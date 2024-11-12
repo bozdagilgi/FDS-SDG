@@ -1,0 +1,482 @@
+---
+title: "FDS_SDG_Indicator_calculations"
+author: "Global Survey Team"
+date: "2024-11-11"
+output: html_document
+unhcrdown::html_page:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+---
+Date: Last revision was on November 2024
+
+*For any issues please contact Ilgi Bozdag at bozdag@unhcr.org or Petra Kaps at kaps@unhcr.org*
+
+**Important Instructions**
+1. For correct calculations, ensure you have two datasets named 'main' and 'hhroster'. 
+2. Confirm that your datasets are cleaned and weighted as required for accurate results!
+
+#SDG Indicators 
+# <span style="color:blue; font-size:28px;"><strong>17.8.1 SDG Indicator</strong></span>
+**17.8.1 Proportion of individuals using the internet**
+##C170801
+The indicator proportion of individuals using the Internet is defined as the proportion of individuals who used the Internet from any location in the last three months.
+
+The Internet is a worldwide public computer network. It provides access to a number of communication services including the World Wide Web and carries e-mail, news, entertainment and data files,irrespective of the device used (not assumed to be only via a computer - it may also be by mobile telephone, tablet, PDA, games machine, digital TV etc.). Access can be via a fixed or mobile network.
+
+| Standard Questions |
+|:------------------:|
+| IA07, IA07_1       |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: Total number of in-scope individuals using the Internet (from any location) in the last 3 months
+
+**Denominator**: Total number of in-scope individuals
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-17-08-01.docx&wdOrigin=BROWSELINK)
+2. [ITU Manual for Measuring ICT Access and Use by Households and Individuals 2020:](https://www.itu.int/en/ITU-D/Statistics/Pages/publications/manual.aspx)
+
+
+```{r}
+table(main$IA07)   #Have you used the Internet in the past 30 days?
+table(main$IA07_1) #How about in the past 3 months? Have you used the Internet in the past 3 months?
+```
+
+```{r}
+main <- main %>%
+  mutate(SDG17_8_1 = case_when(IA07 == 1 ~ 1,
+                               IA07 == 2 & IA07_1 == 1 ~ 1,
+                               TRUE ~ 2)) %>%
+  mutate(SDG17_8_1 = labelled(SDG17_8_1,
+                              labels = c(
+                                 'Yes' = 1,
+                                 'No' = 2
+                               ),
+                               label = "Proportion of individuals using the internet" ))
+```
+```{r}
+table(main$SDG17_8_1)
+```
+
+
+# <span style="color:blue; font-size:28px;"><strong>16.b.1 SDG Indicator</strong></span>
+**16.a.1 Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law**
+##C200204
+
+This indicator is defined as the proportion of the population (adults) who self-report that they personally experienced discrimination or harassment during the last 12 months based on ground(s) prohibited by international human rights law (IHRL). IHRL refers to the body of international legal instruments aiming to promote and protect human rights, including the Universal Declaration of Human Rights (UDHR) and sub-sequent international human rights treaties adopted by the United Nations (UN).
+
+The FDS discrimination module asks how often the respondent experiences discrimination in nines areas. It measures if the respondent has experienced at least one form of discrimination corresponding to the Everyday Discrimination Scale.
+
+| Standard Questions                                                                    |
+|:-------------------------------------------------------------------------------------:|
+| DI01, DI01_01, DI01_02, DI01_03, DI01_04, DI01_05, DI01_06, DI01_07, DI01_08, DI01_09 |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: Number of survey respondents who report experience of any form of discrimination or harassment during the last 12 months
+
+**Denominator**: Total number of survey respondents 
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-0b-01.docx&wdOrigin=BROWSELINK)
+2. [Guidance Note for Implementation of Survey Module on SDG Indicator 16.b.1 & 10.3.1](https://www.ohchr.org/sites/default/files/Documents/Issues/HRIndicators/SDG_Indicator_16b1_10_3_1_Guidance_Note_.pdf)
+
+```{r}
+#In the past 12 month, in your day-to-day life in the host country, how often do any of the following things happen to you? Would you say  almost every day, at least once a week, a few times a month, a few times a year, less than once a year or never?:
+table(main$DI01_01) #You are treated with less politeness than other people are.
+table(main$DI01_02) #You are treated with less respect than other people are.
+table(main$DI01_03) #You receive poorer service than other people at restaurants or stores.
+table(main$DI01_04) #People act as if they think you are not smart.
+table(main$DI01_05) #People act as if they are afraid of you.
+table(main$DI01_06) #People act as if they think you are dishonest.
+table(main$DI01_07) #People act as if they’re better than you are.
+table(main$DI01_08) #You are called names or insulted.
+table(main$DI01_09) #You are threatened or harassed.```
+```
+```{r}
+main <- main %>%
+  mutate(SDG16_b_1 = case_when(
+    # If any value is 1, 2, 3, 4, or 5, assign 1
+    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . %in% 1:5)) > 0 ~ 1,
+    # If all values are 6, assign 2
+    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 6)) == 9 ~ 2,
+    # If all values are 7, assign NA
+    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 7)) == 9 ~ NA_real_,
+    TRUE ~ NA_real_
+  )) %>%
+  mutate(SDG16_b_1 = labelled(
+    SDG16_b_1,
+    labels = c(
+      'Yes' = 1,
+      'No' = 2
+    ),
+    label = "Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law"
+  ))
+
+```
+```{r}
+table(main$SDG16_b_1)
+```
+
+# <span style="color:blue; font-size:28px;"><strong>16.9.1 SDG Indicator</strong></span>
+**16.9.1 Proportion of children under 5 years of age whose births have been registered with a civil authority, by age**
+
+**Definition:**
+
+Proportion of children under 5 years of age whose births have been registered with a civil authority.
+
+**Concepts:**
+
+• Birth registration: Birth registration is defined as ‘the continuous, permanent and universal recording, within the civil registry, of the occurrence and characteristics of births in accordance with the legal requirements of a country’.
+
+• Birth certificate: A birth certificate is a vital record that documents the birth of a child. The term ‘birth certificate’ can refer either to the original document certifying the circumstances of the birth, or to
+
+a certified copy or representation of the registration of that birth, depending on the practices of the country issuing the certificate.
+
+• Civil authority: Official authorized to register the occurrence of a vital event and to record the required details
+
+| Standard Questions|
+|:-----------------:|
+| HH_07b, HH_07a    |
+
+**Unit of measure:**
+Percent (%) of children under 5 years of age
+
+**Numerator**: Number of children under age of five whose births are reported as being registered with the relevant national civil authorities
+
+**Denominator**: Total number of children under the age of five 
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-09-01.docx&wdOrigin=BROWSELINK)
+```{r}
+hhroster$HH_07a # Does [name] have a birth certificate?
+hhroster$HH_07b # Has [name]’s birth been registered with the [civil authorities]?
+```
+```{r}
+# Step 1:Identify children who have a birth certificate
+hhroster <- hhroster %>%
+  mutate(birthCertificate = case_when(
+    HH_07a == 1 ~ 1, # Assigns 1 for yes
+    HH_07a == 2 ~ 2, # Assigns 2 for no
+    HH_07a %in% c(98, 99) ~ NA_real_,  # Assign NA for 98 and 99
+    TRUE ~ NA_real_  # Handle any other missing or unexpected values
+  )) %>%
+  mutate(birthCertificate = labelled(
+    birthCertificate,
+    labels = c(
+      'Yes' = 1,
+      'No' = 2
+    ),
+    label = "Children under 5 with a birth certificate"
+  ))
+
+```
+```{r}
+# Step 2:Identify children whose birth has been registered with civil authorities
+hhroster <- hhroster %>%
+  mutate(birthRegistered = case_when(
+    HH_07b == 1 ~ 1, # Assigns 1 for yes
+    HH_07b == 2 ~ 2, # Assigns 2 for no
+    HH_07b %in% c(98, 99) ~ NA_real_,  # Assign NA for 98 and 99
+    TRUE ~ NA_real_  # Handle any other missing or unexpected values
+  )) %>%
+  mutate(birthRegistered = labelled(
+    birthRegistered,
+    labels = c(
+      'Yes' = 1,
+      'No' = 2
+    ),
+    label = "Children under 5 birth registered with civil authorities"
+  ))
+```
+```{r}
+#Step 3:Create outcome1_2 variable
+hhroster <- hhroster %>%
+  mutate(SDG16_9_1 = case_when(
+    (birthRegistered == 1 | birthCertificate == 1) ~ 1,  # Child has been registered or has birth certificate
+    (birthRegistered == 2 & birthCertificate == 2) ~ 2,  # Child not registered and has no birth certificate
+    (is.na(birthRegistered) & birthCertificate == 2) | (birthRegistered == 2 & is.na(birthCertificate)) ~ 2,  # One is NA, the other is No
+    TRUE ~ NA_real_  # Handle cases where data is missing or unknown
+  )) %>%
+  mutate(SDG16_9_1 = labelled(
+    SDG16_9_1,
+    labels = c(
+      'Yes' = 1,
+      'No' = 2
+    ),
+    label = "Proportion of children under 5 years of age whose births have been registered with a civil authority"
+  ))
+```
+```{r}
+table(hhroster$SDG16_9_1)
+```
+
+
+# <span style="color:blue; font-size:28px;"><strong>16.3.3 SDG Indicator</strong></span>
+**16.3.3 Proportion of the population who have experienced a dispute in the past two years and who accessed a formal or informal dispute resolution mechanism, by type of mechanism**
+##C160303
+
+**Definition:**
+
+Number of persons who experienced a dispute during the past two years who accessed a formal or informal dispute resolution mechanism, as a percentage of all those who experienced a dispute in the past two years, by type of mechanism.
+
+| Standard Questions                                                                                                                         |
+|:------------------------------------------------------------------------------------------------------------------------------------------:|
+| Justice01, Justice05, Justice07a, Justice07b, Justice07c, Justice07d,Justice07e,  Justice07f, Justice07h, Justice07g, Justice07i, Justice16|
+
+**Concepts:**
+
+*A dispute* can be understood as a justiciable problem between individuals or between individual(s) and an entity. Justiciable problems can be seen as the ones giving rise to legal issues, whether or not the problems are perceived as being “legal” by those who face them, and whether or not any legal action was taken as a result of the problem.
+
+*Dispute resolution mechanisms* vary across countries around the world. While in many countries courts represent the main institution dealing with disputes of civil nature, the same may not be true in countries or societies where the first point of reference in such cases are informal systems, tradi-tional or religious leaders.
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: Number of persons who experienced a dispute during the past two years who accessed a formal or informal dispute resolution mechanism
+
+**Denominator**: Number of those who experiences a dispute in the past two years and did not voluntarily self-exclude.
+
+As per the SDG metadata guidance, it is important to exclude from the denominator those who experience disputes and do not turn to dispute resolution mechanisms because they do not need them (voluntarily self-excluded). This refers to cases where the dispute is simple or when respondents solve the issue with the other party through direct negotiation. 
+
+**Limitations:** 
+Variabale "Justice16" is not present in all countries where FDS is carried out. This variable is needed to exclude from the denominator those who voluntary self-exclude. For countries, where this variable is not present, "Case 2" below contains the calculation script.In these cases, the final indicator calculation does not correspond completely to the SDG 16.3.3 indicator. 
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-03-03.docx&wdOrigin=BROWSELINK)
+```{r}
+table(main$Justice01) #In the past two years while in the host country, have you had any disputes?
+table(main$Justice05) #Did you or someone acting on your behalf try to seek information, advice or representation to help you better understand or resolve your dispute?  
+#Justice07 - Did any of the following things happen while you were dealing with this dispute? Please note that when I say 'you' here, I mean you or somebody acting on your behalf. And when I say 'other party', I mean the other party involved in the dispute. 
+table(main$Justice07a)#You communicated with the other party.
+table(main$Justice07b)#You or the other party made a claim to, or made use of, a court/tribunal.
+table(main$Justice07c)#You or the other party made a claim to, or made use of, an [Indigenous/ customary] dispute resolution process such as [INSERT examples].
+table(main$Justice07d)#The problem was reported to the police or other prosecution authority.
+table(main$Justice07e)#You or the other party asked for the intervention of another state authority such as [INSERT examples].
+table(main$Justice07f)#You or the other party asked for the intervention of a religious authority.
+table(main$Justice07g)#You or the other party asked for the intervention of a community leader such as [INSERT example].
+table(main$Justice07h)#You participated in formal mediation, conciliation or arbitration [INSERT examples].
+table(main$Justice07i)#There was no negotiation or third party involvement.
+#table(main$Justice16) #Why didn’t you seek independent advice to help resolve this dispute?  - Check if this variable is present in your data set. 
+```
+```{r}
+#Case 1:
+#Step 1: Identify individuals who experienced a dispute in the past two years 
+main <- main %>%
+  mutate(dispute = case_when(
+    Justice01 == 1 ~ 1, # Assigns 1 for yes
+    Justice01 == 2 ~ 2, # Assigns 2 for no
+    TRUE ~ NA_real_))   # Handle missing cases or "99 - Refuse to answer". 
+```
+```{r}
+#Step 2: Identify individuals who voluntarily self-excluded themselves from seeking formal or informal dispute resolution mechanism. 
+#main <- main %>%
+ # mutate(selfexclusion = case_when(
+ #   Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("A", "B", "C", "D", "I","L", "M") ~ 1, #Assign 1 for those who self-excluded
+ #   Justice01 == 1 & Justice05 == 1 ~ 2,
+  #  Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("E", "F", "G", "H", "J", "K", "OT", "RF") ~ 2 )) #Assign 2 for those who did not self-exclude
+```
+```{r}
+#Step 3: Combine "dispute" and "selfexclusion" to compute the population at risk - those who experiences a dispute and did not voluntary self-ecxlude from seeking for a formal or informal resolution. 
+#main <- main %>%
+ # mutate(popatrisk = case_when(
+  #  dispute == 1 & selfexclusion == 2 ~ 1, 
+  #  TRUE ~ 2))
+```
+```{r}
+#Step 3: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
+main <- main %>%
+  mutate(resolution = case_when(
+    Justice01 == 1 & (Justice07b == 1 | Justice07c == 1 | Justice07d == 1  | Justice07e == 1 | Justice07f == 1 | Justice07g == 1 | Justice07h == 1) ~ 1, # Assigns 1 for yes - accessed a formal or informal dispute resolution mechanism
+    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 2)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
+```
+
+```{r}
+#Case 2: 
+#Step 1: Identify individuals who experienced a dispute in the past two years 
+main <- main %>%
+  mutate(dispute = case_when(
+    Justice01 == 1 ~ 1, # Assigns 1 for yes
+    Justice01 == 2 ~ 2, # Assigns 2 for no
+    TRUE ~ NA_real_))   # Handle missing cases or "99 - Refuse to answer". 
+```
+
+```{r}
+#Step 3: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
+main <- main %>%
+  mutate(resolution = case_when(
+    Justice01 == 1 & (Justice07b == 1 | Justice07c == 1 | Justice07d == 1  | Justice07e == 1 | Justice07f == 1 | Justice07g == 1 | Justice07h == 1) ~ 1, # Assigns 1 for yes - accessed a formal or informal dispute resolution mechanism
+    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 2)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
+```
+
+# <span style="color:blue; font-size:28px;"><strong>16.1.4 SDG Indicator</strong></span>
+**16.1.4 Proportion of population that feel safe walking alone around the area they live after dark**
+##C160105
+
+This indicator refers to the proportion of the adult population who feel safe walking alone in their neighborhood after dark.
+
+As per the SDG metadata guidance, the perception of safety is considered a subjective well being indicator. It affects the way in which human beings interact with their surroundings, their health, and consequently, their quality of life. Indicator 16.1.4 taps into the concept of ‘fear of crime’, which has been elicited in dozens of crime victimization surveys, and the standard formulation used here has been shown to be applicable in different cultural contexts. It is important to note that fear of crime is a phenomenon that is separate from the prevalence of crime and that fear of crime may be even largely independent from actual experience. 
+
+| Standard Questions |
+|:------------------:|
+|       FS01         |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: Number of individuals who self-report feeling safe walking alone in their neighborhood after dark
+
+**Denominator**: Total number of individuals
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-01-04.docx&wdOrigin=BROWSELINK)
+
+```{r}
+table(main$FS01) # How safe do you feel walking alone in your area after dark? Very safe, fairly safe, bit unsafe, very unsafe?
+```
+```{r}
+main <- main %>%
+  mutate(
+  SDG16_1_4 = case_when(
+    FS01 == 1 | FS01 == 2 ~ 1,     # Assign 1 for Yes (feels safe)
+    FS01 == 3 | FS01 == 4 | FS01 == 5 | FS01 == 98 ~ 2,  # Assign 2 for No (does not feel safe)
+    TRUE ~ NA_real_                 # Assign NA for any other values (if needed)
+  )
+)
+
+```
+```{r}
+main <- main %>%
+   mutate(
+    SDG16_1_4 = labelled(
+      SDG16_1_4,
+      labels = c(
+        "Yes" = 1,  # Label for Yes (1)
+        "No" = 2    # Label for No (2)
+      ),
+      label = "Proportion of people that feel safe walking alone in their neighbourhood after dark"  # Assign the variable label
+    )
+  )
+```
+```{r}
+table(main$SDG16_1_4)
+```
+
+# <span style="color:blue; font-size:28px;"><strong>10.3.1 SDG Indicator</strong></span>
+**10.3.1 Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law**
+##C200204
+
+This indicator is defined as the proportion of the population (adults) who self-report that they personally experienced discrimination or harassment during the last 12 months based on ground(s) prohibited by international human rights law (IHRL). IHRL refers to the body of international legal instruments aiming to promote and protect human rights, including the Universal Declaration of Human Rights (UDHR) and sub-sequent international human rights treaties adopted by the United Nations (UN).
+
+The FDS discrimination module asks how often the respondent experiences discrimination in nines areas. It measures if the respondent has experienced at least one form of discrimination corresponding to the Everyday Discrimination Scale.
+
+| Standard Questions                                                                    |
+|:-------------------------------------------------------------------------------------:|
+| DI01, DI01_01, DI01_02, DI01_03, DI01_04, DI01_05, DI01_06, DI01_07, DI01_08, DI01_09 |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: Number of survey respondents who report experience of any form of discrimination or harassment during the last 12 months
+
+**Denominator**: Total number of survey respondents 
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-10-03-01.docx&wdOrigin=BROWSELINK)
+2. [Guidance Note for Implementation of Survey Module on SDG Indicator 16.b.1 & 10.3.1](https://www.ohchr.org/sites/default/files/Documents/Issues/HRIndicators/SDG_Indicator_16b1_10_3_1_Guidance_Note_.pdf)
+
+```{r}
+#In the past 12 month, in your day-to-day life in the host country, how often do any of the following things happen to you? Would you say  almost every day, at least once a week, a few times a month, a few times a year, less than once a year or never?:
+table(main$DI01_01) #You are treated with less politeness than other people are.
+table(main$DI01_02) #You are treated with less respect than other people are.
+table(main$DI01_03) #You receive poorer service than other people at restaurants or stores.
+table(main$DI01_04) #People act as if they think you are not smart.
+table(main$DI01_05) #People act as if they are afraid of you.
+table(main$DI01_06) #People act as if they think you are dishonest.
+table(main$DI01_07) #People act as if they’re better than you are.
+table(main$DI01_08) #You are called names or insulted.
+table(main$DI01_09) #You are threatened or harassed.```
+```
+```{r}
+main <- main %>%
+  mutate(SDG16_b_1 = case_when(
+    # If any value is 1, 2, 3, 4, or 5, assign 1
+    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . %in% 1:5)) > 0 ~ 1,
+    # If all values are 6, assign 2
+    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 6)) == 9 ~ 2,
+    # If all values are 7, assign NA
+    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 7)) == 9 ~ NA_real_,
+    TRUE ~ NA_real_
+  )) %>%
+  mutate(SDG10_3_1 = labelled(
+    SDG10_3_1,
+    labels = c(
+      'Yes' = 1,
+      'No' = 2
+    ),
+    label = "Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law"
+  ))
+
+```
+```{r}
+table(main$SDG10_3_1)
+```
+# <span style="color:blue; font-size:28px;"><strong>8.10.2 SDG Indicator</strong></span>
+**8.10.2 Proportion of adults (15 years and older) with an account at a bank or other financial institution or with a mobile-money-service provider**
+##C081002
+
+The percentage of adults (ages 15+) who report having an account (by themselves or together with someone else) at a bank or another type of financial institution or personally using a mobile money service in the past 12 months.
+
+| Standard Questions           |
+|:----------------------------:|
+| FI01, FI02, FI03, FI10       |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: Number of individuals 15 or above having a personal mobile or bank account
+
+**Denominator**: Total number of individuals 15 or above
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-10-02.docx&wdOrigin=BROWSELINK)
+
+```{r}
+table(main$FI01) #Do you, either by yourself or together with someone else, currently have an account at a bank or another type of formal financial institution in the host country?
+table(main$FI02) #Do you, personally, have a debit card in the host country?
+table(main$FI03) #Do you, personally, have a credit card in the host country?
+table(main$FI10) #In the past 12 months, have you personally used a mobile phone to make payments, buy things, or to send or receive money using a service such as [country specific example]?
+```
+
+```{r}
+main <- main %>%
+  mutate(SDG08_10_2 = case_when(
+   FI01 == 1 | FI02 == 1 | FI03 == 1 | FI10 == 1 ~ 1,
+   FI01 == 2 & FI02 == 2 & FI03 == 2 & FI10 %in% c(2,3) ~ 2,
+    TRUE ~ NA                # For individuals under 18 and all other cases, assigns NA
+  ))
+
+```
+```{r}
+main <- main %>%
+   mutate(SDG08_10_2 = labelled(SDG08_10_2,
+                                labels = c(
+                                  "Yes" = 1,  # Label for Yes
+                                  "No" = 2    # Label for No
+                                ),
+                                label = "Proportion of people above with an account at a bank or other financial institution or with a mobile-money-service provider"
+  ))
+```
+```{r}
+table(main$SDG08_10_2)
+```
