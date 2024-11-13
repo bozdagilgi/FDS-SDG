@@ -480,3 +480,190 @@ main <- main %>%
 ```{r}
 table(main$SDG08_10_2)
 ```
+# <span style="color:blue; font-size:28px;"><strong>8.7.1 SDG Indicator</strong></span>
+**8.7.1 Proportion and number of children aged 5–17 years engaged in child labour, by sex and age**
+##C080701
+
+The number of children engaged in child labour corresponds to the number of children reported to be in child labour during the reference period (usually the week prior to the survey). The proportion of children in child labour is calculated as the number of children in child labour divided by the total number of children in the population. For the purposes of this indicator, children include all persons aged 5 to 17.
+
+| Standard Questions                                                                                                          |
+|:---------------------------------------------------------------------------------------------------------------------------:|
+| CL01_1, CL01_2, CL01_3, CL01_4, CL02, CL08_1, CL08_2, CL08_3, CL08_4, CL08_5, CL08_6, CL08_7, CL08_8, CL08_9, CL08_10, CL09 |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: Number of children aged 5-17 reported in child labour during the week prior to the survey
+
+**Denominator**: Total number of children aged 5-17 in the population
+
+**Concepts**: 
+
+*Child labour* is work that children should not be doing because (a) they are too young or (b) is likely to harm their health, safety or morals, due to its nature or the conditions in which it is carried out.
+
+In accordance with the International Conferences of Labour Statisticians (ICLS) resolutions1, child labour can be measured on the basis of the production boundary set by the United Nations System of National Accounts (UN SNA) or on the basis of the general production boundary. The former limits the frame of reference to economic activity, while the latter extends it to include both economic activity and unpaid household services, that is, the production of domestic and personal services by a household member for consumption within their own household, commonly called “household chores". 
+Following from this, two indicators are used for measuring child labour for the purpose of SDG reporting, the first based on the production boundary set by the UN SNA and the second based on the general production boundary.
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-07-01.docx&wdOrigin=BROWSELINK)
+2. [International Conferences of Labour Statisticians](https://ilostat.ilo.org/about/standards/icls/icls-documents/)
+
+
+*1st Indicator* - Proportion and number of children aged 5-17 years engaged in economic activities at or above age-specific hourly thresholds (SNA production boundary basis)
+The following must be observed when calulating the indicator: 
+Child labour for the 5 to 11 age range: children working for 1 hour or more per week in economic activity;
+
+Child labour for the 12 to 14 age range: children working for 14 hours or more per week in economic activity;
+
+Child labour for the 15 to 17 age range: children working for 43 hours or more per week in economic activity.
+
+```{r}
+table(main$CL01_1) #Did child do any work or help in a farm, food garden or looked after animals either for the household or someone else? For example, growing farm produce, harvesting, or feeding, grazing or milking animals?
+table(main$CL01_2) #Did child help in a family business or a relative’s business with or without pay, or run ${proB} own business?
+table(main$CL01_3) #Did child produce or sell articles, handicrafts, clothes, food or agricultural products?
+table(main$CL01_4) #During the past 7 days, did child engage in any other activity in return for income in cash or in kind, even for only one hour?
+summary(main$CL02) #During the past 7 days, about how many hours did child engage in his/her activities, in total?
+```
+```{r}
+#Step 1: Create a variable identifying children who were engaged in any of the economic activities. 
+main <- main %>%
+  mutate(child_economic_activity = case_when(
+   CL01_1 == 1 | CL01_2 == 1 | CL01_3 == 1 | CL01_4 == 1 ~ 1, #assign 1 if the child has been engaged in any activity
+   CL01_1 == 2 & CL01_2 == 2 & CL01_3 == 2 & CL01_4 == 2 ~ 2, #assign 2 if the child has not been engaged in any activity
+    TRUE ~ NA                # assign NA for all other cases 
+  ))
+```
+```{r}
+#ILGI: HERE WE NEED TO PULL THE AGE OF THE CHILD FROM THE ROSTER TO THE MAIN DATA SET - THE ISSUE IS THAT THE VARIABLES WHICH HOLD THE POSITION OF THE CHILD, BASED ON WHICH THE AGE CAN BE PULLED, ARE NOT IN THE DATASET. I WILL ASK MAGRITH TO ADD THEM. ONCE WE HAVE THEM, WE CAN COMPLETE THE INDICATOR SCRIPT. WE WILL CALL THE VARIABLE CHILD_LABOR_AGE. 
+
+#Step 2: Create a variable identifying the children who have been exposed to child labor. That is engaged in an economic activity at or above age-specific hourly thresholds. 
+#main <- main %>%
+  #mutate(SDG8_7_1_1 = case_when(
+    # Condition for children aged 5-11: engaged in economic activity for at least 1 hour
+   # child_labor_age >= 5 & child_labor_age <= 11 & child_economic_activity == 1 & CL02 >= 1 ~ 1,
+    
+    # Condition for children aged 12-14: engaged in economic activity for at least 14 hours
+    #child_labor_age >= 12 & child_labor_age <= 14 & child_economic_activity == 1 & CL02 >= 14 ~ 1,
+    
+    # Condition for children aged 15-17: engaged in economic activity for at least 43 hours
+    #child_labor_age >= 15 & child_labor_age <= 17 & child_economic_activity == 1 & CL02 >= 43 ~ 1,
+    
+    # Otherwise, classify as not engaged in child labor
+    #TRUE ~ 2
+  #))
+``
+```
+
+
+```{r}
+#main <- main %>%
+   #mutate(SDG8_7_1_1 = labelled(SDG8_7_1_1,
+                                #labels = c(
+                                #  "Yes" = 1,  # Label for Yes
+                                #  "No" = 2    # Label for No
+                               # ),
+                               # label = "Proportion of children aged 5-17 years engaged in economic activities at or above age-specific hourly thresholds"
+```
+
+
+```{r}
+#table(main$SDG8_7_1_1)
+```
+
+*2nd Indicator* - Proportion and number of children aged 5-17 years engaged in economic activities and household chores at or above age-specific hourly thresholds (general production boundary basis):
+
+Child labour for the 5 to 11 age range: children working for 1 hour or more per week in economic activity and/or involved in unpaid household services for 21 hours or more per week;
+
+Child labour for the 12 to 14 age range: children working for 14 hours or more per week in economic activity and/or involved in unpaid household services for 21 hours or more per week;
+
+Child labour for the 15 to 17 age range: children working for 43 hours or more per week in economic activity. (no threshold for unpaid household services)
+
+For the calculation of the 2nd indicator, we will use the calculations from the 1st indicator and the below additional calculations for upaid household services. 
+
+```{r}
+table(main$CL01_1) #Did child do any work or help in a farm, food garden or looked after animals either for the household or someone else? For example, growing farm produce, harvesting, or feeding, grazing or milking animals?
+table(main$CL01_2) #Did child help in a family business or a relative’s business with or without pay, or run ${proB} own business?
+table(main$CL01_3) #Did child produce or sell articles, handicrafts, clothes, food or agricultural products?
+table(main$CL01_4) #During the past 7 days, did child engage in any other activity in return for income in cash or in kind, even for only one hour?
+summary(main$CL02) #During the past 7 days, about how many hours did child engage in his/her activities, in total?
+#During the past 7 days, did ${childsampled} do any of the following for this household?
+table(main$CL08_1) #Shopping for the household?
+table(main$CL08_2) #Cooking?
+table(main$CL08_3) #Washing dishes or cleaning around the house?
+table(main$CL08_4) #Washing clothes?
+table(main$CL08_5) #Caring for children?
+table(main$CL08_6) #Caring for someone old or sick?
+table(main$CL08_8) #Fetching water?
+table(main$CL08_9) #Collecting firewood?
+table(main$CL08_10)#Other household tasks?
+summary(main$CL09) # In the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, about how many hours did CHILD engage in his/her activity(ies), in total?
+```
+
+```{r}
+#Step 1: Create a variable identifying children who were engaged in any of the economic activities - variable created under the calculations for the 1st indicator - variable name: "child_economic_activity". 
+```
+```{r}
+#Step 2: Create a variable identifying children who were engaged in household chores
+main <- main %>%
+  mutate(child_household_chores = case_when(
+   CL08_1 == 1 | CL08_2 == 1 | CL08_3 == 1 | CL08_4 == 1 | CL08_5 == 1 | CL08_5 == 1 | CL08_6 == 1 | CL08_8 == 1 | CL08_9 | CL08_10 == 1 == 1 ~ 1, #assign 1 if the child has been engaged in any household chore
+   CL08_1 == 2 & CL08_2 == 2 & CL08_3 == 2 & CL08_4 == 2 & CL08_5 == 2 & CL08_6 == 2 & CL08_6 == 2 & CL08_8 == 2 & CL08_9 == 2 & CL08_10 == 2 ~ 2, #assign 2 if the child has not been engaged in any household chore
+    TRUE ~ NA                # assign NA for all other cases 
+  ))
+```
+```{r}
+#ILGI: HERE AGAIN WE NEED TO PULL THE AGE OF THE CHILD FROM THE ROSTER TO THE MAIN DATA SET - THE ISSUE IS THAT THE VARIABLES WHICH HOLD THE POSITION OF THE CHILD, BASED ON WHICH THE AGE CAN BE PULLED, ARE NOT IN THE DATASET. I WILL ASK MAGRITH TO ADD THEM. ONCE WE HAVE THEM, WE CAN COMPLETE THE INDICATOR SCRIPT. WE WILL CALL THE VARIABLE CHILD_LABOR_AGE. 
+
+#Step 2: Create a variable identifying the children who have been engaged in an economic activity at or above age-specific hourly thresholds. 
+#main <- main %>%
+  #mutate(child_labor_economic_activity  = case_when(
+    # Condition for children aged 5-11: engaged in economic activity for at least 1 hour
+   # child_labor_age >= 5 & child_labor_age <= 11 & child_economic_activity == 1 & CL02 >= 1 ~ 1,
+    
+    # Condition for children aged 12-14: engaged in economic activity for at least 14 hours
+    #child_labor_age >= 12 & child_labor_age <= 14 & child_economic_activity == 1 & CL02 >= 14 ~ 1,
+    
+    # Condition for children aged 15-17: engaged in economic activity for at least 43 hours
+    #child_labor_age >= 15 & child_labor_age <= 17 & child_economic_activity == 1 & CL02 >= 43 ~ 1,
+    
+    # Otherwise, classify as not engaged economic activity at or above age-specific hourly thresholds.
+    #TRUE ~ 2
+  #))
+```
+
+```{r}
+#Step 2: Create a variable identifying the children who have been engaged in household chores at or above age-specific hourly thresholds.
+#mutate(child_labor_household_chores  = case_when(
+    # Condition for children aged 5-11: engaged in economic activity for at least 1 hour
+   # child_labor_age >= 5 & child_labor_age <= 11 & child_household_chores == 1 & CL09 >= 21 ~ 1,
+    
+    # Condition for children aged 12-14: engaged in economic activity for at least 14 hours
+    #child_labor_age >= 12 & child_labor_age <= 14 & child_household_chores == 1 & CL09 >= 21 ~ 1,
+    
+    # Condition for children aged 15-17: engaged in economic activity for at least 43 hours
+    #child_labor_age >= 15 & child_labor_age <= 17 & child_household_chores == 1 & CL09 >= 0 ~ 1,
+    
+    # Otherwise, classify as not engaged in household chores at or above age-specific hourly thresholds.
+    #TRUE ~ 2
+  #))
+```
+```{r}
+#Step 3: Combine both categories to compute the indicator
+#main <- main %>%
+  #mutate(SDG8_7_1_2 = case_when(child_labor_economic_activity == 1 | child_labor_household_chores == 1 ~ 1,
+  #child_labor_economic_activity == 2 & child_labor_household_chores == 2 ~ 2 ))
+   
+```
+```{r}
+#main <- main %>%
+   #mutate(SDG8_7_1_2 = labelled(SDG8_7_1_2,
+                                #labels = c(
+                                #  "Yes" = 1,  # Label for Yes
+                                #  "No" = 2    # Label for No
+                               # ),
+                               # label = "Proportion of children aged 5-17 years engaged in economic activities and household chores at or above age-specific hourly thresholds"
+```
+```{r}
+#table(main$SDG8_7_1_2)
+```
+
