@@ -65,7 +65,7 @@ table(main$SDG17_8_1)
 
 
 # <span style="color:blue; font-size:28px;"><strong>16.b.1 SDG Indicator</strong></span>
-**16.a.1 Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law**
+**16.b.1 Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law**
 ##C200204
 
 This indicator is defined as the proportion of the population (adults) who self-report that they personally experienced discrimination or harassment during the last 12 months based on ground(s) prohibited by international human rights law (IHRL). IHRL refers to the body of international legal instruments aiming to promote and protect human rights, including the Universal Declaration of Human Rights (UDHR) and sub-sequent international human rights treaties adopted by the United Nations (UN).
@@ -126,6 +126,10 @@ main <- main %>%
 ```{r}
 table(main$SDG16_b_1)
 ```
+*Limitations:* 
+The methodology used for this module in the FDS differs in some aspects from the methodology described in the SDG metadata guidance. More details on the FDS methodology for the discrimination module can be found here. ADD LINK - PETRA
+
+
 
 # <span style="color:blue; font-size:28px;"><strong>16.9.1 SDG Indicator</strong></span>
 **16.9.1 Proportion of children under 5 years of age whose births have been registered with a civil authority, by age**
