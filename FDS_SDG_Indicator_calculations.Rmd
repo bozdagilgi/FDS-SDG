@@ -636,13 +636,13 @@ main <- main %>%
 ```{r}
 #Step 2: Create a variable identifying the children who have been engaged in household chores at or above age-specific hourly thresholds.
 #mutate(child_labor_household_chores  = case_when(
-    # Condition for children aged 5-11: engaged in economic activity for at least 1 hour
+    # Condition for children aged 5-11: engaged in household chores for at least 21 hours
    # child_labor_age >= 5 & child_labor_age <= 11 & child_household_chores == 1 & CL09 >= 21 ~ 1,
     
-    # Condition for children aged 12-14: engaged in economic activity for at least 14 hours
+    # Condition for children aged 12-14: engaged in household chores for at least 21 hours
     #child_labor_age >= 12 & child_labor_age <= 14 & child_household_chores == 1 & CL09 >= 21 ~ 1,
     
-    # Condition for children aged 15-17: engaged in economic activity for at least 43 hours
+    # Condition for children aged 15-17: engaged in household chores
     #child_labor_age >= 15 & child_labor_age <= 17 & child_household_chores == 1 & CL09 >= 0 ~ 1,
     
     # Otherwise, classify as not engaged in household chores at or above age-specific hourly thresholds.
@@ -667,5 +667,245 @@ main <- main %>%
 ```
 ```{r}
 #table(main$SDG8_7_1_2)
+```
+
+# <span style="color:blue; font-size:28px;"><strong>8.6.1 SDG Indicator</strong></span>
+**8.6.1 Proportion of youth (aged 15–24 years) not in education, employment or training**
+##C080601
+
+This indicator conveys the proportion of youth (aged 15-24 years) not in education, employment or training (also known as "the youth NEET rate").
+
+| Standard Questions                                                                                                          |
+|:---------------------------------------------------------------------------------------------------------------------------:|
+| EMP01, EMP02, EMP03, EMP04, EMP05, EMP06a, EMP06b, EMP06c,EMP25a,EMP25aa,EMP29, HH_Educ03, HH_Educ02a, EducR08              |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: (Unemployed youth +Youth outside the labour force) - (Unemployed youth in educator or training + Youth outside the labor force in education or training)
+
+**Denominator**: Total number of youth (aged 15-24 years)
+
+**Concepts**: 
+
+*Youth* is defined as all persons between the ages of 15 and 24 (inclusive).
+
+*Non-formal education*, like formal education is defined in ISCED as education that is institutionalized, intentional and planned by an education provider but is considered an addition, alternative and/or a complement to formal education. Informal learning is defined in ISCED as forms of learning that are intentional or deliberate, but not institutionalized.For the purposes of this indicator, persons will be considered in education if they are in formal or non-formal education, as described above, but excluding informal learning.
+
+*Employment* is defined as all persons of working age who, during a short reference period (one week), were engaged in any activity to produce goods or provide services for pay or profit.Employment is defined as all persons of working age who, during a short reference period (one week), were engaged in any activity to produce goods or provide services for pay or profit.
+For the purpose of this indicator, persons are considered to be in training if they are in a non-academic learning activity through which they acquire specific skills intended for vocational or technical jobs.
+
+*The labour force* is the sum of persons in employment plus persons in unemployment. Together these two groups of the population represent the current supply of labour for the production of goods and services taking place in a country through market transactions in exchange for remuneration.
+
+*Working age* population is the population above the legal working. Often it is defined as all persons aged 15 or older, but this can vary from country to country based on national laws and practices. 
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-06-01.docx&wdOrigin=BROWSELINK)
+2. [Labour Force Statistics](https://ilostat.ilo.org/methods/concepts-and-definitions/description-labour-force-statistics/)
+```{r}
+table(main$EMP01) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you work for someone else for pay, for one or more hours?
+table(main$EMP02) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you run or do any kind of business, farming or other activity to make money?
+table(main$EMP03) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you help in a family business or farm?
+table(main$EMP04) #Even though you did not work, during the past 7 days, did you have a paid job from which you were temporarily absent?
+table(main$EMP05) #Even though you did not work, during the past 7 days, did you have a business or a helper job in a family business/farm from which you were temporarily absent?
+table(main$EMP06a) #During the past 7 days, did you do any work in farming or rearing farm animals, fishing or fish farming, or none of these?
+table(main$EMP06b) #Was this work that you mentioned in farming or rearing farming animals, fishing or fish farming, or none of these?
+table(main$EMP06c) #Thinking about this work, are the products intended only for sale, mainly for sale, only for family use, or mainly for family use?
+table(main$EMP06d) #How many hours did you spend doing this work during the past 7 days?
+table(main$EMP25a) #During the past 30 days, did you do anything to find a paid job?
+table(main$EMP25aa)#During the past 30 days, did you do anything to start a business?
+table(main$EMP29)  #Could you start working within the next 14 days if you were offered a job?
+table(main$EducR08)#Have you ever completed an apprenticeship?
+table(main$educ_now) # Are you currently going to school?  If it is school holiday between two school years, tell us about the last school year.Do not include kindergarten or preschool.
+```
+ILGI: *Note: Apart from the above variables, this indicator should also include other forms of training (not only apprenticeship). With questioins posted in FDS, we are unable to determine if an individual is currently participating in training other than apprenticeship. 
+Check the entire calculation with Ilgi. 
+
+```{r}
+#Step 2: Create a variable identifying unemployed youth
+main <- main %>%
+  mutate(employed_youth = case_when(
+    EMP01 == 1 & between(age_selected, 15, 24) ~ 1,  # Paid employment - employees
+    EMP02 == 1 & EMP06b == 3 & between(age_selected, 15, 24) ~ 1,  # Self-employment
+    EMP03 == 1 & EMP06b == 3 & between(age_selected, 15, 24) ~ 1,  # Unpaid contributing family workers
+    EMP04 == 1 & between(age_selected, 15, 24) ~ 1,  # Absent but still employed
+    EMP05 == 1 & EMP06a == 3 & between(age_selected, 15, 24) ~ 1,  # Absent but self-employed
+    EMP02 == 1 & EMP06b %in% c(1, 2) & EMP06c %in% c(1, 2) & between(age_selected, 15, 24) ~ 1,  # Farming/rearing/fishing for sale
+    EMP05 == 1 & EMP06a %in% c(1, 2) & EMP06c %in% c(1, 2) & between(age_selected, 15, 24) ~ 1,  # Absent but farming for sale
+    between(age_selected, 15, 24) ~ 2,  # If working age but none of the above, mark as not employed
+    TRUE ~ NA_real_  # Set to NA for those not classified as youth
+  ))
+```
+
+```{r}
+#Step 2: Define unemployed and those outside of the labour force
+main <- main %>%
+  mutate(unemployed_youth = case_when(
+    (employed_youth == 2 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) & between(age_selected, 15, 24) ~ 1,  # Actively looking for work - unemployed 
+    employed_youth == 2 & EMP29 != 1 & between(age_selected, 15, 24) ~ 2,  # Outside of labour force
+    TRUE ~ NA_real_  
+  ))
+```
+
+```{r}
+#Step 3: Create a variable identifying youth in education 
+main <- main %>%
+  mutate(youth_education = case_when(
+    (between(age_selected, 15, 24) & educ_now == 1) ~ 1,  # Currently in education
+    (between(age_selected, 15, 24) & educ_now == 2) ~ 2,  # Currently not in education
+    TRUE ~ NA_real_  
+  ))
+```
+
+```{r}
+#Step 3: Create a variable identifying youth doing currently in training (apprenticeship). 
+main <- main %>%
+  mutate(youth_training = case_when(
+    (between(age_selected, 15, 24) & EducR08 == 3) ~ 1,  # Currently in training
+    (between(age_selected, 15, 24) & EducR08 == 1 | EducR08 == 2) ~ 2,  # Currently not in education
+    TRUE ~ NA_real_  
+  ))
+```
+
+```{r}
+#Step 4: Combine Unemployed youth +Youth outside the labour force
+main <- main %>%
+  mutate(unemployed_outsidelabour = case_when(
+    unemployed_youth == 1 | unemployed_youth == 2 ~ 1,  # Unemployed and outside of labour force 
+    TRUE ~ 2 
+  ))
+```
+
+```{r}
+#Step 4: Combine Unemployed youth +Youth outside the labour force
+main <- main %>%
+  mutate(unemployed_outsidelabour = case_when(
+    unemployed_youth == 1 | unemployed_youth == 2 ~ 1,  # Unemployed and outside of labour force 
+    TRUE ~ 2 
+  ))
+```
+```{r}
+#Step 5: Unemployed youth in educator or training
+main <- main %>%
+  mutate(unemployed_ineduc_tr = case_when(
+    unemployed_youth == 1 & (youth_education == 1 & youth_training == 1) ~ 1,  # Unemployed youth in educator or training 
+    TRUE ~ 2 
+  ))
+```
+
+```{r}
+#Step 5: Out of labour youth in educator or training
+main <- main %>%
+  mutate(outoflabour_ineduc_tr = case_when(
+    unemployed_youth == 2 & (youth_education == 1 & youth_training == 1) ~ 1,  # Out of labour youth in educator or training 
+    TRUE ~ 2 
+  ))
+```
+```{r}
+#Step 6: Define the numerator
+numerator <- main %>%
+  filter(between(age_selected, 15, 24)) %>%
+  summarise(
+    total_unemployed_outside_labour = sum(unemployed_outsidelabour == 1, na.rm = TRUE),
+    in_education_or_training = sum(unemployed_ineduc_tr == 1 | outoflabour_ineduc_tr == 1, na.rm = TRUE)
+  ) %>%
+  mutate(numerator = total_unemployed_outside_labour - in_education_or_training) %>%
+  pull(numerator)
+```
+```{r}
+#Step 7: Define the denominator 
+denominator <- main %>%
+  filter(between(age_selected, 15, 24)) %>%
+  nrow()
+```
+
+```{r}
+#Step 8: Calculate the indicator 
+SDG8_6_1 <- (numerator / denominator)*100
+```
+
+
+# <span style="color:blue; font-size:28px;"><strong>8.5.2 SDG Indicator</strong></span>
+**8.5.2 Unemployment rate, by sex, age and persons with disabilities**
+##C080502
+
+The unemployment rate conveys the percentage of persons in the labour force who are unemployed.
+
+| Standard Questions                                                                           |
+|:--------------------------------------------------------------------------------------------:|
+| EMP01, EMP02, EMP03, EMP04, EMP05, EMP06a, EMP06b, EMP06c, EMP06d, EMP25a, EMP25aa, EMP29    |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator:** Number of individuals in the labour force who are unemployed
+
+**Denominator:** Total number of individuals in the labour force
+
+**Concepts**:
+
+*Unemployed persons* are defined as all those of working age (usually aged 15 and above) who were not in employment, carried out activities to seek employment during a specified recent period and were currently available to take up employment given a job opportunity.
+
+*Persons in employment* are defined as all those of working age (usually aged 15 and above) who, during a short reference period such as one week or one day, were engaged in any activity to produce goods or provide services for pay or profit. 
+
+*The labour force* corresponds to the sum of persons in employment and in unemployment.
+
+*Working age* population is the population above the legal working. Often it is defined as all persons aged 15 or older, but this can vary from country to country based on national laws and practices. 
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-05-02.docx&wdOrigin=BROWSELINK)
+2. [Labour Force Statistics](https://ilostat.ilo.org/methods/concepts-and-definitions/description-labour-force-statistics/)
+
+```{r}
+#Step 2: Determine who is employed based on various conditions 
+main <- main %>%
+  mutate(employed = case_when(
+    EMP01 == 1  ~ 1,  # Paid employment - employees
+    EMP02 == 1 & EMP06b == 3~ 1,  # Self-employment
+    EMP03 == 1 & EMP06b == 3~ 1,  # Unpaid contributing family workers
+    EMP04 == 1  ~ 1,  # Absent but still employed
+    EMP05 == 1 & EMP06a == 3~ 1,  # Absent but self-employed
+    EMP02 == 1 & EMP06b %in% c(1, 2) & EMP06c %in% c(1, 2) ~ 1,  # Farming/rearing/fishing for sale
+    EMP05 == 1 & EMP06a %in% c(1, 2) & EMP06c %in% c(1, 2) ~ 1,  # Absent but farming for sale
+    TRUE ~ 2  # Not employed
+  ))
+```
+
+```{r}
+#Step 2: Define unemployed: those not employed but actively looking for work and available to carry out activities
+main <- main %>%
+  mutate(unemployed = case_when(
+    (employed == 2 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) ~ 1,  # Actively looking for work
+    TRUE ~ 2  # Not unemployed if not actively looking or employed
+  ))
+```
+
+```{r}
+#Step 3: Define labour force: anyone employed or unemployed
+main <- main %>%
+  mutate(labour_force = case_when(
+    (employed == 1 | unemployed == 1) ~ 1,  # Employed or actively seeking work
+    TRUE ~ 2  # Not in labour force
+  ))
+```
+
+```{r}
+#Step 4: Outcome - Unemployment rate
+main <- main %>%
+  mutate(SDG_8_5_2 = case_when(
+    employed == 1 & labour_force == 1 ~ 2,  # If employed, outcome is 2 (not unemployed)
+    unemployed == 1 & labour_force == 1 ~ 1,  # If unemployed, outcome is 1
+    TRUE ~ NA_real_  # Catch-all for cases not in the labor force or with missing data
+  ))
+```
+
+```{r}
+main <- main %>%
+   mutate(SDG_8_5_2 = labelled(SDG_8_5_2,
+                                labels = c(
+                                  "Unemployed" = 1,  # Label for Yes
+                                  "Not unemployed" = 2   # Label for No
+                                ),
+                                label = "Proportion of people (working age) who are unemployed"))
 ```
 
