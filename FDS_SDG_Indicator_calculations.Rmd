@@ -1,7 +1,7 @@
 ---
-title: "FDS_SDG_Indicator_calculations"
+title: "FDS Questionnaire v1 SDG Indicator calculations"
 author: "Global Survey Team"
-date: "2024-11-11"
+date: "2024-11"
 output: html_document
 unhcrdown::html_page:
     toc: true
@@ -19,10 +19,40 @@ Date: Last revision was on November 2024
 *For any issues please contact Ilgi Bozdag at bozdag@unhcr.org or Petra Kaps at kaps@unhcr.org*
 
 **Important Instructions**
-1. For correct calculations, ensure you have two datasets named 'main' and 'hhroster'. 
+
+1. For correct calculations, ensure you have five datasets corresponds different respondents named 'main', 'hhroster', x, x and x.  
+
 2. Confirm that your datasets are cleaned and weighted as required for accurate results!
 
-At this step, you should already have **main** and **hhroster** datasets structured in a way that will allow you to calculate your indicators as you will be guided in this document. It's not recommended to clear your work space if your datasets are already loaded. 
+
+Ilgi/Petra - Add Github links once done
+
+# Sustainable Development Goals
+
+[The 2030 Agenda for Sustainable Development](https://sdgs.un.org/2030agenda), adopted by all United Nations Member States in 2015, provides a shared blueprint for peace and prosperity for people and the planet, now and into the future. At its heart are the 17 Sustainable Development Goals (SDGs), which are an urgent call for action by all countries - developed and developing - in a global partnership. They recognize that ending poverty and other deprivations must go hand-in-hand with strategies that improve health and education, reduce inequality, and spur economic growth – all while tackling climate change and working to preserve our oceans and forests. 
+
+
+There is broad consensus around the key indicators used to measure, inform and monitor progress towards global development objectives, as exemplified by the Sustainable Development Goals and related efforts of the MICS, DHS, IHSN, together with national governments.
+UNHCR's objectives are largely aligned with these frameworks.
+
+[The Forced Displacement Survey (FDS)](https://www.unhcr.org/what-we-do/reports-and-publications/data-and-statistics/forced-displacement-survey) is a programme designed to streamline and standardize surveys that collect data on forcibly displaced people.
+
+FDS is a household-level survey with standard questionnaires following context-appropriate methodological approaches.The FDS collects multi-topic data on the socioeconomic and living conditions of refugees, asylum-seekers and nationals who live in proximity (host communities).  The main topics covered by the FDS can be broadly classified into four areas: demographics and legal status, socio-cultural, economic and civil-political.
+
+
+FDS help us to SDG indicators in a standardized way to have a global understanding of the results. Both indicators and questionnaire is also largely aligned with MICS, DHS, IHSN, national household surveys and other standardized UNHCR surveys.
+
+This document will guide you on how each and every indicator will be calculated with the FDS standard questionnaire module corresponding to each indicator.
+
+**Population** refers to survey population in this guidance for the calculation of indicators as shown by numerator and denominator.
+
+**How to calculate an indicator?** In the calculation of a percentage or rate, the denominator is often the total number of observations, events, or units in the population or sample being studied. The numerator, on the other hand, represents the specific part or subset of interest.
+
+Percentage = \(\left(\frac{\text{Numerator}}{\text{Denominator}}\right) \times 100\)
+
+
+At this step, you should already have **main** and **hhroster** datasets structured in a way that will allow you to calculate your indicators as you will be guided in this document. It's not recommended to clear your work space if your datasets are already uploaded. 
+
 
 ```{r, eval=FALSE}
 ## Install pacman if not already installed
@@ -53,481 +83,480 @@ main <- read_dta("FDS_PAK_2024_Allrespondents_complete.dta")
 
 ```
 
-#ADD INTRO - SOMETHING ON SDGs and FDS 
 
-#SDG Indicators 
+# Indicators 
 
 
-## 17.8.1 SDG Indicator
-**17.8.1 Proportion of individuals using the internet**
-Indicator Code: C170801
-The indicator proportion of individuals using the Internet is defined as the proportion of individuals who used the Internet from any location in the last three months.
+## 1.3.1 SDG Indicator
 
-The Internet is a worldwide public computer network. It provides access to a number of communication services including the World Wide Web and carries e-mail, news, entertainment and data files,irrespective of the device used (not assumed to be only via a computer - it may also be by mobile telephone, tablet, PDA, games machine, digital TV etc.). Access can be via a fixed or mobile network.
+**Proportion of population covered by social protection floors/systems, by sex, distinguishing children, unemployed persons, older persons, persons with disabilities, pregnant women, newborns, work-injury victims and the poor and the vulnerable**
 
-| Standard Questions |
-|:------------------:|
-| IA07, IA07_1       |
 
-**Unit of measure:**
-Percent (%)
+Indicator Code: C010301
 
-**Numerator**: Total number of in-scope individuals using the Internet (from any location) in the last 3 months
 
-**Denominator**: Total number of in-scope individuals
+The indicator reflects the proportion of persons effectively covered by a social protection system, including social protection floors. It also reflects the main components of social protection: child and maternity benefits, support for persons without a job, persons with disabilities, victims of work injuries and older persons.
+Effective coverage of social protection is measured by the number of people who are either actively contributing to a social insurance scheme or receiving benefits (contributory or non-contributory).
 
-**Sources** 
-1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-17-08-01.docx&wdOrigin=BROWSELINK)
-2. [ITU Manual for Measuring ICT Access and Use by Households and Individuals 2020:](https://www.itu.int/en/ITU-D/Statistics/Pages/publications/manual.aspx)
+SDG Indicator 1.3.1 and ILO methodology includes child, family and maternity benefits; support for people without jobs, people with disabilities, victims of work injuries and older people.
+
+Calculations include separate indicators in order to distinguish effective coverage for children, unemployed persons, older persons and persons with disabilities, mothers with newborns, workers protected in case of work injury, and the poor and the vulnerable. For each case, coverage is expressed
+as a share of the respective population. FDS can only cover part of the indicators.
+
+
+|    Standard Questions                                  |
+|:------------------------------------------------------:|
+| ScProtec01, ScProtec04, ScProtec16                     |
+
+Indicators are obtained as follows:
+
+a) Proportion of population covered by at least one social protection cash benefit: ratio of the population receiving cash benefits under at least one of the contingencies/social protection functions (contributory or non-contributory benefit) or actively contributing to at least one social security scheme to the total population.
+
+
 
 
 ```{r}
-table(main$IA07)   #Have you used the Internet in the past 30 days?
-table(main$IA07_1) #How about in the past 3 months? Have you used the Internet in the past 3 months?
+
+#Check variables 
+
+table(main$ScProtec01) #In the past 12 months while in the host country, have you or anyone in your household received support from any assistance programme?
+table(main$ScProtec04) #From whom have you or anyone in your household received the assistance provided by this programme?
+#ScProtec16: In the last 12 months, have you or anyone in your household received any of the following payments from the host country government?  
+table(main$ScProtec16a)#Social protection cash benefit
+table(main$ScProtec16b)#Parental/Maternity benefit
+table(main$ScProtec16c)#Disability benefit
+table(main$ScProtec16d)#Unemployment benefit
+table(main$ScProtec16e)#Employment injury benefit
+table(main$ScProtec16f)#Sickness benefit
+table(main$ScProtec16g)#Old-age pension
+table(main$ScProtec16h)#Other vulnerability benefit
+table(main$ScProtec16i)#Social assistance cash benefit
+
 ```
-
 ```{r}
+#Step 2: Create a new variable to check if the household receives any social protection benefit in the form of payment from the government
+
 main <- main %>%
-  mutate(SDG17_8_1 = case_when(IA07 == 1 ~ 1,
-                               IA07 == 2 & IA07_1 == 1 ~ 1,
-                               TRUE ~ 2)) %>%
-  mutate(SDG17_8_1 = labelled(SDG17_8_1,
-                              labels = c(
-                                 'Yes' = 1,
-                                 'No' = 2
-                               ),
-                               label = "Proportion of individuals using the internet" ))
-```
-```{r}
-table(main$SDG17_8_1)
-```
-
-
-# <span style="color:blue; font-size:28px;"><strong>16.b.1 SDG Indicator</strong></span>
-**16.b.1 Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law**
-##C200204
-
-This indicator is defined as the proportion of the population (adults) who self-report that they personally experienced discrimination or harassment during the last 12 months based on ground(s) prohibited by international human rights law (IHRL). IHRL refers to the body of international legal instruments aiming to promote and protect human rights, including the Universal Declaration of Human Rights (UDHR) and sub-sequent international human rights treaties adopted by the United Nations (UN).
-
-The FDS discrimination module asks how often the respondent experiences discrimination in nines areas. It measures if the respondent has experienced at least one form of discrimination corresponding to the Everyday Discrimination Scale.
-
-| Standard Questions                                                                    |
-|:-------------------------------------------------------------------------------------:|
-| DI01, DI01_01, DI01_02, DI01_03, DI01_04, DI01_05, DI01_06, DI01_07, DI01_08, DI01_09 |
-
-**Unit of measure:**
-Percent (%)
-
-**Numerator**: Number of survey respondents who report experience of any form of discrimination or harassment during the last 12 months
-
-**Denominator**: Total number of survey respondents 
-
-**Sources** 
-1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-0b-01.docx&wdOrigin=BROWSELINK)
-2. [Guidance Note for Implementation of Survey Module on SDG Indicator 16.b.1 & 10.3.1](https://www.ohchr.org/sites/default/files/Documents/Issues/HRIndicators/SDG_Indicator_16b1_10_3_1_Guidance_Note_.pdf)
-
-```{r}
-#In the past 12 month, in your day-to-day life in the host country, how often do any of the following things happen to you? Would you say  almost every day, at least once a week, a few times a month, a few times a year, less than once a year or never?:
-table(main$DI01_01) #You are treated with less politeness than other people are.
-table(main$DI01_02) #You are treated with less respect than other people are.
-table(main$DI01_03) #You receive poorer service than other people at restaurants or stores.
-table(main$DI01_04) #People act as if they think you are not smart.
-table(main$DI01_05) #People act as if they are afraid of you.
-table(main$DI01_06) #People act as if they think you are dishonest.
-table(main$DI01_07) #People act as if they’re better than you are.
-table(main$DI01_08) #You are called names or insulted.
-table(main$DI01_09) #You are threatened or harassed.```
-```
-```{r}
-main <- main %>%
-  mutate(SDG16_b_1 = case_when(
-    # If any value is 1, 2, 3, 4, or 5, assign 1
-    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
-                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . %in% 1:5)) > 0 ~ 1,
-    # If all values are 6, assign 2
-    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
-                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 6)) == 9 ~ 2,
-    # If all values are 7, assign NA
-    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
-                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 7)) == 9 ~ NA_real_,
-    TRUE ~ NA_real_
+  rowwise() %>%
+  mutate(Social_Benefit = case_when(
+    any(c_across(starts_with("ScProtec16")) == 1, na.rm = TRUE) ~ 1,  # If any column has 1
+    all(c_across(starts_with("ScProtec16")) == 2, na.rm = TRUE) ~ 2,  # If all columns are 2
+    TRUE ~ 2                                                   # Default to NA
   )) %>%
-  mutate(SDG16_b_1 = labelled(
-    SDG16_b_1,
-    labels = c(
-      'Yes' = 1,
-      'No' = 2
-    ),
-    label = "Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law"
-  ))
-
-```
-```{r}
-table(main$SDG16_b_1)
-```
-*Limitations:* 
-The methodology used for this module in the FDS differs in some aspects from the methodology described in the SDG metadata guidance. More details on the FDS methodology for the discrimination module can be found here. ADD LINK - PETRA
-
-
-
-# <span style="color:blue; font-size:28px;"><strong>16.9.1 SDG Indicator</strong></span>
-**16.9.1 Proportion of children under 5 years of age whose births have been registered with a civil authority, by age**
-
-**Definition:**
-
-Proportion of children under 5 years of age whose births have been registered with a civil authority.
-
-**Concepts:**
-
-• Birth registration: Birth registration is defined as ‘the continuous, permanent and universal recording, within the civil registry, of the occurrence and characteristics of births in accordance with the legal requirements of a country’.
-
-• Birth certificate: A birth certificate is a vital record that documents the birth of a child. The term ‘birth certificate’ can refer either to the original document certifying the circumstances of the birth, or to
-
-a certified copy or representation of the registration of that birth, depending on the practices of the country issuing the certificate.
-
-• Civil authority: Official authorized to register the occurrence of a vital event and to record the required details
-
-| Standard Questions|
-|:-----------------:|
-| HH_07b, HH_07a    |
-
-**Unit of measure:**
-Percent (%) of children under 5 years of age
-
-**Numerator**: Number of children under age of five whose births are reported as being registered with the relevant national civil authorities
-
-**Denominator**: Total number of children under the age of five 
-
-**Sources** 
-1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-09-01.docx&wdOrigin=BROWSELINK)
-```{r}
-hhroster$HH_07a # Does [name] have a birth certificate?
-hhroster$HH_07b # Has [name]’s birth been registered with the [civil authorities]?
-```
-```{r}
-# Step 1:Identify children who have a birth certificate
-hhroster <- hhroster %>%
-  mutate(birthCertificate = case_when(
-    HH_07a == 1 ~ 1, # Assigns 1 for yes
-    HH_07a == 2 ~ 2, # Assigns 2 for no
-    HH_07a %in% c(98, 99) ~ NA_real_,  # Assign NA for 98 and 99
-    TRUE ~ NA_real_  # Handle any other missing or unexpected values
-  )) %>%
-  mutate(birthCertificate = labelled(
-    birthCertificate,
-    labels = c(
-      'Yes' = 1,
-      'No' = 2
-    ),
-    label = "Children under 5 with a birth certificate"
-  ))
-
-```
-```{r}
-# Step 2:Identify children whose birth has been registered with civil authorities
-hhroster <- hhroster %>%
-  mutate(birthRegistered = case_when(
-    HH_07b == 1 ~ 1, # Assigns 1 for yes
-    HH_07b == 2 ~ 2, # Assigns 2 for no
-    HH_07b %in% c(98, 99) ~ NA_real_,  # Assign NA for 98 and 99
-    TRUE ~ NA_real_  # Handle any other missing or unexpected values
-  )) %>%
-  mutate(birthRegistered = labelled(
-    birthRegistered,
-    labels = c(
-      'Yes' = 1,
-      'No' = 2
-    ),
-    label = "Children under 5 birth registered with civil authorities"
-  ))
-```
-```{r}
-#Step 3:Create outcome1_2 variable
-hhroster <- hhroster %>%
-  mutate(SDG16_9_1 = case_when(
-    (birthRegistered == 1 | birthCertificate == 1) ~ 1,  # Child has been registered or has birth certificate
-    (birthRegistered == 2 & birthCertificate == 2) ~ 2,  # Child not registered and has no birth certificate
-    (is.na(birthRegistered) & birthCertificate == 2) | (birthRegistered == 2 & is.na(birthCertificate)) ~ 2,  # One is NA, the other is No
-    TRUE ~ NA_real_  # Handle cases where data is missing or unknown
-  )) %>%
-  mutate(SDG16_9_1 = labelled(
-    SDG16_9_1,
-    labels = c(
-      'Yes' = 1,
-      'No' = 2
-    ),
-    label = "Proportion of children under 5 years of age whose births have been registered with a civil authority"
-  ))
-```
-```{r}
-table(hhroster$SDG16_9_1)
-```
-
-
-# <span style="color:blue; font-size:28px;"><strong>16.3.3 SDG Indicator</strong></span>
-**16.3.3 Proportion of the population who have experienced a dispute in the past two years and who accessed a formal or informal dispute resolution mechanism, by type of mechanism**
-##C160303
-
-**Definition:**
-
-Number of persons who experienced a dispute during the past two years who accessed a formal or informal dispute resolution mechanism, as a percentage of all those who experienced a dispute in the past two years, by type of mechanism.
-
-| Standard Questions                                                                                                                         |
-|:------------------------------------------------------------------------------------------------------------------------------------------:|
-| Justice01, Justice05, Justice07a, Justice07b, Justice07c, Justice07d,Justice07e,  Justice07f, Justice07h, Justice07g, Justice07i, Justice16|
-
-**Concepts:**
-
-*A dispute* can be understood as a justiciable problem between individuals or between individual(s) and an entity. Justiciable problems can be seen as the ones giving rise to legal issues, whether or not the problems are perceived as being “legal” by those who face them, and whether or not any legal action was taken as a result of the problem.
-
-*Dispute resolution mechanisms* vary across countries around the world. While in many countries courts represent the main institution dealing with disputes of civil nature, the same may not be true in countries or societies where the first point of reference in such cases are informal systems, tradi-tional or religious leaders.
-
-**Unit of measure:**
-Percent (%)
-
-**Numerator**: Number of persons who experienced a dispute during the past two years who accessed a formal or informal dispute resolution mechanism
-
-**Denominator**: Number of those who experiences a dispute in the past two years and did not voluntarily self-exclude.
-
-As per the SDG metadata guidance, it is important to exclude from the denominator those who experience disputes and do not turn to dispute resolution mechanisms because they do not need them (voluntarily self-excluded). This refers to cases where the dispute is simple or when respondents solve the issue with the other party through direct negotiation. 
-
-**Limitations:** 
-Variabale "Justice16" is not present in all countries where FDS is carried out. This variable is needed to exclude from the denominator those who voluntary self-exclude. For countries, where this variable is not present, "Case 2" below contains the calculation script.In these cases, the final indicator calculation does not correspond completely to the SDG 16.3.3 indicator. 
-
-**Sources** 
-1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-03-03.docx&wdOrigin=BROWSELINK)
-```{r}
-table(main$Justice01) #In the past two years while in the host country, have you had any disputes?
-table(main$Justice05) #Did you or someone acting on your behalf try to seek information, advice or representation to help you better understand or resolve your dispute?  
-#Justice07 - Did any of the following things happen while you were dealing with this dispute? Please note that when I say 'you' here, I mean you or somebody acting on your behalf. And when I say 'other party', I mean the other party involved in the dispute. 
-table(main$Justice07a)#You communicated with the other party.
-table(main$Justice07b)#You or the other party made a claim to, or made use of, a court/tribunal.
-table(main$Justice07c)#You or the other party made a claim to, or made use of, an [Indigenous/ customary] dispute resolution process such as [INSERT examples].
-table(main$Justice07d)#The problem was reported to the police or other prosecution authority.
-table(main$Justice07e)#You or the other party asked for the intervention of another state authority such as [INSERT examples].
-table(main$Justice07f)#You or the other party asked for the intervention of a religious authority.
-table(main$Justice07g)#You or the other party asked for the intervention of a community leader such as [INSERT example].
-table(main$Justice07h)#You participated in formal mediation, conciliation or arbitration [INSERT examples].
-table(main$Justice07i)#There was no negotiation or third party involvement.
-#table(main$Justice16) #Why didn’t you seek independent advice to help resolve this dispute?  - Check if this variable is present in your data set. 
-```
-```{r}
-#Case 1:
-#Step 1: Identify individuals who experienced a dispute in the past two years 
-main <- main %>%
-  mutate(dispute = case_when(
-    Justice01 == 1 ~ 1, # Assigns 1 for yes
-    Justice01 == 2 ~ 2, # Assigns 2 for no
-    TRUE ~ NA_real_))   # Handle missing cases or "99 - Refuse to answer". 
-```
-```{r}
-#Step 2: Identify individuals who voluntarily self-excluded themselves from seeking formal or informal dispute resolution mechanism. 
-#main <- main %>%
- # mutate(selfexclusion = case_when(
- #   Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("A", "B", "C", "D", "I","L", "M") ~ 1, #Assign 1 for those who self-excluded
- #   Justice01 == 1 & Justice05 == 1 ~ 2,
-  #  Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("E", "F", "G", "H", "J", "K", "OT", "RF") ~ 2 )) #Assign 2 for those who did not self-exclude
-```
-```{r}
-#Step 3: Combine "dispute" and "selfexclusion" to compute the population at risk - those who experiences a dispute and did not voluntary self-ecxlude from seeking for a formal or informal resolution. 
-#main <- main %>%
- # mutate(popatrisk = case_when(
-  #  dispute == 1 & selfexclusion == 2 ~ 1, 
-  #  TRUE ~ 2))
-```
-```{r}
-#Step 3: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
-main <- main %>%
-  mutate(resolution = case_when(
-    Justice01 == 1 & (Justice07b == 1 | Justice07c == 1 | Justice07d == 1  | Justice07e == 1 | Justice07f == 1 | Justice07g == 1 | Justice07h == 1) ~ 1, # Assigns 1 for yes - accessed a formal or informal dispute resolution mechanism
-    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 2)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
+  ungroup()
 ```
 
 ```{r}
-#Case 2: 
-#Step 1: Identify individuals who experienced a dispute in the past two years 
-main <- main %>%
-  mutate(dispute = case_when(
-    Justice01 == 1 ~ 1, # Assigns 1 for yes
-    Justice01 == 2 ~ 2, # Assigns 2 for no
-    TRUE ~ NA_real_))   # Handle missing cases or "99 - Refuse to answer". 
+table(main$Social_Benefit)
 ```
+
+
+
+b) Proportion of children covered by social protection benefits: ratio of children/households receiving child or family cash benefits to the total number of children/households with children.
+
 
 ```{r}
-#Step 3: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
-main <- main %>%
-  mutate(resolution = case_when(
-    Justice01 == 1 & (Justice07b == 1 | Justice07c == 1 | Justice07d == 1  | Justice07e == 1 | Justice07f == 1 | Justice07g == 1 | Justice07h == 1) ~ 1, # Assigns 1 for yes - accessed a formal or informal dispute resolution mechanism
-    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 2)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
+#Not sure if there is a variable that is specific to this indicator 
 ```
 
-# <span style="color:blue; font-size:28px;"><strong>16.1.4 SDG Indicator</strong></span>
-**16.1.4 Proportion of population that feel safe walking alone around the area they live after dark**
-##C160105
+c) Proportion of women giving birth covered by maternity benefits: ratio of women receiving cash maternity benefits to women giving birth in the same year (estimated based on age-specific fertility rates published in the UN’s World Population Prospects or on the number of live births corrected for the share of twin and triplet births).
 
-This indicator refers to the proportion of the adult population who feel safe walking alone in their neighborhood after dark.
+```{r}
+#add here only ScProtec16b - Parental/Maternity benefit
+```
 
-As per the SDG metadata guidance, the perception of safety is considered a subjective well being indicator. It affects the way in which human beings interact with their surroundings, their health, and consequently, their quality of life. Indicator 16.1.4 taps into the concept of ‘fear of crime’, which has been elicited in dozens of crime victimization surveys, and the standard formulation used here has been shown to be applicable in different cultural contexts. It is important to note that fear of crime is a phenomenon that is separate from the prevalence of crime and that fear of crime may be even largely independent from actual experience. 
 
-| Standard Questions |
-|:------------------:|
-|       FS01         |
+d) Proportion of persons with disabilities receiving benefits: ratio of persons receiving disability cash benefits to persons with severe disabilities. The latter is calculated as the product of prevalence of disability ratios (published for each country group by the World Health Organization) and each country’s population.
+
+```{r}
+#check disability benefit compared with disability definition in the questionnaire 
+```
+
+e) Proportion of unemployed receiving benefits: ratio of recipients of unemployment cash benefits to the number of unemployed persons.
+
+```{r}
+#check unemployed benefit from below and compare with unemployment definition
+```
+
+f) Proportion of workers covered in case of employment injury: ratio of workers protected by injury insurance to total employment or the labour force.
+
+
+```{r}
+# not in FDS
+```
+
+g) Proportion of older persons receiving a pension: ratio of persons above statutory retirement age receiving an old-age pension to persons above statutory retirement age (including contributory and non-contributory).
+
+```{r}
+# calculate old people from the main dataset /
+```
+
+h) Proportion of vulnerable persons receiving benefits: ratio of social assistance recipients to the total number of vulnerable persons. The latter are calculated by subtracting from total population all people of working age who are contributing to a social insurance scheme or receiving contributory benefits, and all persons above retirement age receiving contributory benefits.
+
+```{r}
+#vulnerability benefit is there but - not possible from the FDS
+```
+
+i) Proportion of poor population receiving social assistance cash benefit: ratio of social assistance recipients to the population living below the national poverty line.
+
+```{r}
+#Not possible as poverty is not defined
+```
+
+
+
+## 1.4.1 SDG Indicator
+
+**Proportion of population living in households with access to basic services**
+
+Indicator Code: C010401
+
+
+
+
+## 1.4.2 SDG Indicator
+
+**Proportion of total adult population with secure tenure rights to land, (a) with legally recognized documentation, and (b) who perceive their rights to land as secure, by sex and type of tenure**
+
+Indicator Code: C010402
+
+## 2.2.1 SDG Indicator
+
+**Prevalence of stunting (height for age <-2 standard deviation from the median of the World Health Organization (WHO) Child Growth Standards) among children under 5 years of age**
+
+Indicator Code: C020201
+
+## 2.2.2 SDG Indicator 
+
+**Prevalence of malnutrition (weight for height >+2 or <-2 standard deviation from the median of the WHO Child Growth Standards) among children under 5 years of age, by type (wasting and overweight)**
+
+Indicator Code: C020202
+
+## 3.1.2 SDG Indicator 
+
+**Proportion of births attended by skilled health personnel**
+
+Indicator Code: C030102
+
+## 3.8.1 SDG Indicator
+
+**Coverage of essential health services**
+
+Indicator Code: C030801
+
+## 4.1.2 SDG Indicator
+
+**Completion rate (primary education, lower secondary education, upper secondary education)**
+
+Indicator Code: C040102
+
+
+## 4.2.2 SDG Indicator
+
+**Participation rate in organized learning (one year before the official primary entry age), by sex**
+
+Indicator Code: C040202
+
+## 4.3.1 SDG Indicator 
+
+**Participation rate of youth and adults in formal and non-formal education and training in the previous 12 months, by sex**
+
+Indicator Code: C040301
+
+## 4.5.1 SDG Indicator
+
+**Parity indices (female/male, rural/urban, bottom/top wealth quintile and others such as disability status, indigenous peoples and conflict-affected, as data become available) for all education indicators on this list that can be disaggregated**
+
+Indicator Code: C040501
+
+## 5.3.1 SDG Indicator
+
+**Proportion of women aged 20–24 years who were married or in a union before age 15 and before age 18**
+
+Indicator Code: C050301
+
+## 5.a.1 SDG Indicator 
+
+**(a) Proportion of total agricultural population with ownership or secure rights over agricultural land, by sex; and (b) share of women among owners or rights-bearers of agricultural land, by type of tenure**
+
+Indicator Code: C050a01
+
+## 5.b.1 SDG Indicator
+
+**Proportion of individuals who own a mobile telephone, by sex**
+
+Indicator Code: C050b01
+
+## 6.2.1 SDG Indicator
+
+**Proportion of population using (a) safely managed sanitation services and (b) a hand-washing facility with soap and water**
+
+Indicator Code: C060201
+
+## 7.1.1 SDG Indicator
+
+**Proportion of population with access to electricity**
+
+Indicator Code: C070101
+
+## 7.1.2 SDG Indicator
+
+**Proportion of population with primary reliance on clean fuels and technology**
+
+Indicator Code: C070102
+
+## 8.5.1 SDG Indicator
+
+**Average hourly earnings of employees, by sex, age, occupation and persons with disabilities**
+
+Indicator Code: C080501
+## 8.5.2 SDG Indicator
+
+**8.5.2 Unemployment rate, by sex, age and persons with disabilities**
+
+Indicator Code: C080502
+
+The unemployment rate conveys the percentage of persons in the labour force who are unemployed.
+
+| Standard Questions                                                                           |
+|:--------------------------------------------------------------------------------------------:|
+| EMP01, EMP02, EMP03, EMP04, EMP05, EMP06a, EMP06b, EMP06c, EMP06d, EMP25a, EMP25aa, EMP29    |
 
 **Unit of measure:**
 Percent (%)
 
-**Numerator**: Number of individuals who self-report feeling safe walking alone in their neighborhood after dark
+**Numerator:** Number of individuals in the labour force who are unemployed
 
-**Denominator**: Total number of individuals
+**Denominator:** Total number of individuals in the labour force
 
-**Sources** 
-1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-01-04.docx&wdOrigin=BROWSELINK)
+**Concepts**:
 
-```{r}
-table(main$FS01) # How safe do you feel walking alone in your area after dark? Very safe, fairly safe, bit unsafe, very unsafe?
-```
-```{r}
-main <- main %>%
-  mutate(
-  SDG16_1_4 = case_when(
-    FS01 == 1 | FS01 == 2 ~ 1,     # Assign 1 for Yes (feels safe)
-    FS01 == 3 | FS01 == 4 | FS01 == 5 | FS01 == 98 ~ 2,  # Assign 2 for No (does not feel safe)
-    TRUE ~ NA_real_                 # Assign NA for any other values (if needed)
-  )
-)
+*Unemployed persons* are defined as all those of working age (usually aged 15 and above) who were not in employment, carried out activities to seek employment during a specified recent period and were currently available to take up employment given a job opportunity.
 
-```
-```{r}
-main <- main %>%
-   mutate(
-    SDG16_1_4 = labelled(
-      SDG16_1_4,
-      labels = c(
-        "Yes" = 1,  # Label for Yes (1)
-        "No" = 2    # Label for No (2)
-      ),
-      label = "Proportion of people that feel safe walking alone in their neighbourhood after dark"  # Assign the variable label
-    )
-  )
-```
-```{r}
-table(main$SDG16_1_4)
-```
+*Persons in employment* are defined as all those of working age (usually aged 15 and above) who, during a short reference period such as one week or one day, were engaged in any activity to produce goods or provide services for pay or profit. 
 
-# <span style="color:blue; font-size:28px;"><strong>10.3.1 SDG Indicator</strong></span>
-**10.3.1 Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law**
-##C200204
+*The labour force* corresponds to the sum of persons in employment and in unemployment.
 
-This indicator is defined as the proportion of the population (adults) who self-report that they personally experienced discrimination or harassment during the last 12 months based on ground(s) prohibited by international human rights law (IHRL). IHRL refers to the body of international legal instruments aiming to promote and protect human rights, including the Universal Declaration of Human Rights (UDHR) and sub-sequent international human rights treaties adopted by the United Nations (UN).
-
-The FDS discrimination module asks how often the respondent experiences discrimination in nines areas. It measures if the respondent has experienced at least one form of discrimination corresponding to the Everyday Discrimination Scale.
-
-| Standard Questions                                                                    |
-|:-------------------------------------------------------------------------------------:|
-| DI01, DI01_01, DI01_02, DI01_03, DI01_04, DI01_05, DI01_06, DI01_07, DI01_08, DI01_09 |
-
-**Unit of measure:**
-Percent (%)
-
-**Numerator**: Number of survey respondents who report experience of any form of discrimination or harassment during the last 12 months
-
-**Denominator**: Total number of survey respondents 
+*Working age* population is the population above the legal working. Often it is defined as all persons aged 15 or older, but this can vary from country to country based on national laws and practices. 
 
 **Sources** 
-1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-10-03-01.docx&wdOrigin=BROWSELINK)
-2. [Guidance Note for Implementation of Survey Module on SDG Indicator 16.b.1 & 10.3.1](https://www.ohchr.org/sites/default/files/Documents/Issues/HRIndicators/SDG_Indicator_16b1_10_3_1_Guidance_Note_.pdf)
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-05-02.docx&wdOrigin=BROWSELINK)
+2. [Labour Force Statistics](https://ilostat.ilo.org/methods/concepts-and-definitions/description-labour-force-statistics/)
 
 ```{r}
-#In the past 12 month, in your day-to-day life in the host country, how often do any of the following things happen to you? Would you say  almost every day, at least once a week, a few times a month, a few times a year, less than once a year or never?:
-table(main$DI01_01) #You are treated with less politeness than other people are.
-table(main$DI01_02) #You are treated with less respect than other people are.
-table(main$DI01_03) #You receive poorer service than other people at restaurants or stores.
-table(main$DI01_04) #People act as if they think you are not smart.
-table(main$DI01_05) #People act as if they are afraid of you.
-table(main$DI01_06) #People act as if they think you are dishonest.
-table(main$DI01_07) #People act as if they’re better than you are.
-table(main$DI01_08) #You are called names or insulted.
-table(main$DI01_09) #You are threatened or harassed.```
-```
-```{r}
+#Step 2: Determine who is employed based on various conditions 
 main <- main %>%
-  mutate(SDG16_b_1 = case_when(
-    # If any value is 1, 2, 3, 4, or 5, assign 1
-    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
-                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . %in% 1:5)) > 0 ~ 1,
-    # If all values are 6, assign 2
-    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
-                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 6)) == 9 ~ 2,
-    # If all values are 7, assign NA
-    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
-                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 7)) == 9 ~ NA_real_,
-    TRUE ~ NA_real_
-  )) %>%
-  mutate(SDG10_3_1 = labelled(
-    SDG10_3_1,
-    labels = c(
-      'Yes' = 1,
-      'No' = 2
-    ),
-    label = "Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law"
+  mutate(employed = case_when(
+    EMP01 == 1  ~ 1,  # Paid employment - employees
+    EMP02 == 1 & EMP06b == 3~ 1,  # Self-employment
+    EMP03 == 1 & EMP06b == 3~ 1,  # Unpaid contributing family workers
+    EMP04 == 1  ~ 1,  # Absent but still employed
+    EMP05 == 1 & EMP06a == 3~ 1,  # Absent but self-employed
+    EMP02 == 1 & EMP06b %in% c(1, 2) & EMP06c %in% c(1, 2) ~ 1,  # Farming/rearing/fishing for sale
+    EMP05 == 1 & EMP06a %in% c(1, 2) & EMP06c %in% c(1, 2) ~ 1,  # Absent but farming for sale
+    TRUE ~ 2  # Not employed
   ))
-
-```
-```{r}
-table(main$SDG10_3_1)
-```
-# <span style="color:blue; font-size:28px;"><strong>8.10.2 SDG Indicator</strong></span>
-**8.10.2 Proportion of adults (15 years and older) with an account at a bank or other financial institution or with a mobile-money-service provider**
-##C081002
-
-The percentage of adults (ages 15+) who report having an account (by themselves or together with someone else) at a bank or another type of financial institution or personally using a mobile money service in the past 12 months.
-
-| Standard Questions           |
-|:----------------------------:|
-| FI01, FI02, FI03, FI10       |
-
-**Unit of measure:**
-Percent (%)
-
-**Numerator**: Number of individuals 15 or above having a personal mobile or bank account
-
-**Denominator**: Total number of individuals 15 or above
-
-**Sources** 
-1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-10-02.docx&wdOrigin=BROWSELINK)
-
-```{r}
-table(main$FI01) #Do you, either by yourself or together with someone else, currently have an account at a bank or another type of formal financial institution in the host country?
-table(main$FI02) #Do you, personally, have a debit card in the host country?
-table(main$FI03) #Do you, personally, have a credit card in the host country?
-table(main$FI10) #In the past 12 months, have you personally used a mobile phone to make payments, buy things, or to send or receive money using a service such as [country specific example]?
 ```
 
 ```{r}
+#Step 2: Define unemployed: those not employed but actively looking for work and available to carry out activities
 main <- main %>%
-  mutate(SDG08_10_2 = case_when(
-   FI01 == 1 | FI02 == 1 | FI03 == 1 | FI10 == 1 ~ 1,
-   FI01 == 2 & FI02 == 2 & FI03 == 2 & FI10 %in% c(2,3) ~ 2,
-    TRUE ~ NA                # For individuals under 18 and all other cases, assigns NA
+  mutate(unemployed = case_when(
+    (employed == 2 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) ~ 1,  # Actively looking for work
+    TRUE ~ 2  # Not unemployed if not actively looking or employed
   ))
-
 ```
+
+```{r}
+#Step 3: Define labour force: anyone employed or unemployed
+main <- main %>%
+  mutate(labour_force = case_when(
+    (employed == 1 | unemployed == 1) ~ 1,  # Employed or actively seeking work
+    TRUE ~ 2  # Not in labour force
+  ))
+```
+
+```{r}
+#Step 4: Outcome - Unemployment rate
+main <- main %>%
+  mutate(SDG_8_5_2 = case_when(
+    employed == 1 & labour_force == 1 ~ 2,  # If employed, outcome is 2 (not unemployed)
+    unemployed == 1 & labour_force == 1 ~ 1,  # If unemployed, outcome is 1
+    TRUE ~ NA_real_  # Catch-all for cases not in the labor force or with missing data
+  ))
+```
+
 ```{r}
 main <- main %>%
-   mutate(SDG08_10_2 = labelled(SDG08_10_2,
+   mutate(SDG_8_5_2 = labelled(SDG_8_5_2,
                                 labels = c(
-                                  "Yes" = 1,  # Label for Yes
-                                  "No" = 2    # Label for No
+                                  "Unemployed" = 1,  # Label for Yes
+                                  "Not unemployed" = 2   # Label for No
                                 ),
-                                label = "Proportion of people above with an account at a bank or other financial institution or with a mobile-money-service provider"
+                                label = "Proportion of people (working age) who are unemployed"))
+```
+
+## 8.6.1 SDG Indicator 
+
+**8.6.1 Proportion of youth (aged 15–24 years) not in education, employment or training**
+Indicator Code: C080601
+
+This indicator conveys the proportion of youth (aged 15-24 years) not in education, employment or training (also known as "the youth NEET rate").
+
+| Standard Questions                                                                                                          |
+|:---------------------------------------------------------------------------------------------------------------------------:|
+| EMP01, EMP02, EMP03, EMP04, EMP05, EMP06a, EMP06b, EMP06c,EMP25a,EMP25aa,EMP29, HH_Educ03, HH_Educ02a, EducR08              |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: (Unemployed youth +Youth outside the labour force) - (Unemployed youth in educator or training + Youth outside the labor force in education or training)
+
+**Denominator**: Total number of youth (aged 15-24 years)
+
+**Concepts**: 
+
+*Youth* is defined as all persons between the ages of 15 and 24 (inclusive).
+
+*Non-formal education*, like formal education is defined in ISCED as education that is institutionalized, intentional and planned by an education provider but is considered an addition, alternative and/or a complement to formal education. Informal learning is defined in ISCED as forms of learning that are intentional or deliberate, but not institutionalized.For the purposes of this indicator, persons will be considered in education if they are in formal or non-formal education, as described above, but excluding informal learning.
+
+*Employment* is defined as all persons of working age who, during a short reference period (one week), were engaged in any activity to produce goods or provide services for pay or profit.Employment is defined as all persons of working age who, during a short reference period (one week), were engaged in any activity to produce goods or provide services for pay or profit.
+For the purpose of this indicator, persons are considered to be in training if they are in a non-academic learning activity through which they acquire specific skills intended for vocational or technical jobs.
+
+*The labour force* is the sum of persons in employment plus persons in unemployment. Together these two groups of the population represent the current supply of labour for the production of goods and services taking place in a country through market transactions in exchange for remuneration.
+
+*Working age* population is the population above the legal working. Often it is defined as all persons aged 15 or older, but this can vary from country to country based on national laws and practices. 
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-06-01.docx&wdOrigin=BROWSELINK)
+2. [Labour Force Statistics](https://ilostat.ilo.org/methods/concepts-and-definitions/description-labour-force-statistics/)
+```{r}
+table(main$EMP01) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you work for someone else for pay, for one or more hours?
+table(main$EMP02) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you run or do any kind of business, farming or other activity to make money?
+table(main$EMP03) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you help in a family business or farm?
+table(main$EMP04) #Even though you did not work, during the past 7 days, did you have a paid job from which you were temporarily absent?
+table(main$EMP05) #Even though you did not work, during the past 7 days, did you have a business or a helper job in a family business/farm from which you were temporarily absent?
+table(main$EMP06a) #During the past 7 days, did you do any work in farming or rearing farm animals, fishing or fish farming, or none of these?
+table(main$EMP06b) #Was this work that you mentioned in farming or rearing farming animals, fishing or fish farming, or none of these?
+table(main$EMP06c) #Thinking about this work, are the products intended only for sale, mainly for sale, only for family use, or mainly for family use?
+table(main$EMP06d) #How many hours did you spend doing this work during the past 7 days?
+table(main$EMP25a) #During the past 30 days, did you do anything to find a paid job?
+table(main$EMP25aa)#During the past 30 days, did you do anything to start a business?
+table(main$EMP29)  #Could you start working within the next 14 days if you were offered a job?
+table(main$EducR08)#Have you ever completed an apprenticeship?
+table(main$educ_now) # Are you currently going to school?  If it is school holiday between two school years, tell us about the last school year.Do not include kindergarten or preschool.
+```
+ILGI: *Note: Apart from the above variables, this indicator should also include other forms of training (not only apprenticeship). With questioins posted in FDS, we are unable to determine if an individual is currently participating in training other than apprenticeship. 
+Check the entire calculation with Ilgi. 
+
+```{r}
+#Step 2: Create a variable identifying unemployed youth
+main <- main %>%
+  mutate(employed_youth = case_when(
+    EMP01 == 1 & between(age_selected, 15, 24) ~ 1,  # Paid employment - employees
+    EMP02 == 1 & EMP06b == 3 & between(age_selected, 15, 24) ~ 1,  # Self-employment
+    EMP03 == 1 & EMP06b == 3 & between(age_selected, 15, 24) ~ 1,  # Unpaid contributing family workers
+    EMP04 == 1 & between(age_selected, 15, 24) ~ 1,  # Absent but still employed
+    EMP05 == 1 & EMP06a == 3 & between(age_selected, 15, 24) ~ 1,  # Absent but self-employed
+    EMP02 == 1 & EMP06b %in% c(1, 2) & EMP06c %in% c(1, 2) & between(age_selected, 15, 24) ~ 1,  # Farming/rearing/fishing for sale
+    EMP05 == 1 & EMP06a %in% c(1, 2) & EMP06c %in% c(1, 2) & between(age_selected, 15, 24) ~ 1,  # Absent but farming for sale
+    between(age_selected, 15, 24) ~ 2,  # If working age but none of the above, mark as not employed
+    TRUE ~ NA_real_  # Set to NA for those not classified as youth
+  ))
+```
+
+```{r}
+#Step 2: Define unemployed and those outside of the labour force
+main <- main %>%
+  mutate(unemployed_youth = case_when(
+    (employed_youth == 2 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) & between(age_selected, 15, 24) ~ 1,  # Actively looking for work - unemployed 
+    employed_youth == 2 & EMP29 != 1 & between(age_selected, 15, 24) ~ 2,  # Outside of labour force
+    TRUE ~ NA_real_  
+  ))
+```
+
+```{r}
+#Step 3: Create a variable identifying youth in education 
+main <- main %>%
+  mutate(youth_education = case_when(
+    (between(age_selected, 15, 24) & educ_now == 1) ~ 1,  # Currently in education
+    (between(age_selected, 15, 24) & educ_now == 2) ~ 2,  # Currently not in education
+    TRUE ~ NA_real_  
+  ))
+```
+
+```{r}
+#Step 3: Create a variable identifying youth doing currently in training (apprenticeship). 
+main <- main %>%
+  mutate(youth_training = case_when(
+    (between(age_selected, 15, 24) & EducR08 == 3) ~ 1,  # Currently in training
+    (between(age_selected, 15, 24) & EducR08 == 1 | EducR08 == 2) ~ 2,  # Currently not in education
+    TRUE ~ NA_real_  
+  ))
+```
+
+```{r}
+#Step 4: Combine Unemployed youth +Youth outside the labour force
+main <- main %>%
+  mutate(unemployed_outsidelabour = case_when(
+    unemployed_youth == 1 | unemployed_youth == 2 ~ 1,  # Unemployed and outside of labour force 
+    TRUE ~ 2 
+  ))
+```
+
+```{r}
+#Step 4: Combine Unemployed youth +Youth outside the labour force
+main <- main %>%
+  mutate(unemployed_outsidelabour = case_when(
+    unemployed_youth == 1 | unemployed_youth == 2 ~ 1,  # Unemployed and outside of labour force 
+    TRUE ~ 2 
   ))
 ```
 ```{r}
-table(main$SDG08_10_2)
+#Step 5: Unemployed youth in educator or training
+main <- main %>%
+  mutate(unemployed_ineduc_tr = case_when(
+    unemployed_youth == 1 & (youth_education == 1 & youth_training == 1) ~ 1,  # Unemployed youth in educator or training 
+    TRUE ~ 2 
+  ))
 ```
-# <span style="color:blue; font-size:28px;"><strong>8.7.1 SDG Indicator</strong></span>
+
+```{r}
+#Step 5: Out of labour youth in educator or training
+main <- main %>%
+  mutate(outoflabour_ineduc_tr = case_when(
+    unemployed_youth == 2 & (youth_education == 1 & youth_training == 1) ~ 1,  # Out of labour youth in educator or training 
+    TRUE ~ 2 
+  ))
+```
+```{r}
+#Step 6: Define the numerator
+numerator <- main %>%
+  filter(between(age_selected, 15, 24)) %>%
+  summarise(
+    total_unemployed_outside_labour = sum(unemployed_outsidelabour == 1, na.rm = TRUE),
+    in_education_or_training = sum(unemployed_ineduc_tr == 1 | outoflabour_ineduc_tr == 1, na.rm = TRUE)
+  ) %>%
+  mutate(numerator = total_unemployed_outside_labour - in_education_or_training) %>%
+  pull(numerator)
+```
+```{r}
+#Step 7: Define the denominator 
+denominator <- main %>%
+  filter(between(age_selected, 15, 24)) %>%
+  nrow()
+```
+
+```{r}
+#Step 8: Calculate the indicator 
+SDG8_6_1 <- (numerator / denominator)*100
+```
+
+
+## 8.7.1 SDG Indicator
+
 **8.7.1 Proportion and number of children aged 5–17 years engaged in child labour, by sex and age**
-##C080701
+Indicator Code: C080701
 
 The number of children engaged in child labour corresponds to the number of children reported to be in child labour during the reference period (usually the week prior to the survey). The proportion of children in child labour is calculated as the number of children in child labour divided by the total number of children in the population. For the purposes of this indicator, children include all persons aged 5 to 17.
 
@@ -712,242 +741,490 @@ main <- main %>%
 #table(main$SDG8_7_1_2)
 ```
 
-# <span style="color:blue; font-size:28px;"><strong>8.6.1 SDG Indicator</strong></span>
-**8.6.1 Proportion of youth (aged 15–24 years) not in education, employment or training**
-##C080601
+## 8.10.2 SDG Indicator
 
-This indicator conveys the proportion of youth (aged 15-24 years) not in education, employment or training (also known as "the youth NEET rate").
+**8.10.2 Proportion of adults (15 years and older) with an account at a bank or other financial institution or with a mobile-money-service provider**
 
-| Standard Questions                                                                                                          |
-|:---------------------------------------------------------------------------------------------------------------------------:|
-| EMP01, EMP02, EMP03, EMP04, EMP05, EMP06a, EMP06b, EMP06c,EMP25a,EMP25aa,EMP29, HH_Educ03, HH_Educ02a, EducR08              |
+Indicator Code: C081002
 
-**Unit of measure:**
-Percent (%)
+The percentage of adults (ages 15+) who report having an account (by themselves or together with someone else) at a bank or another type of financial institution or personally using a mobile money service in the past 12 months.
 
-**Numerator**: (Unemployed youth +Youth outside the labour force) - (Unemployed youth in educator or training + Youth outside the labor force in education or training)
-
-**Denominator**: Total number of youth (aged 15-24 years)
-
-**Concepts**: 
-
-*Youth* is defined as all persons between the ages of 15 and 24 (inclusive).
-
-*Non-formal education*, like formal education is defined in ISCED as education that is institutionalized, intentional and planned by an education provider but is considered an addition, alternative and/or a complement to formal education. Informal learning is defined in ISCED as forms of learning that are intentional or deliberate, but not institutionalized.For the purposes of this indicator, persons will be considered in education if they are in formal or non-formal education, as described above, but excluding informal learning.
-
-*Employment* is defined as all persons of working age who, during a short reference period (one week), were engaged in any activity to produce goods or provide services for pay or profit.Employment is defined as all persons of working age who, during a short reference period (one week), were engaged in any activity to produce goods or provide services for pay or profit.
-For the purpose of this indicator, persons are considered to be in training if they are in a non-academic learning activity through which they acquire specific skills intended for vocational or technical jobs.
-
-*The labour force* is the sum of persons in employment plus persons in unemployment. Together these two groups of the population represent the current supply of labour for the production of goods and services taking place in a country through market transactions in exchange for remuneration.
-
-*Working age* population is the population above the legal working. Often it is defined as all persons aged 15 or older, but this can vary from country to country based on national laws and practices. 
-
-**Sources** 
-1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-06-01.docx&wdOrigin=BROWSELINK)
-2. [Labour Force Statistics](https://ilostat.ilo.org/methods/concepts-and-definitions/description-labour-force-statistics/)
-```{r}
-table(main$EMP01) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you work for someone else for pay, for one or more hours?
-table(main$EMP02) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you run or do any kind of business, farming or other activity to make money?
-table(main$EMP03) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you help in a family business or farm?
-table(main$EMP04) #Even though you did not work, during the past 7 days, did you have a paid job from which you were temporarily absent?
-table(main$EMP05) #Even though you did not work, during the past 7 days, did you have a business or a helper job in a family business/farm from which you were temporarily absent?
-table(main$EMP06a) #During the past 7 days, did you do any work in farming or rearing farm animals, fishing or fish farming, or none of these?
-table(main$EMP06b) #Was this work that you mentioned in farming or rearing farming animals, fishing or fish farming, or none of these?
-table(main$EMP06c) #Thinking about this work, are the products intended only for sale, mainly for sale, only for family use, or mainly for family use?
-table(main$EMP06d) #How many hours did you spend doing this work during the past 7 days?
-table(main$EMP25a) #During the past 30 days, did you do anything to find a paid job?
-table(main$EMP25aa)#During the past 30 days, did you do anything to start a business?
-table(main$EMP29)  #Could you start working within the next 14 days if you were offered a job?
-table(main$EducR08)#Have you ever completed an apprenticeship?
-table(main$educ_now) # Are you currently going to school?  If it is school holiday between two school years, tell us about the last school year.Do not include kindergarten or preschool.
-```
-ILGI: *Note: Apart from the above variables, this indicator should also include other forms of training (not only apprenticeship). With questioins posted in FDS, we are unable to determine if an individual is currently participating in training other than apprenticeship. 
-Check the entire calculation with Ilgi. 
-
-```{r}
-#Step 2: Create a variable identifying unemployed youth
-main <- main %>%
-  mutate(employed_youth = case_when(
-    EMP01 == 1 & between(age_selected, 15, 24) ~ 1,  # Paid employment - employees
-    EMP02 == 1 & EMP06b == 3 & between(age_selected, 15, 24) ~ 1,  # Self-employment
-    EMP03 == 1 & EMP06b == 3 & between(age_selected, 15, 24) ~ 1,  # Unpaid contributing family workers
-    EMP04 == 1 & between(age_selected, 15, 24) ~ 1,  # Absent but still employed
-    EMP05 == 1 & EMP06a == 3 & between(age_selected, 15, 24) ~ 1,  # Absent but self-employed
-    EMP02 == 1 & EMP06b %in% c(1, 2) & EMP06c %in% c(1, 2) & between(age_selected, 15, 24) ~ 1,  # Farming/rearing/fishing for sale
-    EMP05 == 1 & EMP06a %in% c(1, 2) & EMP06c %in% c(1, 2) & between(age_selected, 15, 24) ~ 1,  # Absent but farming for sale
-    between(age_selected, 15, 24) ~ 2,  # If working age but none of the above, mark as not employed
-    TRUE ~ NA_real_  # Set to NA for those not classified as youth
-  ))
-```
-
-```{r}
-#Step 2: Define unemployed and those outside of the labour force
-main <- main %>%
-  mutate(unemployed_youth = case_when(
-    (employed_youth == 2 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) & between(age_selected, 15, 24) ~ 1,  # Actively looking for work - unemployed 
-    employed_youth == 2 & EMP29 != 1 & between(age_selected, 15, 24) ~ 2,  # Outside of labour force
-    TRUE ~ NA_real_  
-  ))
-```
-
-```{r}
-#Step 3: Create a variable identifying youth in education 
-main <- main %>%
-  mutate(youth_education = case_when(
-    (between(age_selected, 15, 24) & educ_now == 1) ~ 1,  # Currently in education
-    (between(age_selected, 15, 24) & educ_now == 2) ~ 2,  # Currently not in education
-    TRUE ~ NA_real_  
-  ))
-```
-
-```{r}
-#Step 3: Create a variable identifying youth doing currently in training (apprenticeship). 
-main <- main %>%
-  mutate(youth_training = case_when(
-    (between(age_selected, 15, 24) & EducR08 == 3) ~ 1,  # Currently in training
-    (between(age_selected, 15, 24) & EducR08 == 1 | EducR08 == 2) ~ 2,  # Currently not in education
-    TRUE ~ NA_real_  
-  ))
-```
-
-```{r}
-#Step 4: Combine Unemployed youth +Youth outside the labour force
-main <- main %>%
-  mutate(unemployed_outsidelabour = case_when(
-    unemployed_youth == 1 | unemployed_youth == 2 ~ 1,  # Unemployed and outside of labour force 
-    TRUE ~ 2 
-  ))
-```
-
-```{r}
-#Step 4: Combine Unemployed youth +Youth outside the labour force
-main <- main %>%
-  mutate(unemployed_outsidelabour = case_when(
-    unemployed_youth == 1 | unemployed_youth == 2 ~ 1,  # Unemployed and outside of labour force 
-    TRUE ~ 2 
-  ))
-```
-```{r}
-#Step 5: Unemployed youth in educator or training
-main <- main %>%
-  mutate(unemployed_ineduc_tr = case_when(
-    unemployed_youth == 1 & (youth_education == 1 & youth_training == 1) ~ 1,  # Unemployed youth in educator or training 
-    TRUE ~ 2 
-  ))
-```
-
-```{r}
-#Step 5: Out of labour youth in educator or training
-main <- main %>%
-  mutate(outoflabour_ineduc_tr = case_when(
-    unemployed_youth == 2 & (youth_education == 1 & youth_training == 1) ~ 1,  # Out of labour youth in educator or training 
-    TRUE ~ 2 
-  ))
-```
-```{r}
-#Step 6: Define the numerator
-numerator <- main %>%
-  filter(between(age_selected, 15, 24)) %>%
-  summarise(
-    total_unemployed_outside_labour = sum(unemployed_outsidelabour == 1, na.rm = TRUE),
-    in_education_or_training = sum(unemployed_ineduc_tr == 1 | outoflabour_ineduc_tr == 1, na.rm = TRUE)
-  ) %>%
-  mutate(numerator = total_unemployed_outside_labour - in_education_or_training) %>%
-  pull(numerator)
-```
-```{r}
-#Step 7: Define the denominator 
-denominator <- main %>%
-  filter(between(age_selected, 15, 24)) %>%
-  nrow()
-```
-
-```{r}
-#Step 8: Calculate the indicator 
-SDG8_6_1 <- (numerator / denominator)*100
-```
-
-
-# <span style="color:blue; font-size:28px;"><strong>8.5.2 SDG Indicator</strong></span>
-**8.5.2 Unemployment rate, by sex, age and persons with disabilities**
-##C080502
-
-The unemployment rate conveys the percentage of persons in the labour force who are unemployed.
-
-| Standard Questions                                                                           |
-|:--------------------------------------------------------------------------------------------:|
-| EMP01, EMP02, EMP03, EMP04, EMP05, EMP06a, EMP06b, EMP06c, EMP06d, EMP25a, EMP25aa, EMP29    |
+| Standard Questions           |
+|:----------------------------:|
+| FI01, FI02, FI03, FI10       |
 
 **Unit of measure:**
 Percent (%)
 
-**Numerator:** Number of individuals in the labour force who are unemployed
+**Numerator**: Number of individuals 15 or above having a personal mobile or bank account
 
-**Denominator:** Total number of individuals in the labour force
-
-**Concepts**:
-
-*Unemployed persons* are defined as all those of working age (usually aged 15 and above) who were not in employment, carried out activities to seek employment during a specified recent period and were currently available to take up employment given a job opportunity.
-
-*Persons in employment* are defined as all those of working age (usually aged 15 and above) who, during a short reference period such as one week or one day, were engaged in any activity to produce goods or provide services for pay or profit. 
-
-*The labour force* corresponds to the sum of persons in employment and in unemployment.
-
-*Working age* population is the population above the legal working. Often it is defined as all persons aged 15 or older, but this can vary from country to country based on national laws and practices. 
+**Denominator**: Total number of individuals 15 or above
 
 **Sources** 
-1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-05-02.docx&wdOrigin=BROWSELINK)
-2. [Labour Force Statistics](https://ilostat.ilo.org/methods/concepts-and-definitions/description-labour-force-statistics/)
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-10-02.docx&wdOrigin=BROWSELINK)
 
 ```{r}
-#Step 2: Determine who is employed based on various conditions 
-main <- main %>%
-  mutate(employed = case_when(
-    EMP01 == 1  ~ 1,  # Paid employment - employees
-    EMP02 == 1 & EMP06b == 3~ 1,  # Self-employment
-    EMP03 == 1 & EMP06b == 3~ 1,  # Unpaid contributing family workers
-    EMP04 == 1  ~ 1,  # Absent but still employed
-    EMP05 == 1 & EMP06a == 3~ 1,  # Absent but self-employed
-    EMP02 == 1 & EMP06b %in% c(1, 2) & EMP06c %in% c(1, 2) ~ 1,  # Farming/rearing/fishing for sale
-    EMP05 == 1 & EMP06a %in% c(1, 2) & EMP06c %in% c(1, 2) ~ 1,  # Absent but farming for sale
-    TRUE ~ 2  # Not employed
-  ))
-```
-
-```{r}
-#Step 2: Define unemployed: those not employed but actively looking for work and available to carry out activities
-main <- main %>%
-  mutate(unemployed = case_when(
-    (employed == 2 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) ~ 1,  # Actively looking for work
-    TRUE ~ 2  # Not unemployed if not actively looking or employed
-  ))
-```
-
-```{r}
-#Step 3: Define labour force: anyone employed or unemployed
-main <- main %>%
-  mutate(labour_force = case_when(
-    (employed == 1 | unemployed == 1) ~ 1,  # Employed or actively seeking work
-    TRUE ~ 2  # Not in labour force
-  ))
-```
-
-```{r}
-#Step 4: Outcome - Unemployment rate
-main <- main %>%
-  mutate(SDG_8_5_2 = case_when(
-    employed == 1 & labour_force == 1 ~ 2,  # If employed, outcome is 2 (not unemployed)
-    unemployed == 1 & labour_force == 1 ~ 1,  # If unemployed, outcome is 1
-    TRUE ~ NA_real_  # Catch-all for cases not in the labor force or with missing data
-  ))
+table(main$FI01) #Do you, either by yourself or together with someone else, currently have an account at a bank or another type of formal financial institution in the host country?
+table(main$FI02) #Do you, personally, have a debit card in the host country?
+table(main$FI03) #Do you, personally, have a credit card in the host country?
+table(main$FI10) #In the past 12 months, have you personally used a mobile phone to make payments, buy things, or to send or receive money using a service such as [country specific example]?
 ```
 
 ```{r}
 main <- main %>%
-   mutate(SDG_8_5_2 = labelled(SDG_8_5_2,
+  mutate(SDG08_10_2 = case_when(
+   FI01 == 1 | FI02 == 1 | FI03 == 1 | FI10 == 1 ~ 1,
+   FI01 == 2 & FI02 == 2 & FI03 == 2 & FI10 %in% c(2,3) ~ 2,
+    TRUE ~ NA                # For individuals under 18 and all other cases, assigns NA
+  ))
+
+```
+```{r}
+main <- main %>%
+   mutate(SDG08_10_2 = labelled(SDG08_10_2,
                                 labels = c(
-                                  "Unemployed" = 1,  # Label for Yes
-                                  "Not unemployed" = 2   # Label for No
+                                  "Yes" = 1,  # Label for Yes
+                                  "No" = 2    # Label for No
                                 ),
-                                label = "Proportion of people (working age) who are unemployed"))
+                                label = "Proportion of people above with an account at a bank or other financial institution or with a mobile-money-service provider"
+  ))
 ```
+```{r}
+table(main$SDG08_10_2)
+```
+## 10.3.1 SDG Indicator
+
+**10.3.1 Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law**
+
+Indicator Code: C200204
+
+This indicator is defined as the proportion of the population (adults) who self-report that they personally experienced discrimination or harassment during the last 12 months based on ground(s) prohibited by international human rights law (IHRL). IHRL refers to the body of international legal instruments aiming to promote and protect human rights, including the Universal Declaration of Human Rights (UDHR) and sub-sequent international human rights treaties adopted by the United Nations (UN).
+
+The FDS discrimination module asks how often the respondent experiences discrimination in nines areas. It measures if the respondent has experienced at least one form of discrimination corresponding to the Everyday Discrimination Scale.
+
+| Standard Questions                                                                    |
+|:-------------------------------------------------------------------------------------:|
+| DI01, DI01_01, DI01_02, DI01_03, DI01_04, DI01_05, DI01_06, DI01_07, DI01_08, DI01_09 |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: Number of survey respondents who report experience of any form of discrimination or harassment during the last 12 months
+
+**Denominator**: Total number of survey respondents 
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-10-03-01.docx&wdOrigin=BROWSELINK)
+2. [Guidance Note for Implementation of Survey Module on SDG Indicator 16.b.1 & 10.3.1](https://www.ohchr.org/sites/default/files/Documents/Issues/HRIndicators/SDG_Indicator_16b1_10_3_1_Guidance_Note_.pdf)
+
+```{r}
+#In the past 12 month, in your day-to-day life in the host country, how often do any of the following things happen to you? Would you say  almost every day, at least once a week, a few times a month, a few times a year, less than once a year or never?:
+table(main$DI01_01) #You are treated with less politeness than other people are.
+table(main$DI01_02) #You are treated with less respect than other people are.
+table(main$DI01_03) #You receive poorer service than other people at restaurants or stores.
+table(main$DI01_04) #People act as if they think you are not smart.
+table(main$DI01_05) #People act as if they are afraid of you.
+table(main$DI01_06) #People act as if they think you are dishonest.
+table(main$DI01_07) #People act as if they’re better than you are.
+table(main$DI01_08) #You are called names or insulted.
+table(main$DI01_09) #You are threatened or harassed.```
+```
+```{r}
+main <- main %>%
+  mutate(SDG16_b_1 = case_when(
+    # If any value is 1, 2, 3, 4, or 5, assign 1
+    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . %in% 1:5)) > 0 ~ 1,
+    # If all values are 6, assign 2
+    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 6)) == 9 ~ 2,
+    # If all values are 7, assign NA
+    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 7)) == 9 ~ NA_real_,
+    TRUE ~ NA_real_
+  )) %>%
+  mutate(SDG10_3_1 = labelled(
+    SDG10_3_1,
+    labels = c(
+      'Yes' = 1,
+      'No' = 2
+    ),
+    label = "Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law"
+  ))
+
+```
+```{r}
+table(main$SDG10_3_1)
+```
+## 16.1.4 SDG Indicator
+
+**16.1.4 Proportion of population that feel safe walking alone around the area they live after dark**
+
+Indicator Code: C160105
+
+This indicator refers to the proportion of the adult population who feel safe walking alone in their neighborhood after dark.
+
+As per the SDG metadata guidance, the perception of safety is considered a subjective well being indicator. It affects the way in which human beings interact with their surroundings, their health, and consequently, their quality of life. Indicator 16.1.4 taps into the concept of ‘fear of crime’, which has been elicited in dozens of crime victimization surveys, and the standard formulation used here has been shown to be applicable in different cultural contexts. It is important to note that fear of crime is a phenomenon that is separate from the prevalence of crime and that fear of crime may be even largely independent from actual experience. 
+
+| Standard Questions |
+|:------------------:|
+|       FS01         |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: Number of individuals who self-report feeling safe walking alone in their neighborhood after dark
+
+**Denominator**: Total number of individuals
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-01-04.docx&wdOrigin=BROWSELINK)
+
+```{r}
+table(main$FS01) # How safe do you feel walking alone in your area after dark? Very safe, fairly safe, bit unsafe, very unsafe?
+```
+```{r}
+main <- main %>%
+  mutate(
+  SDG16_1_4 = case_when(
+    FS01 == 1 | FS01 == 2 ~ 1,     # Assign 1 for Yes (feels safe)
+    FS01 == 3 | FS01 == 4 | FS01 == 5 | FS01 == 98 ~ 2,  # Assign 2 for No (does not feel safe)
+    TRUE ~ NA_real_                 # Assign NA for any other values (if needed)
+  )
+)
+
+```
+```{r}
+main <- main %>%
+   mutate(
+    SDG16_1_4 = labelled(
+      SDG16_1_4,
+      labels = c(
+        "Yes" = 1,  # Label for Yes (1)
+        "No" = 2    # Label for No (2)
+      ),
+      label = "Proportion of people that feel safe walking alone in their neighbourhood after dark"  # Assign the variable label
+    )
+  )
+```
+```{r}
+table(main$SDG16_1_4)
+```
+
+## 16.3.3 SDG Indicator
+
+**16.3.3 Proportion of the population who have experienced a dispute in the past two years and who accessed a formal or informal dispute resolution mechanism, by type of mechanism**
+
+Indicator Code: C160303
+
+**Definition:**
+
+Number of persons who experienced a dispute during the past two years who accessed a formal or informal dispute resolution mechanism, as a percentage of all those who experienced a dispute in the past two years, by type of mechanism.
+
+| Standard Questions                                                                                                                         |
+|:------------------------------------------------------------------------------------------------------------------------------------------:|
+| Justice01, Justice05, Justice07a, Justice07b, Justice07c, Justice07d,Justice07e,  Justice07f, Justice07h, Justice07g, Justice07i, Justice16|
+
+**Concepts:**
+
+*A dispute* can be understood as a justiciable problem between individuals or between individual(s) and an entity. Justiciable problems can be seen as the ones giving rise to legal issues, whether or not the problems are perceived as being “legal” by those who face them, and whether or not any legal action was taken as a result of the problem.
+
+*Dispute resolution mechanisms* vary across countries around the world. While in many countries courts represent the main institution dealing with disputes of civil nature, the same may not be true in countries or societies where the first point of reference in such cases are informal systems, tradi-tional or religious leaders.
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: Number of persons who experienced a dispute during the past two years who accessed a formal or informal dispute resolution mechanism
+
+**Denominator**: Number of those who experiences a dispute in the past two years and did not voluntarily self-exclude.
+
+As per the SDG metadata guidance, it is important to exclude from the denominator those who experience disputes and do not turn to dispute resolution mechanisms because they do not need them (voluntarily self-excluded). This refers to cases where the dispute is simple or when respondents solve the issue with the other party through direct negotiation. 
+
+**Limitations:** 
+Variabale "Justice16" is not present in all countries where FDS is carried out. This variable is needed to exclude from the denominator those who voluntary self-exclude. For countries, where this variable is not present, "Case 2" below contains the calculation script.In these cases, the final indicator calculation does not correspond completely to the SDG 16.3.3 indicator. 
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-03-03.docx&wdOrigin=BROWSELINK)
+```{r}
+table(main$Justice01) #In the past two years while in the host country, have you had any disputes?
+table(main$Justice05) #Did you or someone acting on your behalf try to seek information, advice or representation to help you better understand or resolve your dispute?  
+#Justice07 - Did any of the following things happen while you were dealing with this dispute? Please note that when I say 'you' here, I mean you or somebody acting on your behalf. And when I say 'other party', I mean the other party involved in the dispute. 
+table(main$Justice07a)#You communicated with the other party.
+table(main$Justice07b)#You or the other party made a claim to, or made use of, a court/tribunal.
+table(main$Justice07c)#You or the other party made a claim to, or made use of, an [Indigenous/ customary] dispute resolution process such as [INSERT examples].
+table(main$Justice07d)#The problem was reported to the police or other prosecution authority.
+table(main$Justice07e)#You or the other party asked for the intervention of another state authority such as [INSERT examples].
+table(main$Justice07f)#You or the other party asked for the intervention of a religious authority.
+table(main$Justice07g)#You or the other party asked for the intervention of a community leader such as [INSERT example].
+table(main$Justice07h)#You participated in formal mediation, conciliation or arbitration [INSERT examples].
+table(main$Justice07i)#There was no negotiation or third party involvement.
+#table(main$Justice16) #Why didn’t you seek independent advice to help resolve this dispute?  - Check if this variable is present in your data set. 
+```
+```{r}
+#Case 1:
+#Step 1: Identify individuals who experienced a dispute in the past two years 
+main <- main %>%
+  mutate(dispute = case_when(
+    Justice01 == 1 ~ 1, # Assigns 1 for yes
+    Justice01 == 2 ~ 2, # Assigns 2 for no
+    TRUE ~ NA_real_))   # Handle missing cases or "99 - Refuse to answer". 
+```
+```{r}
+#Step 2: Identify individuals who voluntarily self-excluded themselves from seeking formal or informal dispute resolution mechanism. 
+#main <- main %>%
+ # mutate(selfexclusion = case_when(
+ #   Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("A", "B", "C", "D", "I","L", "M") ~ 1, #Assign 1 for those who self-excluded
+ #   Justice01 == 1 & Justice05 == 1 ~ 2,
+  #  Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("E", "F", "G", "H", "J", "K", "OT", "RF") ~ 2 )) #Assign 2 for those who did not self-exclude
+```
+```{r}
+#Step 3: Combine "dispute" and "selfexclusion" to compute the population at risk - those who experiences a dispute and did not voluntary self-ecxlude from seeking for a formal or informal resolution. 
+#main <- main %>%
+ # mutate(popatrisk = case_when(
+  #  dispute == 1 & selfexclusion == 2 ~ 1, 
+  #  TRUE ~ 2))
+```
+```{r}
+#Step 3: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
+main <- main %>%
+  mutate(resolution = case_when(
+    Justice01 == 1 & (Justice07b == 1 | Justice07c == 1 | Justice07d == 1  | Justice07e == 1 | Justice07f == 1 | Justice07g == 1 | Justice07h == 1) ~ 1, # Assigns 1 for yes - accessed a formal or informal dispute resolution mechanism
+    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 2)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
+```
+
+```{r}
+#Case 2: 
+#Step 1: Identify individuals who experienced a dispute in the past two years 
+main <- main %>%
+  mutate(dispute = case_when(
+    Justice01 == 1 ~ 1, # Assigns 1 for yes
+    Justice01 == 2 ~ 2, # Assigns 2 for no
+    TRUE ~ NA_real_))   # Handle missing cases or "99 - Refuse to answer". 
+```
+
+```{r}
+#Step 3: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
+main <- main %>%
+  mutate(resolution = case_when(
+    Justice01 == 1 & (Justice07b == 1 | Justice07c == 1 | Justice07d == 1  | Justice07e == 1 | Justice07f == 1 | Justice07g == 1 | Justice07h == 1) ~ 1, # Assigns 1 for yes - accessed a formal or informal dispute resolution mechanism
+    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 2)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
+```
+
+## 16.9.1 SDG Indicator
+
+**16.9.1 Proportion of children under 5 years of age whose births have been registered with a civil authority, by age**
+
+Indicator Code: C160901
+
+**Definition:**
+
+Proportion of children under 5 years of age whose births have been registered with a civil authority.
+
+**Concepts:**
+
+• Birth registration: Birth registration is defined as ‘the continuous, permanent and universal recording, within the civil registry, of the occurrence and characteristics of births in accordance with the legal requirements of a country’.
+
+• Birth certificate: A birth certificate is a vital record that documents the birth of a child. The term ‘birth certificate’ can refer either to the original document certifying the circumstances of the birth, or to
+
+a certified copy or representation of the registration of that birth, depending on the practices of the country issuing the certificate.
+
+• Civil authority: Official authorized to register the occurrence of a vital event and to record the required details
+
+| Standard Questions|
+|:-----------------:|
+| HH_07b, HH_07a    |
+
+**Unit of measure:**
+Percent (%) of children under 5 years of age
+
+**Numerator**: Number of children under age of five whose births are reported as being registered with the relevant national civil authorities
+
+**Denominator**: Total number of children under the age of five 
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-09-01.docx&wdOrigin=BROWSELINK)
+```{r}
+hhroster$HH_07a # Does [name] have a birth certificate?
+hhroster$HH_07b # Has [name]’s birth been registered with the [civil authorities]?
+```
+```{r}
+# Step 1:Identify children who have a birth certificate
+hhroster <- hhroster %>%
+  mutate(birthCertificate = case_when(
+    HH_07a == 1 ~ 1, # Assigns 1 for yes
+    HH_07a == 2 ~ 2, # Assigns 2 for no
+    HH_07a %in% c(98, 99) ~ NA_real_,  # Assign NA for 98 and 99
+    TRUE ~ NA_real_  # Handle any other missing or unexpected values
+  )) %>%
+  mutate(birthCertificate = labelled(
+    birthCertificate,
+    labels = c(
+      'Yes' = 1,
+      'No' = 2
+    ),
+    label = "Children under 5 with a birth certificate"
+  ))
+
+```
+```{r}
+# Step 2:Identify children whose birth has been registered with civil authorities
+hhroster <- hhroster %>%
+  mutate(birthRegistered = case_when(
+    HH_07b == 1 ~ 1, # Assigns 1 for yes
+    HH_07b == 2 ~ 2, # Assigns 2 for no
+    HH_07b %in% c(98, 99) ~ NA_real_,  # Assign NA for 98 and 99
+    TRUE ~ NA_real_  # Handle any other missing or unexpected values
+  )) %>%
+  mutate(birthRegistered = labelled(
+    birthRegistered,
+    labels = c(
+      'Yes' = 1,
+      'No' = 2
+    ),
+    label = "Children under 5 birth registered with civil authorities"
+  ))
+```
+```{r}
+#Step 3:Create outcome1_2 variable
+hhroster <- hhroster %>%
+  mutate(SDG16_9_1 = case_when(
+    (birthRegistered == 1 | birthCertificate == 1) ~ 1,  # Child has been registered or has birth certificate
+    (birthRegistered == 2 & birthCertificate == 2) ~ 2,  # Child not registered and has no birth certificate
+    (is.na(birthRegistered) & birthCertificate == 2) | (birthRegistered == 2 & is.na(birthCertificate)) ~ 2,  # One is NA, the other is No
+    TRUE ~ NA_real_  # Handle cases where data is missing or unknown
+  )) %>%
+  mutate(SDG16_9_1 = labelled(
+    SDG16_9_1,
+    labels = c(
+      'Yes' = 1,
+      'No' = 2
+    ),
+    label = "Proportion of children under 5 years of age whose births have been registered with a civil authority"
+  ))
+```
+```{r}
+table(hhroster$SDG16_9_1)
+```
+
+
+## 16.b.1 SDG Indicator
+
+**16.b.1 Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law**
+Indicator Code: C200204
+
+This indicator is defined as the proportion of the population (adults) who self-report that they personally experienced discrimination or harassment during the last 12 months based on ground(s) prohibited by international human rights law (IHRL). IHRL refers to the body of international legal instruments aiming to promote and protect human rights, including the Universal Declaration of Human Rights (UDHR) and sub-sequent international human rights treaties adopted by the United Nations (UN).
+
+The FDS discrimination module asks how often the respondent experiences discrimination in nines areas. It measures if the respondent has experienced at least one form of discrimination corresponding to the Everyday Discrimination Scale.
+
+| Standard Questions                                                                    |
+|:-------------------------------------------------------------------------------------:|
+| DI01, DI01_01, DI01_02, DI01_03, DI01_04, DI01_05, DI01_06, DI01_07, DI01_08, DI01_09 |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: Number of survey respondents who report experience of any form of discrimination or harassment during the last 12 months
+
+**Denominator**: Total number of survey respondents 
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-0b-01.docx&wdOrigin=BROWSELINK)
+2. [Guidance Note for Implementation of Survey Module on SDG Indicator 16.b.1 & 10.3.1](https://www.ohchr.org/sites/default/files/Documents/Issues/HRIndicators/SDG_Indicator_16b1_10_3_1_Guidance_Note_.pdf)
+
+```{r}
+#In the past 12 month, in your day-to-day life in the host country, how often do any of the following things happen to you? Would you say  almost every day, at least once a week, a few times a month, a few times a year, less than once a year or never?:
+table(main$DI01_01) #You are treated with less politeness than other people are.
+table(main$DI01_02) #You are treated with less respect than other people are.
+table(main$DI01_03) #You receive poorer service than other people at restaurants or stores.
+table(main$DI01_04) #People act as if they think you are not smart.
+table(main$DI01_05) #People act as if they are afraid of you.
+table(main$DI01_06) #People act as if they think you are dishonest.
+table(main$DI01_07) #People act as if they’re better than you are.
+table(main$DI01_08) #You are called names or insulted.
+table(main$DI01_09) #You are threatened or harassed.```
+```
+```{r}
+main <- main %>%
+  mutate(SDG16_b_1 = case_when(
+    # If any value is 1, 2, 3, 4, or 5, assign 1
+    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . %in% 1:5)) > 0 ~ 1,
+    # If all values are 6, assign 2
+    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 6)) == 9 ~ 2,
+    # If all values are 7, assign NA
+    rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 7)) == 9 ~ NA_real_,
+    TRUE ~ NA_real_
+  )) %>%
+  mutate(SDG16_b_1 = labelled(
+    SDG16_b_1,
+    labels = c(
+      'Yes' = 1,
+      'No' = 2
+    ),
+    label = "Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law"
+  ))
+
+```
+```{r}
+table(main$SDG16_b_1)
+```
+*Limitations:* 
+The methodology used for this module in the FDS differs in some aspects from the methodology described in the SDG metadata guidance. More details on the FDS methodology for the discrimination module can be found here. ADD LINK - PETRA
+
+
+
+## 17.8.1 SDG Indicator
+
+**17.8.1 Proportion of individuals using the internet**
+
+Indicator Code: C170801
+The indicator proportion of individuals using the Internet is defined as the proportion of individuals who used the Internet from any location in the last three months.
+
+The Internet is a worldwide public computer network. It provides access to a number of communication services including the World Wide Web and carries e-mail, news, entertainment and data files,irrespective of the device used (not assumed to be only via a computer - it may also be by mobile telephone, tablet, PDA, games machine, digital TV etc.). Access can be via a fixed or mobile network.
+
+| Standard Questions |
+|:------------------:|
+| IA07, IA07_1       |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator**: Total number of in-scope individuals using the Internet (from any location) in the last 3 months
+
+**Denominator**: Total number of in-scope individuals
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-17-08-01.docx&wdOrigin=BROWSELINK)
+2. [ITU Manual for Measuring ICT Access and Use by Households and Individuals 2020:](https://www.itu.int/en/ITU-D/Statistics/Pages/publications/manual.aspx)
+
+
+```{r}
+table(main$IA07)   #Have you used the Internet in the past 30 days?
+table(main$IA07_1) #How about in the past 3 months? Have you used the Internet in the past 3 months?
+```
+
+```{r}
+main <- main %>%
+  mutate(SDG17_8_1 = case_when(IA07 == 1 ~ 1,
+                               IA07 == 2 & IA07_1 == 1 ~ 1,
+                               TRUE ~ 2)) %>%
+  mutate(SDG17_8_1 = labelled(SDG17_8_1,
+                              labels = c(
+                                 'Yes' = 1,
+                                 'No' = 2
+                               ),
+                               label = "Proportion of individuals using the internet" ))
+```
+```{r}
+table(main$SDG17_8_1)
+```
+
+
+
+
+
+
+
+
