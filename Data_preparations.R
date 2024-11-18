@@ -26,3 +26,20 @@ main <- main %>%
       TRUE ~ NA_real_  # Set to NA (blank) if none of the conditions are met
     )
   )
+#Rename _uuid to uuid as it keeps giving errors
+main <- main %>%
+  rename(uuid = `_uuid`)
+
+hhroster <- hhroster %>%
+  rename(uuid = `_uuid`)
+
+# Pull the current education of the randomly selected adult into the main dataset (from roster)
+main <- main %>%
+  left_join(
+    hhroster %>% 
+      select(uuid, rosterposition, HH_Educ02a),
+    by = c("uuid" = "uuid", "selected_adultap" = "rosterposition")
+  )
+# Rename the variable to match the name which is automatically be created by Kobo (it is alreadt there, Magrith will add it to the dataset)
+main <- main %>%
+  rename(educ_now = `HH_Educ02a`)
