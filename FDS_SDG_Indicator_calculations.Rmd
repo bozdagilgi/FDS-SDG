@@ -8,6 +8,12 @@ unhcrdown::html_page:
     toc_depth: 2
     toc_float: true
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(eval=FALSE)
+```
+
+
 Date: Last revision was on November 2024
 
 *For any issues please contact Ilgi Bozdag at bozdag@unhcr.org or Petra Kaps at kaps@unhcr.org*
@@ -16,12 +22,45 @@ Date: Last revision was on November 2024
 1. For correct calculations, ensure you have two datasets named 'main' and 'hhroster'. 
 2. Confirm that your datasets are cleaned and weighted as required for accurate results!
 
+At this step, you should already have **main** and **hhroster** datasets structured in a way that will allow you to calculate your indicators as you will be guided in this document. It's not recommended to clear your work space if your datasets are already loaded. 
+
+```{r, eval=FALSE}
+## Install pacman if not already installed
+if(!require(pacman)) install.packages('pacman')
+
+## Load all required libraries using pacman
+pacman::p_load(
+  tidyverse, dplyr, tidyr, rlang, purrr, magrittr, expss, srvyr,
+  readr,labelled,pastecs,psych,tableone, outbreaks, ggplot2, unhcrthemes,
+  scales, gt,webshot2, sjlabelled, waffle, writexl,remotes, haven )
+```
+
+## Standardized Disaggregation Variables
+
+
+```{r, eval=FALSE}
+
+##Upload cleaned and weighted datasets 
+
+hhroster <- read_dta("FDS_PAK_2024_Roster_complete.dta")
+
+main <- read_dta("FDS_PAK_2024_Allrespondents_complete.dta")
+
+
+
+###Add variable names for disaggregation variables
+
+
+```
+
 #ADD INTRO - SOMETHING ON SDGs and FDS 
 
 #SDG Indicators 
-# <span style="color:blue; font-size:28px;"><strong>17.8.1 SDG Indicator</strong></span>
+
+
+## 17.8.1 SDG Indicator
 **17.8.1 Proportion of individuals using the internet**
-##C170801
+Indicator Code: C170801
 The indicator proportion of individuals using the Internet is defined as the proportion of individuals who used the Internet from any location in the last three months.
 
 The Internet is a worldwide public computer network. It provides access to a number of communication services including the World Wide Web and carries e-mail, news, entertainment and data files,irrespective of the device used (not assumed to be only via a computer - it may also be by mobile telephone, tablet, PDA, games machine, digital TV etc.). Access can be via a fixed or mobile network.
