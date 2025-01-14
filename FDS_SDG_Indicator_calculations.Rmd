@@ -14,13 +14,13 @@ knitr::opts_chunk$set(eval=FALSE)
 ```
 
 
-Date: Last revision was on November 2024
+Date: Last revision was in January 2024
 
 *For any issues please contact Ilgi Bozdag at bozdag@unhcr.org or Petra Kaps at kaps@unhcr.org*
 
 **Important Instructions**
 
-1. For correct calculations, ensure you have five datasets corresponds different respondents named 'main', 'hhroster', x, x and x.  
+1. For correct calculations, ensure you have five datasets named: 'HHroster', 'main', 'RA_adult', 'RA_caregiver', 'RA_woman'.  
 
 2. Confirm that your datasets are cleaned and weighted as required for accurate results!
 
@@ -50,8 +50,85 @@ This document will guide you on how each and every indicator will be calculated 
 
 Percentage = \(\left(\frac{\text{Numerator}}{\text{Denominator}}\right) \times 100\)
 
+**Description of the datasets**
 
-At this step, you should already have **main** and **hhroster** datasets structured in a way that will allow you to calculate your indicators as you will be guided in this document. It's not recommended to clear your work space if your datasets are already uploaded. 
+The FDS consists of 4 questionnaires and an introduction section which together form the FDS interview. The 4 questionnaires and the respective modules in each are the following: 
+
+**- Head of the Household questionnaire**, responded to by the head of the household (>= 15 years of age), it includes all household level questions such as access to services. This questionnaire also includes the household roster, where the head of the household responds to individual level questions about all household members.  
+
+***Head of the Household - Household Roster***
+
+HH definition  
+Identification module  
+HH Roster (including education & language)  
+Banking for HH Roster  
+Disability   
+ 
+***Head of the Household***
+
+Legal Status 2 
+Displacement History  
+Shelter  
+WASH  
+Clean Energy  
+Assets  
+Mosquito Nets  
+Land and Property  
+Food and Nutrition  
+Objective Wellbeing   
+Experience of Shocks  
+Social Protection  
+Child Labor  
+
+
+**- Random Adult questionnaire**, responded to by the randomly selected adult (>= 15 years of age) from the household.
+
+Subjective and Mental Wellbeing  
+Aspiration   
+Healthcare   
+Mental Health  
+Mobility  
+Education 2  
+Skills   
+Employment  
+Job Search   
+Time Spent on Domestic Work   
+Trust - Political Participation  
+Financial Solutions  
+Remittances  
+Access to Information  
+Freedom of thought  
+Feel Safe Walking Alone  
+Access to Justice  
+Acceptance between communities  
+Discrimination  
+Victimization  
+
+**- Random Woman questionnaire**, responded to by the randomly selected woman (>= 15 years of age) who gave birth in the last 2 years.
+
+Women’s health - Birth attendance  
+Family Planning  
+Menstrual Hygiene  
+
+**- Caregiver questionnaire**, responded to by the caregiver of the randomly selected child (<5 years of age) from the household.
+
+Anthropometrics
+Immunization 
+
+Data is organized in 5 datasets, which are connected through an unique identifier "uuid". The 5 datasets are the following: 
+
+- *HHroster* = Roster section from questionnaire responded to by the head of the household 
+
+- *main* = Questionnaire responded to by head of the Household 
+
+- *RA_adult* = Questionnaire responded to by the randomly selected adult 
+
+- *RA_woman* = Questionnaire responded to by the randomly selected woman
+
+- *RA_caregiver* = Questionnaire responded to by the caregiver of the randomly selected child
+
+
+At this step, you should already have all five datasets structured in a way that will allow you to calculate your indicators as you will be guided in this document. It's not recommended to clear your work space if your datasets are already loaded. 
 
 
 ```{r, eval=FALSE}
@@ -64,27 +141,78 @@ pacman::p_load(
   readr,labelled,pastecs,psych,tableone, outbreaks, ggplot2, unhcrthemes,
   scales, gt,webshot2, sjlabelled, waffle, writexl,remotes, haven )
 ```
+```{r}
+##Upload cleaned and weighted datasets 
+
+HHroster <- read_dta("HHroster.dta")
+main <- read_dta("main.dta")
+RA_adult <- read_dta("RA_adult.dta")
+RA_woman <- read_dta("RA_woman.dta")
+RA_caregiver <- read_dta ("RA_caregiver.dta")
+```
 
 ## Standardized Disaggregation Variables
 
-
+**Population Group**
 ```{r, eval=FALSE}
 
-##Upload cleaned and weighted datasets 
+table(HHroster$Intro_07)     #in dataset "HHroster". 
+table(main$Intro_07)         #in dataset "main". 
+table(RA_adult$Intro_07)     #in dataset "RA_adult". 
+table(RA_woman$Intro_07)     #in dataset "RA_woman". 
+table(RA_caregiver$Intro_07) #in dataset "RA_caregiver". 
+```
 
-hhroster <- read_dta("FDS_PAK_2024_Roster_complete.dta")
+**Age**
+```{r, eval=FALSE}
+# Main age variable
+summary(HHroster$agetouse) #Main age variable at individual level can be found in the dataset "HHroster". 
 
-main <- read_dta("FDS_PAK_2024_Allrespondents_complete.dta")
+#2 categories (<18, >18)
+table(HHroster$HH_04_cat2) #in dataset "HHroster".
+
+#4 categories (0-4, 5-17, 18-59, 60+)
+table(HHroster$HH_04_cat4) #in dataset "HHroster".
+
+#We look at age categories only for indicators for which data is pulled from the "HHroster" dataset, which holds the individual data for all members of the household. For other four datasets (Head of the household, randomly selected adult, randomly selected woman, and randomly selected caregiver) the respondent is always => 15 years of age. 
+
+summary(main$HH_04_HoH)           #in dataset "main".
+summary(RA_adult$age_selected)   #in dataset "RA_adult".
+summary(RA_woman$agerandomwoman) #in dataset "RA_woman".
+summary(RA_caregiver$HH_04_RC)   #in dataset "RA_caregiver".
+```
+
+**Gender**
+```{r, eval=FALSE}
+table(HHroster$HH_02)          #in dataset "HHroster".
+table(main$HH_02_HoH)         #in dataset "main". 
+table(RA_adult$HH_02_RA)     #in dataset "RA_adult".
+table(RA_caregiver$HH_02_RC) #in dataset "RA_caregiver".
+```
 
 
+**Disability**
+```{r, eval=FALSE}
+table(HHroster$disability)          #in dataset "HHroster".
+table(main$disability_HoH)         #in dataset "main". 
+table(RA_adult$disability_RA)     #in dataset "RA_adult".
+table(RA_woman$disability_RW)     #in dataset "RA_woman".
+table(RA_caregiver$disability_RC) #in dataset "RA_caregiver".
+```
 
-###Add variable names for disaggregation variables
 
+**Country of origin**
+```{r, eval=FALSE}
+table(HHroster$COO)          #in dataset "HHroster".
+table(main$COO_HoH)         #in dataset "main".
+table(RA_adult$COO_RA)     #in dataset "RA_adult".
+table(RA_woman$COO_RW)     #in dataset "RA_woman".
+table(RA_caregiver$COO_RC) #in dataset "RA_caregiver".
 
 ```
 
 
-# Indicators 
+#Indicators 
 
 
 ## 1.3.1 SDG Indicator
@@ -107,6 +235,9 @@ as a share of the respective population. FDS can only cover part of the indicato
 |    Standard Questions                                  |
 |:------------------------------------------------------:|
 | ScProtec01, ScProtec04, ScProtec16                     |
+
+**Sources**  
+1.[SDG 1.3.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-01-03-01a.docx&wdOrigin=BROWSELINK)
 
 Indicators are obtained as follows:
 
@@ -151,12 +282,11 @@ table(main$Social_Benefit)
 ```
 
 
-
 b) Proportion of children covered by social protection benefits: ratio of children/households receiving child or family cash benefits to the total number of children/households with children.
 
 
 ```{r}
-#Not sure if there is a variable that is specific to this indicator 
+#not possible from the FDS
 ```
 
 c) Proportion of women giving birth covered by maternity benefits: ratio of women receiving cash maternity benefits to women giving birth in the same year (estimated based on age-specific fertility rates published in the UN’s World Population Prospects or on the number of live births corrected for the share of twin and triplet births).
@@ -212,13 +342,299 @@ i) Proportion of poor population receiving social assistance cash benefit: ratio
 Indicator Code: C010401
 
 
+The proportion of population living in households with access to basic services is defined as the proportion of population using public service provision systems that meet basic human needs including drinking water, sanitation, hygiene, energy, mobility, waste collection, health care, education and information technologies. The basic services indicator is therefore based on 9 components.
 
+In FDS, we are only able to calculate a proxy, as we are not able to calculate the access to all 9 components. This indicator will be measured through 4 components: Access to basic health care services, access to basic drinking water services, access to basic hygiene facilities and access to clean fuels and technology. 
+
+| Services       | Variables                                                            |
+|----------------|:--------------------------------------------------------:            |
+| Health         |                                                                      |                                                    
+| Drinking water |BD01, BD01a, BD20_2, BD20_3 BD22                                      |
+| Hygiene        |HW2_OB, HW3_OB, HW4_OB, HW8_OB                                        |
+| Clean Energy   |HC01, HC02, HC04                                                      |
+
+
+
+### Calculate variables for access to nine basic services {.tabset}
+
+**Click on services below to see how they are calculated**
+
+#### Drinking water
+Access to Basic Drinking Water Services refers to the use of drinking water from an improved source with a collection time of not more than 30 minutes for a round trip, including queuing. ‘Improved’ drinking water sources include the following:: piped water, boreholes or tube wells, protected dug wells, protected springs, rainwater, water kiosks, and packaged or delivered water. This definition is based on the WHO/UNICEF Joint Monitoring Programme (JMP) drinking water ladder. 
+
+1. Improved water source.
+2. The main water source is located within the household's dwelling or yard, or it is reachable within a 30-minute round trip, including any time spent queuing.
+
+**Numerator**: Individuals using drinking water from an improved source, provided collection time is not more than 30 minutes for a round trip, including queuing. 
+
+**Denominator**: Total number of individuals
+
+**Dataset**: main
+
+**Sources**  
+1.[SDG 1.4.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-01-04-01.docx&wdOrigin=BROWSELINK)
+2.[JMP WASH guidance](https://washdata.org/sites/default/files/documents/reports/2019-03/JMP-2018-core-questions-for-household-surveys.pdf).
+
+```{r, eval=FALSE}
+##Step 1: Check all variables
+table(main$BD01)   ##What is the main source of drinking water used by members of your household?
+table(main$BD01a)  ##Where is this main drinking water source located? In your own dwelling, in your own yard or plot , or elsewhere?
+table(main$BD20_2) ##How long does it take for members of your household to go to the main source of drinking water, stay in a queue, get water, and come back? Please do not include time spent socializing. 
+table(main$BD20_3) ##Specifying minutes on how long it takes to collect water 
+table(main$BD22)   ##Does it take more or less than 30 minutes?
+
+
+## Step 2: Add a column specifying if the household uses improved or unimproved source of drinking water 
+main <- main %>%
+mutate(Improved_dw = ifelse(BD01 %in% c(11, 12, 13, 14, 21, 31, 41, 51, 61, 71, 72, 91, 92), 1, 0)) %>%
+  mutate(Improved_dw = labelled(Improved_dw,
+                               labels = c(
+                                 "Yes" = 1,
+                                 "No" = 0
+                               ),
+                               label = "Improved drinking water source"))
+
+##Step 3: Add a coloumn specifying if the improved water source is located in own dwelling/yard/plot or elsewhere. 
+main <- main %>%
+mutate(Improved_dw_Loc = case_when(
+BD01 %in% c(11, 12) ~ 1, #Assigns 1 if piped into dwelling/yard/plot
+BD01 %in% c(13, 14, 21, 31, 41, 51) & BD01a %in% c(1, 2) ~ 1, #Assigns 1 if other source located in HH dwelling or plot
+BD01 %in% c(13, 14, 21, 31, 41, 51) & BD01a == 3 ~ 0))%>% #Assigns 2 if other source located elsewhere
+mutate(Improved_dw_Loc = labelled(Improved_dw_Loc,
+                               labels = c(
+                                 "Own dwelling/yard/plot" = 1,
+                                 "Elsewhere" = 0
+                               ),
+                               label = "Improved drinking water source in own dwelling, yard or plot"))
+
+##Step 4: Add a coloumn specifying if it takes more or less than 30 min to the improved drinking water source. If the improved drinking water source is located in own dwelling, yard or plot, it is considered that it takes less than 30 minutes to reach. 
+## BD20_3 - Minutes
+
+main <- main %>%
+  mutate(
+    Improved_dw_access = case_when(
+      BD01 %in% c(11, 12,91,92) ~ 1, #Assigns 1 if improved water source is "Piped to plot/yard/dwelling", "Bottled water" or "Sachets". 
+      BD01 %in% c(13, 14, 21, 31, 41, 51, 61, 71, 72) & ((BD20_2 == 1 & BD20_3 < 30) | (BD20_2 == 98 & BD22 == 1)) ~ 1, #Assigns 1 if other improved water source which are reachable in less than 30 minutes. 
+      TRUE ~ 0))%>% #Assigns 0 in all other cases. 
+mutate(Improved_dw_access = labelled(Improved_dw_access,
+                               labels = c(
+                                 "Yes" = 1, 
+                                 "No" = 0
+                               ),
+                               label = "Improved water source located reachable in less than 30min"))
+      
+      
+main <- main %>%
+  mutate(
+    Improved_dw_final = case_when(
+      Improved_dw == 1 & (Improved_dw_Loc == 1 | Improved_dw_access == 1)~ 1, #Assigns 1 when an improved water source is located on premises or reachable in less than 30 min. 
+      TRUE ~ 0
+    )
+  ) %>%
+  mutate(Improved_dw_final = labelled(Improved_dw_final,
+                               labels = c(
+                                 "Yes" = 1, 
+                                 "No" = 0
+                               ),
+                               label = "Access to clean drinking water services"))
+
+
+
+table(main$Improved_dw_final)
+
+
+```
+
+
+#### Hygiene Facilities
+
+The proportion of the population with basic hygiene services is defined as the proportion of population with a handwashing facility with soap and water available at home. Handwashing facilities may be located within the dwelling, yard or plot. They may be fixed or mobile and include a sink with tap water, buckets with taps, tippy-taps, and jugs or basins designated for handwashing. Soap includes bar soap, liquid soap, powder detergent, and soapy water but does not include ash, soil, sand or other handwashing agents.
+
+**Unit of observation**: Household
+
+**Numerator**:  Number of individuals with access to with basic handwashing facilities on premises
+
+**Denominator**: Total number of individuals
+
+**Dataset**: main
+
+**Sources**  
+1.[SDG 6.2.1a Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-06-02-01b.docx&wdOrigin=BROWSELINK)
+2.[JMP Methodology](https://washdata.org/reports/jmp-2017-methodology)
+
+```{r, eval=FALSE}
+table(main$HW2_OB) #Can you please show me where members of your household most often wash their hands?
+table(main$HW3_OB) #Observe presence of water at the place for hand washing. Verify by checking the tap/pump, or basin, bucket, water container or similar objects for presence of water.
+table(main$HW4_OB) #Is soap or detergent or ash/mud/sand present at the place for hand washing?
+table(main$HW8_OB) #Type of soap
+```
+
+
+```{r, eval=FALSE}
+#Step 1: Create a variable which checks for the type of hand washing facility
+
+main <- main %>%
+  mutate(handwashing_type = case_when(
+    HW2_OB  %in% c(1,2,3) ~ 1, #Assigns 1 when the observed hand washing facility is fixed facility (sink,tap) in yard/plot/dwelling or mobile hand washing facility
+    HW2_OB %in% c(4,96) ~ 0, #Assigns 0 when there is no hand washing facility observed in dwelling/yard/plot or when the answer is other,specify
+    HW2_OB == 5 ~ NA )) #Assigns NA where the permission to observe the hand washing facility is not given
+
+#Step 2: Create a variable checking for the presence of water
+main <- main %>%
+  mutate(handwashing_water = case_when(
+    HW3_OB == 1 ~ 1, #Assigns 1 when water is present
+    HW3_OB == 2 ~ 0)) #Assigns 0 when water is not present
+    
+#Step 3: Create a variable checking for the presence and type of soap
+main <- main %>%
+  mutate(handwashing_soap = case_when(
+    HW4_OB == 1 & HW8_OB %in% c("A","B")~ 1, #Assigns 1 when soap is present and type is bar soap, liquid soap, powder detergent, and soapy water
+    HW4_OB == 1 & HW8_OB %in% c("C")~ 0, #Assigns 0 when soap is present and type is ash, soil, sand
+    HW4_OB == 2 ~ 0)) #Assigns 0 when soap is not present
+
+#Step 4: Combine all 3 conditions to a final variable
+main <- main %>%
+  mutate(handwashing_facility = case_when(
+    handwashing_type == 1 & handwashing_water == 1 & handwashing_soap == 1 ~ 1,
+    handwashing_type == 0 | handwashing_water == 0 | handwashing_soap == 0 ~ 0))%>%
+  mutate(handwashing_facility = labelled(handwashing_facility,
+                                labels = c(
+                                  'Yes' = 1,
+                                  'No' = 0
+                                ),
+                                label = "Proportion of people with basic hygiene services "))
+
+table(main$handwashing_facility)
+
+```
+
+#### Clean fuels and technology
+
+Proportion of population with primary reliance on clean fuels and technology is calculated as the number of people using clean fuels and technologies for cooking, heating and lighting divided by total population reporting that any cooking, heating or lighting, expressed as percentage. “Clean” is defined by the emission rate targets and specific fuel recommendations (i.e. against unprocessed coal and kerosene) included in the normative guidance WHO guidelines for indoor air quality: household fuel combustion. The indicator is based on the main type of fuel and technology used for cooking as cooking occupies the largest share of overall household energy needs.
+
+**Unit of observation**: Household
+
+**Numerator**:   Number of individuals using clean fuel and technology as their primary source of cooking
+
+**Denominator**: Total number of individuals
+
+**Dataset**: main
+
+To calculate the indicator value, the standard survey methodology considers in the numerator only individuals in households that use one of the following most of the time as their source for cooking are considered in the numerator:
+
+  + solar cooker
+  + electric stove
+  + piped natural gas stove
+  + biogas stove
+  + LPG/cooking gas stove
+  + liquid fuel stove with alcohol / ethanol.
+
+**Sources**  
+1.[SDG 7.1.2 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-07-01-02.docx&wdOrigin=BROWSELINK)
+2.[World Bank LSMS Energy guidance](https://rstudio.unhcr.org/connect/#/apps/6fb3ccbf-b6ca-4fee-907f-d5c069b8944c/access/106)
+
+
+```{r, eval=FALSE}
+#Step 1: Calculate clean fuel for cooking 
+table(main$HC01) #Is any food or drink consumed by household members cooked or prepared at the household dwelling using a cookstove, fire or other cooking device?
+table(main$HC02) #What does this household use for cooking most of the time, including cooking food, making tea/ coffee, boiling drinking water?
+table(main$HC04) #What type of fuel or energy source does this household use most of the time in this ${HC02_response} for cooking food, making tea/coffee and boiling drinking water?
+
+main <- main %>%
+  mutate(
+    clean_cook = case_when(
+      (HC01 == 1 & (HC02 %in% c(1, 2, 3, 4, 5)) | (HC01 == 1 & HC02 == 8 & HC04 == 2)
+      ) ~ 1,  # First condition for clean cooking
+      (HC01 == 1 & (HC02 %in% c(6,7,9,10,11,96)) | (HC02 == 8 & !(HC04== 2)
+      )) ~ 0,  # Condition for unclean cooking or incomplete clean technology
+      HC01 == 2 ~ 0,  # HC01 is "2"
+      TRUE ~ NA_real_  # Handle missing or other cases
+    )
+  ) 
+```
+```{r}
+table(main$clean_cook)
+```
+
+```{r}
+#Step 2: Calculate clean fuel for heating
+table(main$HHT01) #Does this household use any heating device or fire to keep the dwelling/living quarters warm at any time during the year?
+table(main$HHT04) #What kind of device does this household use to heat the home when needed? For example, do you use a space heater(s), or use your cookstove in the winter for warmth?
+table(main$HHT06) #What type of fuel or energy source does this household use **most of the time for heating** in ${HHT04_response}?
+```
+
+```{r}
+#Note that the following types of heating: manufactured space heater, traditional space heater, manufactured cookstove and traditional cookstove are only considered clean when the brand of them is considered a clean brand based on the WHO guidelines. However we do not have the needed information to classify a brand as clean or unclean. Therefore households that use these types of heating have been classified as clean without including the brand names in the calculation. 
+main <- main %>%
+  mutate(
+    clean_heating = case_when(
+      HHT01 == 1 & HHT04 %in% c(1, 2, 3, 4, 5, 8) ~ 1, # Clean heating
+      HHT01 == 1 & HHT04 %in% c(6, 7, 96) ~ 0,         # Unclean heating
+      HHT01 == 2 ~ 0,                                  # No heating used
+      TRUE ~ NA_real_                                  # Missing or other cases
+    )
+  )
+
+```
+```{r}
+table(main$clean_heating)
+```
+
+```{r}
+#Step 3: Calculate clean lightning
+table(main$HL01) #Does this household use anything for lightning? 
+table(main$HL03) # What does this household use **most of the time** as energy for lighting, or as a light source?
+main <- main %>%
+  mutate(
+    clean_lightning = case_when(
+      HL01 == 1 & HL03 %in% c(1, 2, 3, 4, 5, 6) ~ 1, # Clean lighting
+      HL01 == 1 & HL03 %in% c(7,9,9,10,11,96) ~ 0,   # Unclean lighting
+      HL01 == 2 ~ 0,                                  # No lighting
+      TRUE ~ NA_real_                                  # Missing or other cases
+    )
+  )
+
+```
+```{r}
+table(main$clean_lightning)
+```
+
+```{r}
+#Step 4: Combine the three conditions above into a final indicator
+main <- main %>%
+  mutate(
+    clean_fuel = case_when(
+      clean_cook == 1 & clean_heating == 1 & clean_lightning == 1 ~ 1,
+      clean_cook == 0 | clean_heating == 0 | clean_lightning == 0 ~ 0))
+  
+```
+```{r}
+main <- main %>%
+   mutate(clean_fuel = labelled(clean_fuel,
+                                labels = c(
+                                  "Clean fuel" = 1,  # Label for Yes
+                                  "Unclean fuel" = 0   # Label for No
+                                ),
+                                label = "Proportion of population with primary reliance on clean fuels and technology"))
+```
+
+#### Health care services
+
+#Petra - add health
+#Petra - add final indicator calculation
 
 ## 1.4.2 SDG Indicator
 
 **Proportion of total adult population with secure tenure rights to land, (a) with legally recognized documentation, and (b) who perceive their rights to land as secure, by sex and type of tenure**
 
 Indicator Code: C010402
+
+Indicator 1.4.2 measures the relevant part of Target 1.4 (ensure men and women have equal rights to economic resources, as well as access to …, ownership of and control over land and other forms of property, inheritance, natural resources). It measures the results of policies that aim to strengthen tenure security for all, including women and other vulnerable groups.
+
+
+Indicator 1.4.2 covers (a) all types of land use (such as residential, commercial, agricultural, forestry, grazing, wetlands based on standard land-use classification) in both rural and urban areas; and (b) all land tenure types as recognized at the country level, such as freehold, leasehold, public land, customary land. An individual can hold land in his/her own name, jointly with other individuals, as a member of a household, or collectively as member of group1, cooperative or other type of association.
+
+
 
 ## 2.2.1 SDG Indicator
 
@@ -237,6 +653,51 @@ Indicator Code: C020202
 **Proportion of births attended by skilled health personnel**
 
 Indicator Code: C030102
+
+Proportion of births attended by skilled health personnel (generally doctors, nurses or midwives but can refer to other health professionals providing childbirth care) is the proportion of childbirths attended by skilled health personnel. According to the current definition these are competent maternal and newborn health (MNH) professionals educated, trained and regulated to national and international standards. They are competent to: (i) provide and promote evidence-based, human-rights based, quality, socio-culturally sensitive and dignified care to women and newborns; (ii) facilitate physiological processes during labour and delivery to ensure a clean and positive childbirth experience; and (iii) identify and manage or refer women and/or newborns with complications.
+
+
+| Standard Questions |
+|:------------------:|
+|    BA10            |
+
+**Unit of observation**: Individual
+
+**Numerator**: Number of women aged 15-49 with a live birth attended by a skilled health personnel (e.g., doctors, nurses or midwives)
+
+**Denominator**: Total number of women aged 15-49 with a live birth in the same period
+
+**Dataset**: RA_woman
+
+**Sources**  
+1.[SDG 3.1.2 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-03-01-02.docx&wdOrigin=BROWSELINK)
+
+```{r, eval=FALSE}
+table(RA_woman$BA10) #Who assisted you with the delivery?
+
+```
+```{r, eval=FALSE}
+RA_woman <- RA_woman %>%
+  mutate(
+    C030102 = case_when(
+      BA10 %in% c("A", "B", "C") ~ 1,           # Assign 1 for skilled personnel
+      BA10 %in% c("D", "E", "F") ~ 0,           # Assign 0 for unskilled personnel
+      BA10 == "X" ~ NA_real_,                   # Set NA for X(Other, specify)
+      TRUE ~ NA_real_                           # Set NA for any other values not specified
+    )
+  )
+
+
+RA_woman <- RA_woman %>%
+mutate(C030102 = labelled(C030102,
+                                labels = c(
+                                  "Yes" = 1,  # Yes for skilled personnel
+                                  "No" = 0    # No for unskilled personnel
+                                ),
+                                label = "Proportion of births attended by skilled health personnel"
+  ))
+```
+
 
 ## 3.8.1 SDG Indicator
 
@@ -263,6 +724,7 @@ Indicator Code: C040202
 
 Indicator Code: C040301
 
+
 ## 4.5.1 SDG Indicator
 
 **Parity indices (female/male, rural/urban, bottom/top wealth quintile and others such as disability status, indigenous peoples and conflict-affected, as data become available) for all education indicators on this list that can be disaggregated**
@@ -274,6 +736,66 @@ Indicator Code: C040501
 **Proportion of women aged 20–24 years who were married or in a union before age 15 and before age 18**
 
 Indicator Code: C050301
+
+Both formal (i.e., marriages) and informal unions are covered under this indicator. Informal unions are generally defined as those in which a couple lives together for some time, intends to have a lasting relationship, but for which there has been no formal civil or religious ceremony (i.e., cohabitation)
+
+Marriage before the age of 18 is a fundamental violation of human rights. Child marriage often compromises a girl’s development by resulting in early pregnancy and social isolation, interrupting her schooling, limiting her opportunities for career and vocational advancement and placing her at increased risk of intimate partner violence. In many cultures, girls reaching puberty are expected to assume gender roles associated with womanhood. These include entering a union and becoming a mother. The practice of early/child marriage is a direct manifestation of gender inequality.
+
+| Standard Questions |
+|:------------------:|
+|    HH_09           |
+
+**Unit of observation**: Individual
+
+**Numerator**: Number of women aged 20-24 who were first married or in union before age 15 (or before age 18)
+
+**Denominator**: Total number of women aged 20-24
+
+**Dataset**: HHroster
+
+**Sources**  
+1.[SDG 5.3.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-05-03-01.docx&wdOrigin=BROWSELINK)
+
+```{r}
+summary(HHroster$HH_09) #How old were you when you first married? 
+```
+
+```{r}
+#Married or in union before age 15 
+
+HHroster <- HHroster %>%
+  mutate(
+    women20_24 = case_when( #Create a variable to identify women age 20 - 24 (denominator)
+      HH_02 == 2 & agetouse >= 20 & agetouse <= 24 ~ 1,
+      TRUE ~ 0
+    ))
+
+HHroster <- HHroster %>%
+  mutate(
+  married_before_15 = case_when(
+      women20_24 == 1 & HH_09 < 15 ~ 1,
+      TRUE ~ 0))
+
+numerator_15 <- sum(HHroster$married_before_15, na.rm = TRUE)
+denominator_15 <- sum(HHroster$women20_24, na.rm = TRUE)
+proportion_15 <- (numerator / denominator) * 100
+cat("Proportion of women aged 20-24 married before age 15:", round(proportion_15, 2), "%\n")
+
+```
+```{r}
+#Married or in union before age 18 
+
+HHroster <- HHroster %>%
+  mutate(
+  married_before_18 = case_when(
+      women20_24 == 1 & HH_09 < 18 ~ 1,
+      TRUE ~ 0))
+
+numerator_18 <- sum(HHroster$married_before_18, na.rm = TRUE)
+denominator_18 <- sum(HHroster$women20_24, na.rm = TRUE)
+proportion_18 <- (numerator / denominator) * 100
+cat("Proportion of women aged 20-24 married before age 18:", round(proportion_18, 2), "%\n")
+```
 
 ## 5.a.1 SDG Indicator 
 
@@ -287,9 +809,164 @@ Indicator Code: C050a01
 
 Indicator Code: C050b01
 
+## 6.1.1 SDG Indicator
+
+**Proportion of population using safely managed drinking water services**
+
+Indicator Code: C060101
+
+Access to Basic Drinking Water Services refers to the use of drinking water from an improved source with a collection time of not more than 30 minutes for a round trip, including queuing. ‘Improved’ drinking water sources include the following:: piped water, boreholes or tube wells, protected dug wells, protected springs, rainwater, water kiosks, and packaged or delivered water. This definition is based on the WHO/UNICEF Joint Monitoring Programme (JMP) drinking water ladder. 
+
+1. Improved water source.
+2. The main water source is located within the household's dwelling or yard, or it is reachable within a 30-minute round trip, including any time spent queuing.
+
+**Numerator**: Individuals using drinking water from an improved source, provided collection time is not more than 30 minutes for a round trip, including queuing. 
+
+**Denominator**: Total number of individuals
+
+**Dataset**: main
+
+**Sources**  
+1.[SDG 1.4.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-01-04-01.docx&wdOrigin=BROWSELINK)
+2.[JMP WASH guidance](https://washdata.org/sites/default/files/documents/reports/2019-03/JMP-2018-core-questions-for-household-surveys.pdf).
+
+```{r, eval=FALSE}
+##Step 1: Check all variables
+table(main$BD01)   ##What is the main source of drinking water used by members of your household?
+table(main$BD01a)  ##Where is this main drinking water source located? In your own dwelling, in your own yard or plot , or elsewhere?
+table(main$BD20_2) ##How long does it take for members of your household to go to the main source of drinking water, stay in a queue, get water, and come back? Please do not include time spent socializing. 
+table(main$BD20_3) ##Specifying minutes on how long it takes to collect water 
+table(main$BD22)   ##Does it take more or less than 30 minutes?
+
+
+## Step 2: Add a column specifying if the household uses improved or unimproved source of drinking water 
+main <- main %>%
+mutate(Improved_dw = ifelse(BD01 %in% c(11, 12, 13, 14, 21, 31, 41, 51, 61, 71, 72, 91, 92), 1, 0)) %>%
+  mutate(Improved_dw = labelled(Improved_dw,
+                               labels = c(
+                                 "Yes" = 1,
+                                 "No" = 0
+                               ),
+                               label = "Improved drinking water source"))
+
+##Step 3: Add a coloumn specifying if the improved water source is located in own dwelling/yard/plot or elsewhere. 
+main <- main %>%
+mutate(Improved_dw_Loc = case_when(
+BD01 %in% c(11, 12) ~ 1, #Assigns 1 if piped into dwelling/yard/plot
+BD01 %in% c(13, 14, 21, 31, 41, 51) & BD01a %in% c(1, 2) ~ 1, #Assigns 1 if other source located in HH dwelling or plot
+BD01 %in% c(13, 14, 21, 31, 41, 51) & BD01a == 3 ~ 0))%>% #Assigns 2 if other source located elsewhere
+mutate(Improved_dw_Loc = labelled(Improved_dw_Loc,
+                               labels = c(
+                                 "Own dwelling/yard/plot" = 1,
+                                 "Elsewhere" = 0
+                               ),
+                               label = "Improved drinking water source in own dwelling, yard or plot"))
+
+##Step 4: Add a coloumn specifying if it takes more or less than 30 min to the improved drinking water source. If the improved drinking water source is located in own dwelling, yard or plot, it is considered that it takes less than 30 minutes to reach. 
+## BD20_3 - Minutes
+
+main <- main %>%
+  mutate(
+    Improved_dw_access = case_when(
+      BD01 %in% c(11, 12,91,92) ~ 1, #Assigns 1 if improved water source is "Piped to plot/yard/dwelling", "Bottled water" or "Sachets". 
+      BD01 %in% c(13, 14, 21, 31, 41, 51, 61, 71, 72) & ((BD20_2 == 1 & BD20_3 < 30) | (BD20_2 == 98 & BD22 == 1)) ~ 1, #Assigns 1 if other improved water source which are reachable in less than 30 minutes. 
+      TRUE ~ 0))%>% #Assigns 0 in all other cases. 
+mutate(Improved_dw_access = labelled(Improved_dw_access,
+                               labels = c(
+                                 "Yes" = 1, 
+                                 "No" = 0
+                               ),
+                               label = "Improved water source located reachable in less than 30min"))
+      
+      
+main <- main %>%
+  mutate(
+    C060101 = case_when(
+      Improved_dw == 1 & (Improved_dw_Loc == 1 | Improved_dw_access == 1)~ 1, #Assigns 1 when an improved water source is located on premises or reachable in less than 30 min. 
+      TRUE ~ 0
+    )
+  ) %>%
+  mutate(C060101 = labelled(C060101,
+                               labels = c(
+                                 "Yes" = 1, 
+                                 "No" = 0
+                               ),
+                               label = "Access to clean drinking water services"))
+
+
+
+table(main$C060101)
+
+
+```
+
 ## 6.2.1 SDG Indicator
 
 **Proportion of population using (a) safely managed sanitation services and (b) a hand-washing facility with soap and water**
+
+Indicator Code: C060102
+
+In FDS, we are able to calculate (b) aspect of this indicator. 
+
+The proportion of the population with basic hygiene services is defined as the proportion of population with a handwashing facility with soap and water available at home. Hand washing facilities may be located within the dwelling, yard or plot. They may be fixed or mobile and include a sink with tap water, buckets with taps, tippy-taps, and jugs or basins designated for hand washing. Soap includes bar soap, liquid soap, powder detergent, and soapy water but does not include ash, soil, sand or other handwashing agents.
+
+**Unit of observation**: Household
+
+**Numerator**:  Number of individuals with access to with basic hand washing facilities on premises
+
+**Denominator**: Total number of individuals
+
+**Dataset**: main
+
+**Sources**  
+1.[SDG 6.2.1a Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-06-02-01b.docx&wdOrigin=BROWSELINK)
+2.[JMP Methodology](https://washdata.org/reports/jmp-2017-methodology)
+
+```{r, eval=FALSE}
+table(main$HW2_OB) #Can you please show me where members of your household most often wash their hands?
+table(main$HW3_OB) #Observe presence of water at the place for hand washing. Verify by checking the tap/pump, or basin, bucket, water container or similar objects for presence of water.
+table(main$HW4_OB) #Is soap or detergent or ash/mud/sand present at the place for hand washing?
+table(main$HW8_OB) #Type of soap
+```
+
+
+```{r, eval=FALSE}
+#Step 1: Create a variable which checks for the type of hand washing facility
+
+main <- main %>%
+  mutate(handwashing_type = case_when(
+    HW2_OB  %in% c(1,2,3) ~ 1, #Assigns 1 when the observed hand washing facility is fixed facility (sink,tap) in yard/plot/dwelling or mobile hand washing facility
+    HW2_OB %in% c(4,96) ~ 0, #Assigns 0 when there is no hand washing facility observed in dwelling/yard/plot or when the answer is other,specify
+    HW2_OB == 5 ~ NA )) #Assigns NA where the permission to observe the hand washing facility is not given
+
+#Step 2: Create a variable checking for the presence of water
+main <- main %>%
+  mutate(handwashing_water = case_when(
+    HW3_OB == 1 ~ 1, #Assigns 1 when water is present
+    HW3_OB == 2 ~ 0)) #Assigns 0 when water is not present
+    
+#Step 3: Create a variable checking for the presence and type of soap
+main <- main %>%
+  mutate(handwashing_soap = case_when(
+    HW4_OB == 1 & HW8_OB %in% c("A","B")~ 1, #Assigns 1 when soap is present and type is bar soap, liquid soap, powder detergent, and soapy water
+    HW4_OB == 1 & HW8_OB %in% c("C")~ 0, #Assigns 0 when soap is present and type is ash, soil, sand
+    HW4_OB == 2 ~ 0)) #Assigns 0 when soap is not present
+
+#Step 4: Combine all 3 conditions to a final variable
+main <- main %>%
+  mutate(C060102 = case_when(
+    handwashing_type == 1 & handwashing_water == 1 & handwashing_soap == 1 ~ 1,
+    handwashing_type == 0 | handwashing_water == 0 | handwashing_soap == 0 ~ 0))%>%
+  mutate(C060102 = labelled(C060102,
+                                labels = c(
+                                  'Yes' = 1,
+                                  'No' = 0
+                                ),
+                                label = "Proportion of people with basic hygiene services "))
+
+table(main$C060102)
+
+```
 
 Indicator Code: C060201
 
@@ -299,11 +976,158 @@ Indicator Code: C060201
 
 Indicator Code: C070101
 
+Proportion of population with access to electricity is the percentage of population with access to electricity. SDG7 ensures access to affordable, reliable, sustainable and modern energy for all. Specifically, Indicator 7.1.1 refers to the proportion of population with access to electricity.
+
+Access to electricity addresses major critical issues in all the dimensions of sustainable development. The target has a wide range of social and economic impacts, including facilitating development of income generating activities and lightening the burden of household tasks.
+
+Under the global target of equal access to energy, SDG7.1.1 focuses specifically on electricity access available to the global population. In order to gain a clear picture, access rates are only considered if the primary source of lighting is the local electricity provider, solar systems, mini-grids and stand-alone systems. Sources such as generators, candles, batteries, etc., are not considered due to their limited working capacities and since they are usually kept as backup sources for lighting.
+
+Calculation based on the World Bank Multi-Tier Framework for Measuring Electricity Access. In Tier 1, households are considered to have electricity based on capacity of the main source of electricity to operate different appliances and availability of electricity supply (on average at least one hour of electricity in the evening during the previous week). Population with access to electricity (Tier 1 or above for all attributes) are defined as having access to electricity
+
+| Standard Questions             |
+|:------------------------------:|
+| HE01, HE02a, HE02b, HE04, HE05 |
+
+**Unit of observation**: Household
+
+**Numerator**:   Households with access to electricity from TIER 1 or above
+
+**Denominator**: Total households
+
+**Dataset**: main
+
+**Sources**  
+1.[SDG 7.1.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-07-01-01.docx&wdOrigin=BROWSELINK)
+2.[World Bank LSMS Energy guidance](https://rstudio.unhcr.org/connect/#/apps/6fb3ccbf-b6ca-4fee-907f-d5c069b8944c/access/106)
+
+```{r}
+table(main$HE01)  #What source of electricity is used **most** of the time in this household?
+table(main$HE02a) #Which of your household appliances are powered using this household’s ${HE01_response}?
+table(main$HE02b) #How many light bulbs can be powered using this household's ${HE01_response}?
+table(main$HE04)  #In the **past 7 days**, on average how many hours of electricity were available per day?
+table(main$HE05)      #In the past 7 days, on average how many hours of electricity were available each evening, from 6:00pm to 10:00pm from ${HE01_response}?
+```
+
+
+
+
 ## 7.1.2 SDG Indicator
 
 **Proportion of population with primary reliance on clean fuels and technology**
 
 Indicator Code: C070102
+
+Proportion of population with primary reliance on clean fuels and technology is calculated as the number of people using clean fuels and technologies for cooking, heating and lighting divided by total population reporting that any cooking, heating or lighting, expressed as percentage. “Clean” is defined by the emission rate targets and specific fuel recommendations (i.e. against unprocessed coal and kerosene) included in the normative guidance WHO guidelines for indoor air quality: household fuel combustion. 
+
+| Standard Questions                                        |
+|:---------------------------------------------------------:|
+| HC01, HC02, HC04, HHT01, HHT04, HHT06, HL01, HL03, EMP06d |
+
+**Unit of observation**: Household
+
+**Numerator**:   Number of individuals using clean fuel and technology as their primary source of cooking, heating and lighting
+
+**Denominator**: Total number of individuals
+
+**Dataset**: main
+
+To calculate the indicator value, the standard survey methodology considers in the numerator only individuals in households that use one of the following most of the time as their source for cooking are considered in the numerator:
+
+  + solar cooker
+  + electric stove
+  + piped natural gas stove
+  + biogas stove
+  + LPG/cooking gas stove
+  + liquid fuel stove with alcohol / ethanol.
+
+**Sources**  
+1.[SDG 7.1.2 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-07-01-02.docx&wdOrigin=BROWSELINK)
+2.[World Bank LSMS Energy guidance](https://rstudio.unhcr.org/connect/#/apps/6fb3ccbf-b6ca-4fee-907f-d5c069b8944c/access/106)
+
+
+```{r, eval=FALSE}
+#Step 1: Calculate clean fuel for cooking 
+table(main$HC01) #Is any food or drink consumed by household members cooked or prepared at the household dwelling using a cookstove, fire or other cooking device?
+table(main$HC02) #What does this household use for cooking most of the time, including cooking food, making tea/ coffee, boiling drinking water?
+table(main$HC04) #What type of fuel or energy source does this household use most of the time in this ${HC02_response} for cooking food, making tea/coffee and boiling drinking water?
+
+main <- main %>%
+  mutate(
+    clean_cook = case_when(
+      (HC01 == 1 & (HC02 %in% c(1, 2, 3, 4, 5)) | (HC01 == 1 & HC02 == 8 & HC04 == 2)
+      ) ~ 1,  # First condition for clean cooking
+      (HC01 == 1 & (HC02 %in% c(6,7,9,10,11,96)) | (HC02 == 8 & !(HC04== 2)
+      )) ~ 0,  # Condition for unclean cooking or incomplete clean technology
+      HC01 == 2 ~ 0,  # HC01 is "2"
+      TRUE ~ NA_real_  # Handle missing or other cases
+    )
+  ) 
+```
+```{r}
+table(main$clean_cook)
+```
+
+```{r}
+#Step 2: Calculate clean fuel for heating
+table(main$HHT01) #Does this household use any heating device or fire to keep the dwelling/living quarters warm at any time during the year?
+table(main$HHT04) #What kind of device does this household use to heat the home when needed? For example, do you use a space heater(s), or use your cookstove in the winter for warmth?
+table(main$HHT06) #What type of fuel or energy source does this household use **most of the time for heating** in ${HHT04_response}?
+```
+
+```{r}
+#Note that the following types of heating: manufactured space heater, traditional space heater, manufactured cookstove and traditional cookstove are only considered clean when the brand of them is considered a clean brand based on the WHO guidelines. However we do not have the needed information to classify a brand as clean or unclean. Therefore households that use these types of heating have been classified as clean without including the brand names in the calculation. 
+main <- main %>%
+  mutate(
+    clean_heating = case_when(
+      HHT01 == 1 & HHT04 %in% c(1, 2, 3, 4, 5, 8) ~ 1, # Clean heating
+      HHT01 == 1 & HHT04 %in% c(6, 7, 96) ~ 0,         # Unclean heating
+      HHT01 == 2 ~ 0,                                  # No heating used
+      TRUE ~ NA_real_                                  # Missing or other cases
+    )
+  )
+
+```
+```{r}
+table(main$clean_heating)
+```
+
+```{r}
+#Step 3: Calculate clean lightning
+table(main$HL01) #Does this household use anything for lightning? 
+table(main$HL03) # What does this household use **most of the time** as energy for lighting, or as a light source?
+main <- main %>%
+  mutate(
+    clean_lightning = case_when(
+      HL01 == 1 & HL03 %in% c(1, 2, 3, 4, 5, 6) ~ 1, # Clean lighting
+      HL01 == 1 & HL03 %in% c(7,9,9,10,11,96) ~ 0,   # Unclean lighting
+      HL01 == 2 ~ 0,                                  # No lighting
+      TRUE ~ NA_real_                                  # Missing or other cases
+    )
+  )
+
+```
+```{r}
+table(main$clean_lightning)
+```
+
+```{r}
+#Step 4: Combine the three conditions above into a final indicator
+main <- main %>%
+  mutate(
+    C070102 = case_when(
+      clean_cook == 1 & clean_heating == 1 & clean_lightning == 1 ~ 1,
+      clean_cook == 0 | clean_heating == 0 | clean_lightning == 0 ~ 0))
+  
+```
+```{r}
+main <- main %>%
+   mutate(C070102 = labelled(C070102,
+                                labels = c(
+                                  "Clean fuel" = 1,  # Label for Yes
+                                  "Unclean fuel" = 0   # Label for No
+                                ),
+                                label = "Proportion of population with primary reliance on clean fuels and technology"))
+```
 
 ## 8.5.1 SDG Indicator
 
@@ -354,7 +1178,7 @@ main <- main %>%
     EMP05 == 1 & EMP06a == 3~ 1,  # Absent but self-employed
     EMP02 == 1 & EMP06b %in% c(1, 2) & EMP06c %in% c(1, 2) ~ 1,  # Farming/rearing/fishing for sale
     EMP05 == 1 & EMP06a %in% c(1, 2) & EMP06c %in% c(1, 2) ~ 1,  # Absent but farming for sale
-    TRUE ~ 2  # Not employed
+    TRUE ~ 0  # Not employed
   ))
 ```
 
@@ -362,8 +1186,8 @@ main <- main %>%
 #Step 2: Define unemployed: those not employed but actively looking for work and available to carry out activities
 main <- main %>%
   mutate(unemployed = case_when(
-    (employed == 2 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) ~ 1,  # Actively looking for work
-    TRUE ~ 2  # Not unemployed if not actively looking or employed
+    (employed == 0 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) ~ 1,  # Actively looking for work
+    TRUE ~ 0  # Not unemployed if not actively looking or employed
   ))
 ```
 
@@ -372,7 +1196,7 @@ main <- main %>%
 main <- main %>%
   mutate(labour_force = case_when(
     (employed == 1 | unemployed == 1) ~ 1,  # Employed or actively seeking work
-    TRUE ~ 2  # Not in labour force
+    TRUE ~ 0  # Not in labour force
   ))
 ```
 
@@ -380,7 +1204,7 @@ main <- main %>%
 #Step 4: Outcome - Unemployment rate
 main <- main %>%
   mutate(SDG_8_5_2 = case_when(
-    employed == 1 & labour_force == 1 ~ 2,  # If employed, outcome is 2 (not unemployed)
+    employed == 1 & labour_force == 1 ~ 0,  # If employed, outcome is 2 (not unemployed)
     unemployed == 1 & labour_force == 1 ~ 1,  # If unemployed, outcome is 1
     TRUE ~ NA_real_  # Catch-all for cases not in the labor force or with missing data
   ))
@@ -391,7 +1215,7 @@ main <- main %>%
    mutate(SDG_8_5_2 = labelled(SDG_8_5_2,
                                 labels = c(
                                   "Unemployed" = 1,  # Label for Yes
-                                  "Not unemployed" = 2   # Label for No
+                                  "Not unemployed" = 0   # Label for No
                                 ),
                                 label = "Proportion of people (working age) who are unemployed"))
 ```
@@ -460,7 +1284,7 @@ main <- main %>%
     EMP05 == 1 & EMP06a == 3 & between(age_selected, 15, 24) ~ 1,  # Absent but self-employed
     EMP02 == 1 & EMP06b %in% c(1, 2) & EMP06c %in% c(1, 2) & between(age_selected, 15, 24) ~ 1,  # Farming/rearing/fishing for sale
     EMP05 == 1 & EMP06a %in% c(1, 2) & EMP06c %in% c(1, 2) & between(age_selected, 15, 24) ~ 1,  # Absent but farming for sale
-    between(age_selected, 15, 24) ~ 2,  # If working age but none of the above, mark as not employed
+    between(age_selected, 15, 24) ~ 0,  # If working age but none of the above, mark as not employed
     TRUE ~ NA_real_  # Set to NA for those not classified as youth
   ))
 ```
@@ -469,8 +1293,8 @@ main <- main %>%
 #Step 2: Define unemployed and those outside of the labour force
 main <- main %>%
   mutate(unemployed_youth = case_when(
-    (employed_youth == 2 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) & between(age_selected, 15, 24) ~ 1,  # Actively looking for work - unemployed 
-    employed_youth == 2 & EMP29 != 1 & between(age_selected, 15, 24) ~ 2,  # Outside of labour force
+    (employed_youth == 0 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) & between(age_selected, 15, 24) ~ 1,  # Actively looking for work - unemployed 
+    employed_youth == 0 & EMP29 != 1 & between(age_selected, 15, 24) ~ 0,  # Outside of labour force
     TRUE ~ NA_real_  
   ))
 ```
@@ -480,7 +1304,7 @@ main <- main %>%
 main <- main %>%
   mutate(youth_education = case_when(
     (between(age_selected, 15, 24) & educ_now == 1) ~ 1,  # Currently in education
-    (between(age_selected, 15, 24) & educ_now == 2) ~ 2,  # Currently not in education
+    (between(age_selected, 15, 24) & educ_now == 2) ~ 0,  # Currently not in education
     TRUE ~ NA_real_  
   ))
 ```
@@ -490,7 +1314,7 @@ main <- main %>%
 main <- main %>%
   mutate(youth_training = case_when(
     (between(age_selected, 15, 24) & EducR08 == 3) ~ 1,  # Currently in training
-    (between(age_selected, 15, 24) & EducR08 == 1 | EducR08 == 2) ~ 2,  # Currently not in education
+    (between(age_selected, 15, 24) & EducR08 == 1 | EducR08 == 2) ~ 0,  # Currently not in education
     TRUE ~ NA_real_  
   ))
 ```
@@ -499,8 +1323,8 @@ main <- main %>%
 #Step 4: Combine Unemployed youth +Youth outside the labour force
 main <- main %>%
   mutate(unemployed_outsidelabour = case_when(
-    unemployed_youth == 1 | unemployed_youth == 2 ~ 1,  # Unemployed and outside of labour force 
-    TRUE ~ 2 
+    unemployed_youth == 1 | unemployed_youth == 0 ~ 1,  # Unemployed and outside of labour force 
+    TRUE ~ 0 
   ))
 ```
 
@@ -509,7 +1333,7 @@ main <- main %>%
 main <- main %>%
   mutate(unemployed_outsidelabour = case_when(
     unemployed_youth == 1 | unemployed_youth == 2 ~ 1,  # Unemployed and outside of labour force 
-    TRUE ~ 2 
+    TRUE ~ 0 
   ))
 ```
 ```{r}
@@ -517,7 +1341,7 @@ main <- main %>%
 main <- main %>%
   mutate(unemployed_ineduc_tr = case_when(
     unemployed_youth == 1 & (youth_education == 1 & youth_training == 1) ~ 1,  # Unemployed youth in educator or training 
-    TRUE ~ 2 
+    TRUE ~ 0 
   ))
 ```
 
@@ -525,8 +1349,8 @@ main <- main %>%
 #Step 5: Out of labour youth in educator or training
 main <- main %>%
   mutate(outoflabour_ineduc_tr = case_when(
-    unemployed_youth == 2 & (youth_education == 1 & youth_training == 1) ~ 1,  # Out of labour youth in educator or training 
-    TRUE ~ 2 
+    unemployed_youth == 0 & (youth_education == 1 & youth_training == 1) ~ 1,  # Out of labour youth in educator or training 
+    TRUE ~ 0 
   ))
 ```
 ```{r}
@@ -603,45 +1427,38 @@ summary(main$CL02) #During the past 7 days, about how many hours did child engag
 main <- main %>%
   mutate(child_economic_activity = case_when(
    CL01_1 == 1 | CL01_2 == 1 | CL01_3 == 1 | CL01_4 == 1 ~ 1, #assign 1 if the child has been engaged in any activity
-   CL01_1 == 2 & CL01_2 == 2 & CL01_3 == 2 & CL01_4 == 2 ~ 2, #assign 2 if the child has not been engaged in any activity
+   CL01_1 == 2 & CL01_2 == 2 & CL01_3 == 2 & CL01_4 == 2 ~ 0, #assign 2 if the child has not been engaged in any activity
     TRUE ~ NA                # assign NA for all other cases 
   ))
 ```
 ```{r}
-#ILGI: HERE WE NEED TO PULL THE AGE OF THE CHILD FROM THE ROSTER TO THE MAIN DATA SET - THE ISSUE IS THAT THE VARIABLES WHICH HOLD THE POSITION OF THE CHILD, BASED ON WHICH THE AGE CAN BE PULLED, ARE NOT IN THE DATASET. I WILL ASK MAGRITH TO ADD THEM. ONCE WE HAVE THEM, WE CAN COMPLETE THE INDICATOR SCRIPT. WE WILL CALL THE VARIABLE CHILD_LABOR_AGE. 
 
 #Step 2: Create a variable identifying the children who have been exposed to child labor. That is engaged in an economic activity at or above age-specific hourly thresholds. 
-#main <- main %>%
-  #mutate(SDG8_7_1_1 = case_when(
-    # Condition for children aged 5-11: engaged in economic activity for at least 1 hour
-   # child_labor_age >= 5 & child_labor_age <= 11 & child_economic_activity == 1 & CL02 >= 1 ~ 1,
-    
-    # Condition for children aged 12-14: engaged in economic activity for at least 14 hours
-    #child_labor_age >= 12 & child_labor_age <= 14 & child_economic_activity == 1 & CL02 >= 14 ~ 1,
-    
-    # Condition for children aged 15-17: engaged in economic activity for at least 43 hours
-    #child_labor_age >= 15 & child_labor_age <= 17 & child_economic_activity == 1 & CL02 >= 43 ~ 1,
-    
-    # Otherwise, classify as not engaged in child labor
-    #TRUE ~ 2
-  #))
-``
+main <- main %>%
+  mutate(C080701a = case_when(
+     #Condition for children aged 5-11: engaged in economic activity for at least 1 hour
+     child_labor_age >= 5 & child_labor_age <= 11 & child_economic_activity == 1 & CL02 >= 1 ~ 1,
+     #Condition for children aged 12-14: engaged in economic activity for at least 14 hours
+     child_labor_age >= 12 & child_labor_age <= 14 & child_economic_activity == 1 & CL02 >= 14 ~ 1,
+     #Condition for children aged 15-17: engaged in economic activity for at least 43 hours
+     child_labor_age >= 15 & child_labor_age <= 17 & child_economic_activity == 1 & CL02 >= 43 ~ 1,
+     TRUE ~ 0)) #Otherwise, classify as not engaged in child labor
 ```
 
 
 ```{r}
-#main <- main %>%
-   #mutate(SDG8_7_1_1 = labelled(SDG8_7_1_1,
-                                #labels = c(
-                                #  "Yes" = 1,  # Label for Yes
-                                #  "No" = 2    # Label for No
-                               # ),
-                               # label = "Proportion of children aged 5-17 years engaged in economic activities at or above age-specific hourly thresholds"
+main <- main %>%
+  mutate(C080701a = labelled(C080701a,
+                             labels = c(
+                               "Yes" = 1,  # Label for Yes
+                               "No" = 0    # Label for No
+                             ),
+                             label = "Proportion of children aged 5-17 years engaged in economic activities at or above age-specific hourly thresholds"))
 ```
 
 
 ```{r}
-#table(main$SDG8_7_1_1)
+table(main$C080701a)
 ```
 
 *2nd Indicator* - Proportion and number of children aged 5-17 years engaged in economic activities and household chores at or above age-specific hourly thresholds (general production boundary basis):
@@ -681,64 +1498,64 @@ summary(main$CL09) # In the past 7 days, from [the same week day as the day of t
 main <- main %>%
   mutate(child_household_chores = case_when(
    CL08_1 == 1 | CL08_2 == 1 | CL08_3 == 1 | CL08_4 == 1 | CL08_5 == 1 | CL08_5 == 1 | CL08_6 == 1 | CL08_8 == 1 | CL08_9 | CL08_10 == 1 == 1 ~ 1, #assign 1 if the child has been engaged in any household chore
-   CL08_1 == 2 & CL08_2 == 2 & CL08_3 == 2 & CL08_4 == 2 & CL08_5 == 2 & CL08_6 == 2 & CL08_6 == 2 & CL08_8 == 2 & CL08_9 == 2 & CL08_10 == 2 ~ 2, #assign 2 if the child has not been engaged in any household chore
+   CL08_1 == 2 & CL08_2 == 2 & CL08_3 == 2 & CL08_4 == 2 & CL08_5 == 2 & CL08_6 == 2 & CL08_6 == 2 & CL08_8 == 2 & CL08_9 == 2 & CL08_10 == 2 ~ 0, #assign 2 if the child has not been engaged in any household chore
     TRUE ~ NA                # assign NA for all other cases 
   ))
 ```
 ```{r}
-#ILGI: HERE AGAIN WE NEED TO PULL THE AGE OF THE CHILD FROM THE ROSTER TO THE MAIN DATA SET - THE ISSUE IS THAT THE VARIABLES WHICH HOLD THE POSITION OF THE CHILD, BASED ON WHICH THE AGE CAN BE PULLED, ARE NOT IN THE DATASET. I WILL ASK MAGRITH TO ADD THEM. ONCE WE HAVE THEM, WE CAN COMPLETE THE INDICATOR SCRIPT. WE WILL CALL THE VARIABLE CHILD_LABOR_AGE. 
 
 #Step 2: Create a variable identifying the children who have been engaged in an economic activity at or above age-specific hourly thresholds. 
 #main <- main %>%
-  #mutate(child_labor_economic_activity  = case_when(
+  mutate(child_labor_economic_activity  = case_when(
     # Condition for children aged 5-11: engaged in economic activity for at least 1 hour
-   # child_labor_age >= 5 & child_labor_age <= 11 & child_economic_activity == 1 & CL02 >= 1 ~ 1,
+    child_labor_age >= 5 & child_labor_age <= 11 & child_economic_activity == 1 & CL02 >= 1 ~ 1,
     
     # Condition for children aged 12-14: engaged in economic activity for at least 14 hours
-    #child_labor_age >= 12 & child_labor_age <= 14 & child_economic_activity == 1 & CL02 >= 14 ~ 1,
+    child_labor_age >= 12 & child_labor_age <= 14 & child_economic_activity == 1 & CL02 >= 14 ~ 1,
     
     # Condition for children aged 15-17: engaged in economic activity for at least 43 hours
-    #child_labor_age >= 15 & child_labor_age <= 17 & child_economic_activity == 1 & CL02 >= 43 ~ 1,
+    child_labor_age >= 15 & child_labor_age <= 17 & child_economic_activity == 1 & CL02 >= 43 ~ 1,
     
     # Otherwise, classify as not engaged economic activity at or above age-specific hourly thresholds.
-    #TRUE ~ 2
-  #))
+    TRUE ~ 0
+  ))
 ```
 
 ```{r}
 #Step 2: Create a variable identifying the children who have been engaged in household chores at or above age-specific hourly thresholds.
-#mutate(child_labor_household_chores  = case_when(
+mutate(child_labor_household_chores  = case_when(
     # Condition for children aged 5-11: engaged in household chores for at least 21 hours
-   # child_labor_age >= 5 & child_labor_age <= 11 & child_household_chores == 1 & CL09 >= 21 ~ 1,
+   child_labor_age >= 5 & child_labor_age <= 11 & child_household_chores == 1 & CL09 >= 21 ~ 1,
     
     # Condition for children aged 12-14: engaged in household chores for at least 21 hours
-    #child_labor_age >= 12 & child_labor_age <= 14 & child_household_chores == 1 & CL09 >= 21 ~ 1,
+    child_labor_age >= 12 & child_labor_age <= 14 & child_household_chores == 1 & CL09 >= 21 ~ 1,
     
     # Condition for children aged 15-17: engaged in household chores
-    #child_labor_age >= 15 & child_labor_age <= 17 & child_household_chores == 1 & CL09 >= 0 ~ 1,
+    child_labor_age >= 15 & child_labor_age <= 17 & child_household_chores == 1 & CL09 >= 0 ~ 1,
     
     # Otherwise, classify as not engaged in household chores at or above age-specific hourly thresholds.
-    #TRUE ~ 2
-  #))
+    TRUE ~ 0
+  ))
 ```
 ```{r}
 #Step 3: Combine both categories to compute the indicator
-#main <- main %>%
-  #mutate(SDG8_7_1_2 = case_when(child_labor_economic_activity == 1 | child_labor_household_chores == 1 ~ 1,
-  #child_labor_economic_activity == 2 & child_labor_household_chores == 2 ~ 2 ))
+main <- main %>%
+  mutate(C080701b = case_when(child_labor_economic_activity == 1 | child_labor_household_chores == 1 ~ 1,
+  child_labor_economic_activity == 0 & child_labor_household_chores == 0 ~ 0 ))
    
 ```
 ```{r}
-#main <- main %>%
-   #mutate(SDG8_7_1_2 = labelled(SDG8_7_1_2,
-                                #labels = c(
-                                #  "Yes" = 1,  # Label for Yes
-                                #  "No" = 2    # Label for No
-                               # ),
-                               # label = "Proportion of children aged 5-17 years engaged in economic activities and household chores at or above age-specific hourly thresholds"
+main <- main %>%
+  mutate(C080701b = labelled(C080701b,
+                             labels = c(
+                               "Yes" = 1,  # Label for Yes
+                               "No" = 0    # Label for No
+                             ),
+                             label = "Proportion of children aged 5-17 years engaged in economic activities and household chores at or above age-specific hourly thresholds"))
+
 ```
 ```{r}
-#table(main$SDG8_7_1_2)
+table(main$C080701b)
 ```
 
 ## 8.10.2 SDG Indicator
@@ -774,7 +1591,7 @@ table(main$FI10) #In the past 12 months, have you personally used a mobile phone
 main <- main %>%
   mutate(SDG08_10_2 = case_when(
    FI01 == 1 | FI02 == 1 | FI03 == 1 | FI10 == 1 ~ 1,
-   FI01 == 2 & FI02 == 2 & FI03 == 2 & FI10 %in% c(2,3) ~ 2,
+   FI01 == 2 & FI02 == 2 & FI03 == 2 & FI10 %in% c(2,3) ~ 0,
     TRUE ~ NA                # For individuals under 18 and all other cases, assigns NA
   ))
 
@@ -784,7 +1601,7 @@ main <- main %>%
    mutate(SDG08_10_2 = labelled(SDG08_10_2,
                                 labels = c(
                                   "Yes" = 1,  # Label for Yes
-                                  "No" = 2    # Label for No
+                                  "No" = 0    # Label for No
                                 ),
                                 label = "Proportion of people above with an account at a bank or other financial institution or with a mobile-money-service provider"
   ))
@@ -837,7 +1654,7 @@ main <- main %>%
                      DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . %in% 1:5)) > 0 ~ 1,
     # If all values are 6, assign 2
     rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
-                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 6)) == 9 ~ 2,
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 6)) == 9 ~ 0,
     # If all values are 7, assign NA
     rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
                      DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 7)) == 9 ~ NA_real_,
@@ -847,7 +1664,7 @@ main <- main %>%
     SDG10_3_1,
     labels = c(
       'Yes' = 1,
-      'No' = 2
+      'No' = 0
     ),
     label = "Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law"
   ))
@@ -888,7 +1705,7 @@ main <- main %>%
   mutate(
   SDG16_1_4 = case_when(
     FS01 == 1 | FS01 == 2 ~ 1,     # Assign 1 for Yes (feels safe)
-    FS01 == 3 | FS01 == 4 | FS01 == 5 | FS01 == 98 ~ 2,  # Assign 2 for No (does not feel safe)
+    FS01 == 3 | FS01 == 4 | FS01 == 5 | FS01 == 98 ~ 0,  # Assign 2 for No (does not feel safe)
     TRUE ~ NA_real_                 # Assign NA for any other values (if needed)
   )
 )
@@ -901,7 +1718,7 @@ main <- main %>%
       SDG16_1_4,
       labels = c(
         "Yes" = 1,  # Label for Yes (1)
-        "No" = 2    # Label for No (2)
+        "No" = 0    # Label for No (2)
       ),
       label = "Proportion of people that feel safe walking alone in their neighbourhood after dark"  # Assign the variable label
     )
@@ -966,7 +1783,7 @@ table(main$Justice07i)#There was no negotiation or third party involvement.
 main <- main %>%
   mutate(dispute = case_when(
     Justice01 == 1 ~ 1, # Assigns 1 for yes
-    Justice01 == 2 ~ 2, # Assigns 2 for no
+    Justice01 == 2 ~ 0, # Assigns 2 for no
     TRUE ~ NA_real_))   # Handle missing cases or "99 - Refuse to answer". 
 ```
 ```{r}
@@ -975,21 +1792,21 @@ main <- main %>%
  # mutate(selfexclusion = case_when(
  #   Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("A", "B", "C", "D", "I","L", "M") ~ 1, #Assign 1 for those who self-excluded
  #   Justice01 == 1 & Justice05 == 1 ~ 2,
-  #  Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("E", "F", "G", "H", "J", "K", "OT", "RF") ~ 2 )) #Assign 2 for those who did not self-exclude
+  #  Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("E", "F", "G", "H", "J", "K", "OT", "RF") ~ 0 )) #Assign 2 for those who did not self-exclude
 ```
 ```{r}
-#Step 3: Combine "dispute" and "selfexclusion" to compute the population at risk - those who experiences a dispute and did not voluntary self-ecxlude from seeking for a formal or informal resolution. 
+#Step 3: Combine "dispute" and "selfexclusion" to compute the population at risk - those who experiences a dispute and did not voluntary self-exclude from seeking for a formal or informal resolution. 
 #main <- main %>%
  # mutate(popatrisk = case_when(
-  #  dispute == 1 & selfexclusion == 2 ~ 1, 
-  #  TRUE ~ 2))
+  #  dispute == 1 & selfexclusion == 0 ~ 1, 
+  #  TRUE ~ 0))
 ```
 ```{r}
-#Step 3: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
+#Step 4: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
 main <- main %>%
   mutate(resolution = case_when(
     Justice01 == 1 & (Justice07b == 1 | Justice07c == 1 | Justice07d == 1  | Justice07e == 1 | Justice07f == 1 | Justice07g == 1 | Justice07h == 1) ~ 1, # Assigns 1 for yes - accessed a formal or informal dispute resolution mechanism
-    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 2)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
+    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 0)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
 ```
 
 ```{r}
@@ -998,16 +1815,16 @@ main <- main %>%
 main <- main %>%
   mutate(dispute = case_when(
     Justice01 == 1 ~ 1, # Assigns 1 for yes
-    Justice01 == 2 ~ 2, # Assigns 2 for no
+    Justice01 == 2 ~ 0, # Assigns 2 for no
     TRUE ~ NA_real_))   # Handle missing cases or "99 - Refuse to answer". 
 ```
 
 ```{r}
-#Step 3: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
+#Step 2: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
 main <- main %>%
   mutate(resolution = case_when(
     Justice01 == 1 & (Justice07b == 1 | Justice07c == 1 | Justice07d == 1  | Justice07e == 1 | Justice07f == 1 | Justice07g == 1 | Justice07h == 1) ~ 1, # Assigns 1 for yes - accessed a formal or informal dispute resolution mechanism
-    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 2)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
+    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 0)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
 ```
 
 ## 16.9.1 SDG Indicator
@@ -1052,7 +1869,7 @@ hhroster$HH_07b # Has [name]’s birth been registered with the [civil authoriti
 hhroster <- hhroster %>%
   mutate(birthCertificate = case_when(
     HH_07a == 1 ~ 1, # Assigns 1 for yes
-    HH_07a == 2 ~ 2, # Assigns 2 for no
+    HH_07a == 2 ~ 0, # Assigns 2 for no
     HH_07a %in% c(98, 99) ~ NA_real_,  # Assign NA for 98 and 99
     TRUE ~ NA_real_  # Handle any other missing or unexpected values
   )) %>%
@@ -1060,7 +1877,7 @@ hhroster <- hhroster %>%
     birthCertificate,
     labels = c(
       'Yes' = 1,
-      'No' = 2
+      'No' = 0
     ),
     label = "Children under 5 with a birth certificate"
   ))
@@ -1071,7 +1888,7 @@ hhroster <- hhroster %>%
 hhroster <- hhroster %>%
   mutate(birthRegistered = case_when(
     HH_07b == 1 ~ 1, # Assigns 1 for yes
-    HH_07b == 2 ~ 2, # Assigns 2 for no
+    HH_07b == 2 ~ 0, # Assigns 2 for no
     HH_07b %in% c(98, 99) ~ NA_real_,  # Assign NA for 98 and 99
     TRUE ~ NA_real_  # Handle any other missing or unexpected values
   )) %>%
@@ -1079,7 +1896,7 @@ hhroster <- hhroster %>%
     birthRegistered,
     labels = c(
       'Yes' = 1,
-      'No' = 2
+      'No' = 0
     ),
     label = "Children under 5 birth registered with civil authorities"
   ))
@@ -1089,15 +1906,15 @@ hhroster <- hhroster %>%
 hhroster <- hhroster %>%
   mutate(SDG16_9_1 = case_when(
     (birthRegistered == 1 | birthCertificate == 1) ~ 1,  # Child has been registered or has birth certificate
-    (birthRegistered == 2 & birthCertificate == 2) ~ 2,  # Child not registered and has no birth certificate
-    (is.na(birthRegistered) & birthCertificate == 2) | (birthRegistered == 2 & is.na(birthCertificate)) ~ 2,  # One is NA, the other is No
+    (birthRegistered == 0 & birthCertificate == 0) ~ 0,  # Child not registered and has no birth certificate
+    (is.na(birthRegistered) & birthCertificate == 0) | (birthRegistered == 0 & is.na(birthCertificate)) ~ 0,  # One is NA, the other is No
     TRUE ~ NA_real_  # Handle cases where data is missing or unknown
   )) %>%
   mutate(SDG16_9_1 = labelled(
     SDG16_9_1,
     labels = c(
       'Yes' = 1,
-      'No' = 2
+      'No' = 0
     ),
     label = "Proportion of children under 5 years of age whose births have been registered with a civil authority"
   ))
@@ -1151,7 +1968,7 @@ main <- main %>%
                      DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . %in% 1:5)) > 0 ~ 1,
     # If all values are 6, assign 2
     rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
-                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 6)) == 9 ~ 2,
+                     DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 6)) == 9 ~ 0,
     # If all values are 7, assign NA
     rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
                      DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 7)) == 9 ~ NA_real_,
@@ -1161,7 +1978,7 @@ main <- main %>%
     SDG16_b_1,
     labels = c(
       'Yes' = 1,
-      'No' = 2
+      'No' = 0
     ),
     label = "Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law"
   ))
@@ -1209,18 +2026,17 @@ table(main$IA07_1) #How about in the past 3 months? Have you used the Internet i
 main <- main %>%
   mutate(SDG17_8_1 = case_when(IA07 == 1 ~ 1,
                                IA07 == 2 & IA07_1 == 1 ~ 1,
-                               TRUE ~ 2)) %>%
+                               TRUE ~ 0)) %>%
   mutate(SDG17_8_1 = labelled(SDG17_8_1,
                               labels = c(
                                  'Yes' = 1,
-                                 'No' = 2
+                                 'No' = 0
                                ),
                                label = "Proportion of individuals using the internet" ))
 ```
 ```{r}
 table(main$SDG17_8_1)
 ```
-
 
 
 
