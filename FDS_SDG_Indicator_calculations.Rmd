@@ -1005,10 +1005,8 @@ table(main$HE01)  #What source of electricity is used **most** of the time in th
 table(main$HE02a) #Which of your household appliances are powered using this household’s ${HE01_response}?
 table(main$HE02b) #How many light bulbs can be powered using this household's ${HE01_response}?
 table(main$HE04)  #In the **past 7 days**, on average how many hours of electricity were available per day?
-table(main$HE05)      #In the past 7 days, on average how many hours of electricity were available each evening, from 6:00pm to 10:00pm from ${HE01_response}?
+table(main$HE05)  #In the past 7 days, on average how many hours of electricity were available each evening, from 6:00pm to 10:00pm from ${HE01_response}?
 ```
-
-
 
 
 ## 7.1.2 SDG Indicator
