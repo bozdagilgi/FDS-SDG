@@ -531,7 +531,7 @@ To calculate the indicator value, the standard survey methodology considers in t
 
 **Sources**  
 1.[SDG 7.1.2 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-07-01-02.docx&wdOrigin=BROWSELINK)
-2.[World Bank LSMS Energy guidance](https://rstudio.unhcr.org/connect/#/apps/6fb3ccbf-b6ca-4fee-907f-d5c069b8944c/access/106)
+2.[World Bank LSMS Energy guidance](https://documents1.worldbank.org/curated/en/557341633679857128/pdf/Measuring-Energy-Access-A-Guide-to-Collecting-Data-Using-the-Core-Questions-on-Household-Energy-Use.pdf)
 
 
 ```{r, eval=FALSE}
@@ -709,21 +709,21 @@ Coverage of essential health services (defined as the average coverage of essent
 
 Concepts:
 
-The index of health service coverage is computed as the geometric means of 14 tracer indicators.
+The index of health service coverage is computed as the geometric means of 14 tracer indicators and expressed as a UHC Service Coverage Index. 4 health service areas, and 14 tracer indicators are the following:
 
 I. Reproductive, maternal, newborn and child health (family planning,pregnancy care,child immunization, child treatment)
 II. Infectious disease (tuberculosis, HIV/AIDS, Malaria, WASH)
 III. Noncommunicable diseases (Hypertension, diabetes, tobacco)
 IV. Service capacity and access (hospital access, health workers, health security)
 
-In FDS, we are able to calculate tracer on pregnancy care, child immunization, malaria, WASH, therefore the final indicator is a proxy for SDG 3.8.1 
+In FDS, we are able to evaluate two health service areas, area I. and II. through 4 tracer indicators - on pregnancy care, child immunization, malaria, WASH. Therefore the final indicator calculation results in a proxy for SDG 3.8.1 
 
 | Tracers            | Variables                                                            |
 |--------------------|:--------------------------------------------------------:            |
 | Pregnancy care     |BA4, BA6_1                                                            |                                                    
 | child immunization |MV7, MV8                                                              |
-| Malaria            |HW2_OB, HW3_OB, HW4_OB, HW8_OB                                        |
-| WASH               |HC01, HC02, HC04                                                      |
+| Malaria            |MN05_2, MN05_3, HH_13                                                 |
+| WASH               |SAN01, SAN02, SAN03, SAN05                                            |
 
 
 **Sources**  
@@ -821,7 +821,7 @@ cat("The percentage of children receiving three doses of the DTP-containing vacc
 
 Percentage of population in malaria-endemic areas who slept under an ITN the previous night.
 
-**Unit of observation**: Individual
+**Unit of observation**: Individual (based on household size)
 
 **Numerator**: Number of people in malaria-endemic areas who slept under an ITN
 
@@ -832,8 +832,6 @@ Percentage of population in malaria-endemic areas who slept under an ITN the pre
 ```{r}
 table(main$MN05_2) #You told me that X people slept under [bednets/mosquito nets] last night, how many of them slept under treated [bednets/mosquito nets]?
 table(main$MN05_3) #You told me that one person slept under [bednets/mosquito nets] last night, did this person sleep under treated [bednets/mosquito nets]?
-table(main$MN08)   #Did some guests sleep in your home last night?
-table(main$MN09)   #How many guests slept in your home last night?
 table(main$HH_13)  #Did you sleep here last  night? 
 ```
 
@@ -851,56 +849,81 @@ main <- main %>%
 ```
 
 ```{r}
-#Step 3: Calculate the total number of household members who slept it the household the night before 
+#Step 2: Calculate the total number of household members who slept it the household the night before 
+HHroster <- HHroster %>%
+mutate(
+    sleep_HH = case_when(
+      member == 1 & HH_13 == 1 ~ 1, 
+      TRUE ~ NA_real_))
+
 mosquito_members <- HHroster %>%
   group_by(uuid) %>%
-  summarise(totalmembermosq = sum(member == 1 & HH_13 == 1, na.rm = TRUE))
+  summarise(
+    totalmembermosq = if (all(is.na(sleep_HH))) NA_real_ else sum(sleep_HH == 1, na.rm = TRUE)
+  )
 
 # Join with the main data set
 main <- main %>%
   left_join(mosquito_members, by = "uuid")
 ```
-```{r}
-#Step 2: Remove guests from the number of people that slept in the household last night
-main <- main %>%
-  mutate(
-    total_people_nets = case_when(
-      !is.na(totalmembermosq) & MN08 == 1 ~ totalmembermosq - MN09,  #Remove the number of guests who slept in the household from the number of people who slept under ITNs
-      !is.na(totalmembermosq) & MN08 == 2 ~ totalmembermosq,  # Take sleep_ITN if no guests stayed with the household over night
-      TRUE  ~ NA_real_))  # Assign NA in any other case
-   
-```
 
 ```{r}
-summary_totals1 <- main %>%
+#ILGI: This is the start of the calculation at a household level - % of people in each household that slept under an ITN the night before. 
+#Step 3: Calculate the % of people that slept under mosquito nets in each household 
+main <- main %>%
+  mutate(
+    sleep_ITN_HH = case_when(
+      !is.na(final_sleep_ITN) & !is.na(totalmembermosq) ~ final_sleep_ITN/totalmembermosq,  
+      is.na(final_sleep_ITN) | is.na(totalmembermosq) ~ NA_real_))  # NA if nominator or denominator are NA
+ 
+
+```
+```{r}
+# Calculate the average percentage, ignoring NAs
+average_sleep_ITN <- main %>%
   summarise(
-    total_itn = sum(final_sleep_ITN, na.rm = TRUE),
-    total_household_members = sum(total_people_nets, na.rm = TRUE)
+    avg_sleep_ITN_HH = mean(sleep_ITN_HH, na.rm = TRUE)
   )
 
-# Extract the totals
-total_itn_users <- summary_totals1$total_itn
-total_people <- summary_totals1$total_household_members
-```
-```{r}
-# Calculate the percentage of people in malaria-endemic areas who slept under ITNs
-percentage_under_itn1 <- (total_itn_users / total_people) * 100
+avg_value <- (average_sleep_ITN$avg_sleep_ITN_HH)*100
 
-# Print the percentage
-cat("The percentage of the population in malaria-endemic areas who slept under an ITN is:", round(percentage_under_itn1, 2), "%\n")
+# Print the result
+print(average_sleep_ITN)
+cat("The average % of people per household who slept under ITN the previous night is:", avg_value, "%\n")
 
 ```
 ```{r}
-main <- main %>%
-  mutate(
-    final_nets = case_when(
-      final_sleep_ITN >= totalmembermosq ~ 1, #Assign 1 when the number of people who slept under ITNs is higher or equal than the number of people who slept in the household the night before
-      final_sleep_ITN < totalmembermosq ~ 0, #Assign 0 when the number of people who slept under ITNs is lower than the number of people who slept in the household the night before
-      TRUE ~ NA_real_ ))
-      
-      
+# Step: Calculate the weighted average percentage of ITN usage
+weighted_average_ITN <- main %>%
+  summarise(
+    numerator = sum(sleep_ITN_HH * totalmembermosq, na.rm = TRUE),  # Weighted sum
+    denominator = sum(totalmembermosq, na.rm = TRUE),  # Total population
+    weighted_avg_sleep_ITN = (numerator / denominator) * 100  # Weighted average
+  )
+
+# Extract the weighted average
+malaria_per <- weighted_average_ITN$weighted_avg_sleep_ITN
+
+# Print the result
+print(weighted_average_ITN)
+cat("The weighted average % of people per household who slept under an ITN the previous night is:", malaria_per,"%\n")
+
 ```
 
+```{r}
+#ILGI: This is the start of the calculation at an individual level - % of people who slept under an ITN the previous night.
+result <- main %>%
+  summarise(
+    total_ITN = sum(final_sleep_ITN, na.rm = TRUE),  # Total people who used ITN
+    total_population = sum(totalmembermosq, na.rm = TRUE),  # Total population in malaria-endemic areas
+    percentage_ITN = (total_ITN / total_population) * 100  # Calculate percentage
+  )
+
+# Print the final result
+print(result)
+cat("The percentage of population in malaria-endemic areas who slept under an ITN the previous night is:", result$percentage_ITN, "%\n")
+
+```
 
 #### Water, sanitation and hygiene
 Percentage of population using at least basic sanitation services, that is, improved sanitation facilities that are not shared with other households. 
@@ -957,6 +980,38 @@ mutate(wash = case_when(
   ))
 
 table(main$wash)
+```
+```{r}
+# Step 5: Calculate weighted percentage
+sanitation_percentage <- main %>%
+  summarise(
+    numerator = sum(wash * HHmembersize, na.rm = TRUE),  # Total individuals with access to basic sanitation
+    denominator = sum(HHmembersize, na.rm = TRUE),  # Total population
+    percentage_sanitation = (numerator / denominator) * 100  # Weighted percentage
+  )
+
+# Extract the final percentage
+final_sanitation_per <- sanitation_percentage$percentage_sanitation
+
+# Print the results
+print(sanitation_percentage)
+cat("The percentage of population using at least basic sanitation services is:", final_sanitation_per, "%\n")
+```
+
+### Final calculation of the SDG 3.8.1 
+
+```{r}
+#Step 1: Calculate geometric mean of each of the two health care service areas
+#Area 1: Reproductive, maternal, newborn and child health (RMNCH)
+RMNCH <- (child_immun_per + antenatal_care_per)/2
+
+#Area 2: Infectious diseases (ID)
+ID <- (malaria_per + final_sanitation_per)/2
+```
+```{r}
+#Step 2: Calculate the geometric mean of the two values to calculate the final UHC Service Coverage Index of the two health care service areas 
+UHC <- (RMNCH + ID)/2
+print(UHC)
 ```
 
 
@@ -1064,6 +1119,48 @@ Indicator Code: C050a01
 
 Indicator Code: C050b01
 
+An individual owns a mobile cellular phone if he/she has a mobile cellular phone device with at least one active SIM card for personal use. Mobile cellular phones supplied by employers that can be used for personal reasons (to make personal calls, access the Internet, etc.) are included. Individuals who have only active SIM card(s) and not a mobile phone device are excluded. Individuals who have a mobile phone for personal use that is not registered under his/her name are also included. An active SIM card is a SIM card that has been used in the last three months.
+
+A mobile (cellular) telephone refers to a portable telephone subscribing to a public mobile telephone service using cellular technology, which provides access to the Public Switched Telephone Network (PSTN). This includes analogue and digital cellular systems and technologies such as IMT-2000 (3G) and IMT-Advanced. Users of both postpaid subscriptions and prepaid accounts are included.
+
+| Standard Questions             |
+|:------------------------------:|
+|IA01, IA01_1                    | 
+
+
+**Numerator**: Individuals owning a mobile phone 
+
+**Denominator**: Total number of individuals
+
+**Dataset**: RA_adult
+
+**Sources**  
+1.[SDG 5. b. 1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-05-0B-01.docx&wdOrigin=BROWSELINK)
+
+```{r}
+#Step 1: check all variables
+table(RA_adult$IA01)   #Do you yourself  have your own  mobile phone?
+table(RA_adult$IA01_1) #Does the mobile phone you own have an active SIM card?  An active SIM card is a card that has been used in the past three months.
+```
+
+```{r}
+#ILGI: A response option in both above questions is Not needed. Those that do not need a mobile phone or an active sim card. I have put them in 0 for now, as even if they don't need it they still don't have it. Do you agree? 
+## Step 2: Add a column specifying if the household uses improved or unimproved source of drinking water 
+RA_adult <- RA_adult %>%
+mutate(C050b01 = case_when(
+  IA01 == 1 & IA01_1 == 1 ~ 1, #Assign 1 when an individual has a mobile phone with active sim card
+  IA01 == 1 & IA01_1 %in% c(2,3) ~ 0, #Assign 0 when an individual has a mobile phone without and active sim card
+  IA01 == 2 & IA01 == 3 ~ 0))%>% #Assigns 0 when an individual does not have a mobile phone or doesn't need one.
+  mutate(C050b01 = labelled(C050b01, #Add labels
+                               labels = c(
+                                 "Yes" = 1,
+                                 "No" = 0
+                               ),
+                               label = "Ownership of a mobile phone"))
+ 
+table(RA_adult$C050b01)
+```
+
 ## 6.1.1 SDG Indicator
 
 **Proportion of population using safely managed drinking water services**
@@ -1074,6 +1171,10 @@ Access to Basic Drinking Water Services refers to the use of drinking water from
 
 1. Improved water source.
 2. The main water source is located within the household's dwelling or yard, or it is reachable within a 30-minute round trip, including any time spent queuing.
+
+| Standard Questions                |
+|:---------------------------------:|
+| BD01, BD01a, BD20_2, BD20_3, BD22 |
 
 **Numerator**: Individuals using drinking water from an improved source, provided collection time is not more than 30 minutes for a round trip, including queuing. 
 
@@ -1165,6 +1266,10 @@ In FDS, we are able to calculate (b) aspect of this indicator.
 
 The proportion of the population with basic hygiene services is defined as the proportion of population with a handwashing facility with soap and water available at home. Hand washing facilities may be located within the dwelling, yard or plot. They may be fixed or mobile and include a sink with tap water, buckets with taps, tippy-taps, and jugs or basins designated for hand washing. Soap includes bar soap, liquid soap, powder detergent, and soapy water but does not include ash, soil, sand or other handwashing agents.
 
+| Standard Questions             |
+|:------------------------------:|
+| HW2_OB, HW3_OB, HW4_OB, HW8_OB |
+
 **Unit of observation**: Household
 
 **Numerator**:  Number of individuals with access to with basic hand washing facilities on premises
@@ -1237,11 +1342,11 @@ Access to electricity addresses major critical issues in all the dimensions of s
 
 Under the global target of equal access to energy, SDG7.1.1 focuses specifically on electricity access available to the global population. In order to gain a clear picture, access rates are only considered if the primary source of lighting is the local electricity provider, solar systems, mini-grids and stand-alone systems. Sources such as generators, candles, batteries, etc., are not considered due to their limited working capacities and since they are usually kept as backup sources for lighting.
 
-Calculation based on the World Bank Multi-Tier Framework for Measuring Electricity Access. In Tier 1, households are considered to have electricity based on capacity of the main source of electricity to operate different appliances and availability of electricity supply (on average at least one hour of electricity in the evening during the previous week). Population with access to electricity (Tier 1 or above for all attributes) are defined as having access to electricity
+Calculation is based on the World Bank Multi-Tier Framework for Measuring Electricity Access. In Tier 1, households are considered to have electricity based on capacity of the main source of electricity to operate different appliances and availability of electricity supply (on average at least one hour of electricity in the evening during the previous week). Population with access to electricity (Tier 1 or above for all attributes) are defined as having access to electricity
 
-| Standard Questions             |
-|:------------------------------:|
-| HE01, HE02a, HE02b, HE04, HE05 |
+| Standard Questions                                   |
+|:----------------------------------------------------:|
+| HE01, HE02a, HE02b, HE04_summinutes, HE05_summinutes |
 
 **Unit of observation**: Household
 
@@ -1253,14 +1358,35 @@ Calculation based on the World Bank Multi-Tier Framework for Measuring Electrici
 
 **Sources**  
 1.[SDG 7.1.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-07-01-01.docx&wdOrigin=BROWSELINK)
-2.[World Bank LSMS Energy guidance](https://rstudio.unhcr.org/connect/#/apps/6fb3ccbf-b6ca-4fee-907f-d5c069b8944c/access/106)
+2.[World Bank LSMS Energy guidance](https://documents1.worldbank.org/curated/en/557341633679857128/pdf/Measuring-Energy-Access-A-Guide-to-Collecting-Data-Using-the-Core-Questions-on-Household-Energy-Use.pdf)
 
 ```{r}
 table(main$HE01)  #What source of electricity is used **most** of the time in this household?
 table(main$HE02a) #Which of your household appliances are powered using this household’s ${HE01_response}?
 table(main$HE02b) #How many light bulbs can be powered using this household's ${HE01_response}?
-table(main$HE04)  #In the **past 7 days**, on average how many hours of electricity were available per day?
-table(main$HE05)  #In the past 7 days, on average how many hours of electricity were available each evening, from 6:00pm to 10:00pm from ${HE01_response}?
+table(main$HE04_summinutes)  #In the **past 7 days**, on average how many hours of electricity were available per day?
+table(main$HE05_summinutes)  #In the past 7 days, on average how many hours of electricity were available each evening, from 6:00pm to 10:00pm from ${HE01_response}?
+```
+
+```{r}
+#Step 1: Assess the capacity of electricity 
+main <- main %>%
+  mutate(
+    C070101 = case_when(
+      (HE01 %in% c(1,2) & (HE05_hours >= 1 & HE05_hours != 98)) ~ 1, #If the main source of electricity is national gird or mini-grid which is available at least 1 hour every evening, then Capacity is above tier 1.  
+      HE01 %in% c(3,5,6) & HE02a %in% c("A", "B", "C", "D", "E", "F", "G") ~ 1, #If the main source of electricity is solar home system, electric generator or rechargeable batter & the household is able to power at least a small device, then Capacity is above tier 1.
+      HE01 == 4 & HE02a %in% c("A", "B") & HE02b >= 2  ~ 1, # If households use a solar lantern, can power either a mobile charger or radio, and use multiple light bulbs, capacity tier is at least 1. 
+      TRUE ~ 2)) #All other cases, capacity of electricity is below tier 1.  
+
+main <- main %>%
+   mutate(C070101 = labelled(C070101,
+                                labels = c(
+                                  "Yes" = 1,  # Label for Yes
+                                  "No" = 0   # Label for No
+                                ),
+                                label = "Proportion of households with access to electricity from TIER 1 or above"))
+```
+      
 ```
 
 
@@ -1291,11 +1417,12 @@ To calculate the indicator value, the standard survey methodology considers in t
   + piped natural gas stove
   + biogas stove
   + LPG/cooking gas stove
-  + liquid fuel stove with alcohol / ethanol.
+  + liquid fuel stove with alcohol / ethanol
+  
 
 **Sources**  
 1.[SDG 7.1.2 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-07-01-02.docx&wdOrigin=BROWSELINK)
-2.[World Bank LSMS Energy guidance](https://rstudio.unhcr.org/connect/#/apps/6fb3ccbf-b6ca-4fee-907f-d5c069b8944c/access/106)
+2.[World Bank LSMS Energy guidance](https://documents1.worldbank.org/curated/en/557341633679857128/pdf/Measuring-Energy-Access-A-Guide-to-Collecting-Data-Using-the-Core-Questions-on-Household-Energy-Use.pdf)
 
 
 ```{r, eval=FALSE}
