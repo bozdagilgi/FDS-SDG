@@ -924,6 +924,27 @@ print(result)
 cat("The percentage of population in malaria-endemic areas who slept under an ITN the previous night is:", result$percentage_ITN, "%\n")
 
 ```
+```{r}
+main <- main %>%
+  mutate(
+    mosq_test = case_when(
+      MN01 == 1 & MN08 == 2 ~ final_sleep_ITN, 
+      MN01 == 1 & MN08 == 1 & MN09 > 0 & (MN07 > (totalmembermosq + MN09)) ~ totalmembermosq, 
+      MN01 == 1 & MN08 == 1 & MN09 > 0 & (MN07 < (totalmembermosq + MN09)) ~final_sleep_ITN, #Assuming HH members have priority in sleeping under ITNs. 
+      TRUE ~ NA_real_)) 
+```
+```{r}
+result1 <- main %>%
+  summarise(
+    total_ITN = sum(mosq_test, na.rm = TRUE),  # Total people who used ITN
+    total_population = sum(totalmembermosq, na.rm = TRUE),  # Total population in malaria-endemic areas
+    percentage_ITN = (total_ITN / total_population) * 100  # Calculate percentage
+  )
+
+# Print the final result
+print(result1)
+cat("The percentage of population in malaria-endemic areas who slept under an ITN the previous night is:", result1$percentage_ITN, "%\n")
+```
 
 #### Water, sanitation and hygiene
 Percentage of population using at least basic sanitation services, that is, improved sanitation facilities that are not shared with other households. 
@@ -1387,7 +1408,6 @@ main <- main %>%
                                 label = "Proportion of households with access to electricity from TIER 1 or above"))
 ```
       
-```
 
 
 ## 7.1.2 SDG Indicator
