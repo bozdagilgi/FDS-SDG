@@ -1042,12 +1042,152 @@ print(UHC)
 
 Indicator Code: C040102
 
+Percentage of a cohort of children or young people aged 3-5 years above the intended age for the last grade of each level of education who have completed that grade.
 
+The intended age for the last grade of each level of education is the age at which pupils would enter the grade if they had started school at the official primary entrance age, had studied full-time and had progressed without repeating or skipping a grade.For example, if the official age of entry into primary education is 6 years, and if primary education has 6 grades, the intended age for the last grade of primary education is 11 years. In this case, 14-16 years (11 + 3 = 14 and 11 + 5 = 16) would be the reference age group for calculation of the primary completion rate.
+
+| Standard Questions                                     |
+|:------------------------------------------------------:|
+|    HH_Educ02a, HH_Educ03, HH_Educ17, HH_Educ18         |
+
+**Unit of observation**: Individual 
+
+**Numerator**:  population aged 3 to 5 years above the official entrance age a into the last grade of level n of education who completed level n
+
+**Denominator**:  population aged 3 to 5 years above the official entrance age a into the last grade of level n of education
+
+**Dataset**: HHroster
+
+**Note:** Prior to running the below calculation, ensure to check the ISCED education levels for the country where the survey has taken place, The below example is done on the FDS Pakistan survey, therefore the education levels and the official entrance age is adjusted to Pakistan. 
+
+**Sources**  
+1.[SDG 4.1.2 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-04-01-02.docx&wdOrigin=BROWSELINK)
+2.[ISCED Diagrams](https://isced.uis.unesco.org/visualizations/)
+
+
+```{r}
+summary(HHroster$agetouse) # Age of the individual
+table(HHroster$HH_Educ02a) # Are you currently going to school?  If it is school holiday between two school years, tell us about the last school year.Do not include kindergarten or preschool.
+table(HHroster$HH_Educ03)  #What [grade / year] are you/is he/she attending?
+table(HHroster$HH_Educ17)  # In which country have you/has she/he completed your/theirs highest level of formal education?
+table(HHroster$HH_Educ18)  # What is the highest [grade / year] of formal education that you/he/she has/have completed?
+table(HHroster$primary_complete) #If an individual has completed primary school
+table(HHroster$lowersec_complete) #If an individual has completed lower secondary school
+table(HHroster$uppersec_complete) #If an individual has completed upper secondary school
+```
+1. Calculation for the SDG 4.1.2 - following the age cut off - 3 to 5 years above the official entrance age a into the last grade of level n
+```{r}
+#Primary education
+HHroster <- HHroster %>%
+mutate(C040102_primary = case_when(
+  agetouse %in% 12:14 & primary_complete == 1 ~ 1, #Primary school complete
+  agetouse %in% 12:14 & is.na(primary_complete) ~ 0, #Primary school not complete
+  TRUE ~ NA_real_)) 
+```
+
+```{r}
+#Lower secondary education
+HHroster <- HHroster %>%
+mutate(C040102_lowersec = case_when(
+  agetouse %in% 15:17 & lowersec_complete == 1 ~ 1, #Lower secondary school complete
+  agetouse %in% 15:17 & is.na(lowersec_complete) ~ 0, #Lower secondary not complete
+  TRUE ~ NA_real_)) 
+```
+
+```{r}
+#Upper secondary complete
+HHroster <- HHroster %>%
+mutate(C040102_uppersec = case_when(
+  agetouse %in% 19:21 & uppersec_complete == 1 ~ 1, #Upper secondary complete
+  agetouse %in% 19:21 & is.na(uppersec_complete) ~ 0, #Upper secondary not complete
+  TRUE ~ NA_real_)) 
+```
+
+```{r}
+table(HHroster$C040102_primary)
+table(HHroster$C040102_lowersec)
+table(HHroster$C040102_uppersec)
+```
+
+2. 1. Calculation for the SDG 4.1.2 - open age, without the upper age limit per education level. This is based on [IRRS recommendation](https://egrisstats.org/wp-content/uploads/2021/12/International-Recommendations-on-Refugee-Statistics.pdf)
+```{r}
+#Primary education
+HHroster <- HHroster %>%
+mutate(C040102_primary_open = case_when(
+  agetouse %in% 12:45 & primary_complete == 1 ~ 1, #Primary school complete
+  agetouse %in% 12:45 & is.na(primary_complete) ~ 0, #Primary school not complete
+  TRUE ~ NA_real_)) 
+```
+
+```{r}
+#Lower secondary education
+HHroster <- HHroster %>%
+mutate(C040102_lowersec_open = case_when(
+  agetouse %in% 15:45 & lowersec_complete == 1 ~ 1, #Lower secondary school complete
+  agetouse %in% 15:45 & is.na(lowersec_complete) ~ 0, #Lower secondary not complete
+  TRUE ~ NA_real_)) 
+```
+
+```{r}
+#Upper secondary complete
+HHroster <- HHroster %>%
+mutate(C040102_uppersec_open = case_when(
+  agetouse %in% 19:45 & uppersec_complete == 1 ~ 1, #Upper secondary complete
+  agetouse %in% 19:45 & is.na(uppersec_complete) ~ 0, #Upper secondary not complete
+  TRUE ~ NA_real_)) 
+```
+
+```{r}
+table(HHroster$C040102_primary_open)
+table(HHroster$C040102_lowersec_open)
+table(HHroster$C040102_uppersec_open)
+```
 ## 4.2.2 SDG Indicator
 
 **Participation rate in organized learning (one year before the official primary entry age), by sex**
 
 Indicator Code: C040202
+
+The participation rate in organized learning (one year before the official primary entry age), by sex is defined as the percentage of children in the given age range who participate in one or more organized learning programme, including programmes which offer a combination of education and care. Participation in early childhood and in primary education are both included. The age range will vary by country depending on the official age of entry to primary education.
+
+| Standard Questions                                     |
+|:------------------------------------------------------:|
+|    HH_Educ00                                           |
+
+
+**Unit of observation**: Individual 
+
+**Numerator**:  enrollment in early childhood or primary education (ISCED levels 0 and 1) aged one year below the official entry age a to primary education
+
+**Denominator**:  school-age population aged one year below the official entry age a to primary education
+
+**Dataset**: HHroster
+
+**Sources**  
+1.[SDG 4.2.2 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-04-02-02.docx&wdOrigin=BROWSELINK)
+2.[ISCED Diagrams](https://isced.uis.unesco.org/visualizations/)
+
+```{r}
+summary(HHroster$agetouse) # Age of the individual
+table(HHroster$HH_Educ00) # Is [child name] currently going to pre-school?
+```
+
+```{r}
+#Prior to calculating the indicator, check the official entry age to primary school in the country where the survey took place. Our calculation is done on the data from FDS Pakistan, where the official entry age to primary education is 5. 
+HHroster <- HHroster %>%
+mutate(C040202 = case_when(
+  agetouse == 4 & HH_Educ00 == 1 ~ 1, #Assigns 1 when a child age 4 is enrolled in pre-school. 
+  agetouse == 4 & HH_Educ00 %in% c(2, 98, 99) ~ 0))%>% #Assigns 2 when a child age 4 is not enrolled in pre-school, refuse to answer or don't know. 
+mutate(C040202 = labelled(C040202, #Add labels
+                               labels = c(
+                                 "Yes" = 1,
+                                 "No" = 0
+                               ),
+                               label = "participation rate in organized learning one year before the official entry age to primary education "))
+```
+```{r}
+table(HHroster$C040202)
+```
 
 ## 4.3.1 SDG Indicator 
 
@@ -1561,7 +1701,7 @@ Percent (%)
 
 *The labour force* corresponds to the sum of persons in employment and in unemployment.
 
-*Working age* population is the population above the legal working. Often it is defined as all persons aged 15 or older, but this can vary from country to country based on national laws and practices. 
+*Working age* population is the population above the legal working age. Often it is defined as all persons aged 15 or older, but this can vary from country to country based on national laws and practices. 
 
 **Sources** 
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-05-02.docx&wdOrigin=BROWSELINK)
@@ -1869,7 +2009,7 @@ Child labour for the 12 to 14 age range: children working for 14 hours or more p
 
 Child labour for the 15 to 17 age range: children working for 43 hours or more per week in economic activity. (no threshold for unpaid household services)
 
-For the calculation of the 2nd indicator, we will use the calculations from the 1st indicator and the below additional calculations for upaid household services. 
+For the calculation of the 2nd indicator, we will use the calculations from the 1st indicator and the below additional calculations for unpaid household services. 
 
 ```{r}
 table(main$CL01_1) #Did child do any work or help in a farm, food garden or looked after animals either for the household or someone else? For example, growing farm produce, harvesting, or feeding, grazing or milking animals?
