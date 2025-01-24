@@ -82,3 +82,17 @@ table(HHroster$primary_complete)
 table(HHroster$lowersec_complete)
 table(HHroster$uppersec_complete)
 
+#Extract needed variables related to educatioin from the roster to the RA_adult 
+HHroster_selected <- HHroster %>%
+  select(uuid, rosterposition, HH_Educ02a, HH_Educ07, HH_Educ14)
+HHroster_selected <- HHroster_selected %>%
+  rename(
+    HH_Educ02a_RA = HH_Educ02a,
+    HH_Educ07_RA = HH_Educ07,
+    HH_Educ14_RA = HH_Educ14
+  )
+RA_adult <- RA_adult %>%
+  left_join(HHroster_selected, by = c("uuid", "rosterposition"))
+
+#Rename anthropometric variables to facilitate the use of anthro packages in the calculation of Z-scores 
+
