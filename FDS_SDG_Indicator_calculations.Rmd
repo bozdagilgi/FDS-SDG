@@ -1,11 +1,10 @@
 ---
 title: "FDS Questionnaire v1 SDG Indicator calculations"
 author: "Global Survey Team"
-date: "2024-11"
-output: html_document
+output: unhcrdown::html_page
 unhcrdown::html_page:
     toc: true
-    toc_depth: 2
+    toc_depth: 3
     toc_float: true
 ---
 
@@ -14,7 +13,7 @@ knitr::opts_chunk$set(eval=FALSE)
 ```
 
 
-Date: Last revision was in January 2024
+Date: Last revision was in January 2025
 
 *For any issues please contact Ilgi Bozdag at bozdag@unhcr.org or Petra Kaps at kaps@unhcr.org*
 
@@ -141,7 +140,7 @@ pacman::p_load(
   readr,labelled,pastecs,psych,tableone, outbreaks, ggplot2, unhcrthemes,
   scales, gt,webshot2, sjlabelled, waffle, writexl,remotes, haven )
 ```
-```{r}
+```{r, eval=FALSE}
 ##Upload cleaned and weighted datasets 
 
 HHroster <- read_dta("HHroster.dta")
@@ -246,7 +245,7 @@ a) Proportion of population covered by at least one social protection cash benef
 
 
 
-```{r}
+```{r, eval=FALSE}
 
 #Check variables 
 
@@ -264,7 +263,7 @@ table(main$ScProtec16h)#Other vulnerability benefit
 table(main$ScProtec16i)#Social assistance cash benefit
 
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 2: Create a new variable to check if the household receives any social protection benefit in the form of payment from the government
 
 main <- main %>%
@@ -277,7 +276,7 @@ main <- main %>%
   ungroup()
 ```
 
-```{r}
+```{r, eval=FALSE}
 table(main$Social_Benefit)
 ```
 
@@ -285,51 +284,51 @@ table(main$Social_Benefit)
 b) Proportion of children covered by social protection benefits: ratio of children/households receiving child or family cash benefits to the total number of children/households with children.
 
 
-```{r}
+```{r, eval=FALSE}
 #not possible from the FDS
 ```
 
 c) Proportion of women giving birth covered by maternity benefits: ratio of women receiving cash maternity benefits to women giving birth in the same year (estimated based on age-specific fertility rates published in the UN’s World Population Prospects or on the number of live births corrected for the share of twin and triplet births).
 
-```{r}
+```{r, eval=FALSE}
 #add here only ScProtec16b - Parental/Maternity benefit
 ```
 
 
 d) Proportion of persons with disabilities receiving benefits: ratio of persons receiving disability cash benefits to persons with severe disabilities. The latter is calculated as the product of prevalence of disability ratios (published for each country group by the World Health Organization) and each country’s population.
 
-```{r}
+```{r, eval=FALSE}
 #check disability benefit compared with disability definition in the questionnaire 
 ```
 
 e) Proportion of unemployed receiving benefits: ratio of recipients of unemployment cash benefits to the number of unemployed persons.
 
-```{r}
+```{r, eval=FALSE}
 #check unemployed benefit from below and compare with unemployment definition
 ```
 
 f) Proportion of workers covered in case of employment injury: ratio of workers protected by injury insurance to total employment or the labour force.
 
 
-```{r}
+```{r, eval=FALSE}
 # not in FDS
 ```
 
 g) Proportion of older persons receiving a pension: ratio of persons above statutory retirement age receiving an old-age pension to persons above statutory retirement age (including contributory and non-contributory).
 
-```{r}
+```{r, eval=FALSE}
 # calculate old people from the main dataset /
 ```
 
 h) Proportion of vulnerable persons receiving benefits: ratio of social assistance recipients to the total number of vulnerable persons. The latter are calculated by subtracting from total population all people of working age who are contributing to a social insurance scheme or receiving contributory benefits, and all persons above retirement age receiving contributory benefits.
 
-```{r}
+```{r, eval=FALSE}
 #vulnerability benefit is there but - not possible from the FDS
 ```
 
 i) Proportion of poor population receiving social assistance cash benefit: ratio of social assistance recipients to the population living below the national poverty line.
 
-```{r}
+```{r, eval=FALSE}
 #Not possible as poverty is not defined
 ```
 
@@ -346,16 +345,16 @@ The proportion of population living in households with access to basic services 
 
 In FDS, we are only able to calculate a proxy, as we are not able to calculate the access to all 9 components. This indicator will be measured through 4 components: Access to basic health care services, access to basic drinking water services, access to basic hygiene facilities and access to clean fuels and technology. 
 
-| Services       | Variables                                                            |
-|----------------|:--------------------------------------------------------:            |
-| Health         |                                                                      |                                                    
-| Drinking water |BD01, BD01a, BD20_2, BD20_3 BD22                                      |
-| Hygiene        |HW2_OB, HW3_OB, HW4_OB, HW8_OB                                        |
-| Clean Energy   |HC01, HC02, HC04                                                      |
+| Services           | Variables                                                             |
+|--------------------|:---------------------------------------------------------------------:|
+| Health             |BA4, BA6_1, MV7, MV8, MN05_2, MN05_3, HH_13,SAN01, SAN02, SAN03, SAN05 |                                                    
+| Drinking water     |BD01, BD01a, BD20_2, BD20_3 BD22                                       |
+| Hygiene            |HW2_OB, HW3_OB, HW4_OB, HW8_OB                                         |
+| Clean Energy       |HC01, HC02, HC04                                                       |
+                                        
 
 
-
-### Calculate variables for access to nine basic services {.tabset}
+### Calculate variables for access to four basic services {.tabset}
 
 **Click on services below to see how they are calculated**
 
@@ -552,18 +551,18 @@ main <- main %>%
     )
   ) 
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$clean_cook)
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 2: Calculate clean fuel for heating
 table(main$HHT01) #Does this household use any heating device or fire to keep the dwelling/living quarters warm at any time during the year?
 table(main$HHT04) #What kind of device does this household use to heat the home when needed? For example, do you use a space heater(s), or use your cookstove in the winter for warmth?
 table(main$HHT06) #What type of fuel or energy source does this household use **most of the time for heating** in ${HHT04_response}?
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Note that the following types of heating: manufactured space heater, traditional space heater, manufactured cookstove and traditional cookstove are only considered clean when the brand of them is considered a clean brand based on the WHO guidelines. However we do not have the needed information to classify a brand as clean or unclean. Therefore households that use these types of heating have been classified as clean without including the brand names in the calculation. 
 main <- main %>%
   mutate(
@@ -576,11 +575,11 @@ main <- main %>%
   )
 
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$clean_heating)
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 3: Calculate clean lightning
 table(main$HL01) #Does this household use anything for lightning? 
 table(main$HL03) # What does this household use **most of the time** as energy for lighting, or as a light source?
@@ -595,11 +594,11 @@ main <- main %>%
   )
 
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$clean_lightning)
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 4: Combine the three conditions above into a final indicator
 main <- main %>%
   mutate(
@@ -608,7 +607,7 @@ main <- main %>%
       clean_cook == 0 | clean_heating == 0 | clean_lightning == 0 ~ 0))
   
 ```
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
    mutate(clean_fuel = labelled(clean_fuel,
                                 labels = c(
@@ -619,9 +618,318 @@ main <- main %>%
 ```
 
 #### Health care services
+Coverage of essential health services (defined as the average coverage of essential services based on tracer interventions that include reproductive, maternal, newborn and child health, infectious diseases, non-communicable diseases and service capacity and access, among the general and the most disadvantaged population).
 
-#Petra - add health
-#Petra - add final indicator calculation
+Concepts:
+
+The index of health service coverage is computed as the geometric means of 14 tracer indicators and expressed as a UHC Service Coverage Index. 4 health service areas, and 14 tracer indicators are the following:
+
+I. Reproductive, maternal, newborn and child health (family planning,pregnancy care,child immunization, child treatment)
+II. Infectious disease (tuberculosis, HIV/AIDS, Malaria, WASH)
+III. Noncommunicable diseases (Hypertension, diabetes, tobacco)
+IV. Service capacity and access (hospital access, health workers, health security)
+
+In FDS, we are able to evaluate two health service areas, area I. and II. through 4 tracer indicators - on pregnancy care, child immunization, malaria, WASH. Therefore the final indicator calculation results in a proxy for SDG 3.8.1 
+
+| Tracers            | Variables                                                            |
+|--------------------|:--------------------------------------------------------:            |
+| Pregnancy care     |BA4, BA6_1                                                            |                                                    
+| child immunization |MV7, MV8                                                              |
+| Malaria            |MN05_2, MN05_3, HH_13                                                 |
+| WASH               |SAN01, SAN02, SAN03, SAN05                                            |
+
+
+**Sources**  
+1.[SDG 3.8.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-03-08-01.docx&wdOrigin=BROWSELINK)
+
+##### Calculate variables for tracer indicators {.tabset}
+
+##### Pregnancy care
+
+Percentage of women aged 15-49 years with a live birth in a given time period who received antenatal care four or more times.
+
+**Unit of observation**: Individual
+
+**Numerator**: Number of women aged 15−49 years with a live birth in a given time period who received antenatal care four or more times
+
+**Denominator**: Total number of women aged 15−49 years with a live birth in the same period (last 2 years in FDS)
+
+**Dataset**: RA_woman
+
+
+```{r, eval=FALSE}
+table(RA_woman$BA4) #Did you see anyone for a follow-up visit during your last pregnancy?
+table(RA_woman$BA6_1) #Overall during your pregnancy, how many times did you have a follow-up visit with a health professional?
+```
+
+```{r, eval=FALSE}
+#Step 1: Create a variable assessing if women aged 15−49 years with a live birth in the last 2 years received antenatal care four or more times
+RA_woman <- RA_woman %>%
+  mutate(
+    pregnancy_care = case_when(
+      BA4 == 1 & BA6_1 >= 4 ~ 1,           # Assign 1 when antenatal care was received 4 or more times
+      BA4 == 2 ~ 0,                        # Assign 0 when no antenatal care was received
+      BA4 == 1 & BA6_1 < 4 ~ 0))           # Assign 0 when antenatal care was received less than 4 times
+      
+```
+```{r, eval=FALSE}
+#Step 2: Calculate the percentage of women aged 15−49 years with a live birth in the last 2 years who received antenatal care four or more times
+antenatal_care_per <- RA_woman %>%
+  filter(!is.na(pregnancy_care)) %>%  # Exclude rows with NA in pregnancy_care
+  summarise(
+    total_women = n(),  # Total number of women in the denominator
+    received_anc4_count = sum(pregnancy_care, na.rm = TRUE),  # Count of women in the numerator
+    percentage = (received_anc4_count / total_women) * 100  # Percentage calculation
+  ) %>%
+  pull(percentage)
+
+# Print the result
+cat("The percentage of women aged 15−49 years with a live birth in the last 2 years who received antenatal care four or more times is:", antenatal_care_per, "%\n")
+```
+
+##### Child immunization
+
+Percentage of infants receiving three doses of diphtheria-tetanus-pertussis containing vaccine
+
+**Unit of observation**: Individual
+
+**Numerator**: Children 1 year of age who have received three doses of diphtheria-tetanus-pertussis containing vaccine
+
+**Denominator**: All children 1 year of age
+
+**Dataset**: RA_caregiver
+
+```{r, eval=FALSE}
+table(RA_caregier$MV7)  #Has the child received Pentavalent vaccine (DPT + Hep B + Hib) that is, three shots in the arm by the age of 14 weeks - to prevent from getting Diphtheriae, Pertussis, Tetanus, Hepatitis B and Haemophilus Influenza type B - HIB)
+table(RA_caregiver$MV8) #How many times did the child receive the Pentavalent vaccine?
+summary(RA_caregiver$child_age_immunization) #Age of the child 
+```
+
+```{r, eval=FALSE}
+#Step 1: Create a variable assessing if the children 1 year of age have received three shots of pentavalent vaccine
+RA_caregiver <- RA_caregiver %>%
+  mutate(
+    child_immunization = case_when(
+      (child_age_immunization >= 12 & child_age_immunization <= 23) & MV7 %in% c(1, 2) & MV8 >= 3 & MV8 != 98 ~ 1, # 1 for yes
+      (child_age_immunization >= 12 & child_age_immunization <= 23) & MV7 == 3 ~ 0,  # 0 for No
+      TRUE ~ NA_real_  # Assign NA for MV7 == 98 or any other conditions
+    )
+  )           
+      
+```
+```{r, eval=FALSE}
+#Step 2: Calculate the percentage of infants receiving three doses of diphtheria-tetanus-pertussis containing vaccine
+
+child_immun_per <- RA_caregiver %>%
+  filter(!is.na(child_immunization)) %>%  # Exclude rows with NA in child_immunization
+  summarise(
+    child_immun_per = (sum(child_immunization, na.rm = TRUE) / n()) * 100  # Calculate the percentage
+  ) %>%
+  pull(child_immun_per)
+
+cat("The percentage of children receiving three doses of the DTP-containing vaccine is:", child_immun_per, "%\n")
+
+```
+##### Malaria prevention
+
+Percentage of population in malaria-endemic areas who slept under an ITN the previous night.
+
+**Unit of observation**: Individual (based on household size)
+
+**Numerator**: Number of people in malaria-endemic areas who slept under an ITN
+
+**Denominator**: Total number of people in malaria endemic areas.
+
+**Dataset**: main
+
+```{r, eval=FALSE}
+table(main$MN05_2) #You told me that X people slept under [bednets/mosquito nets] last night, how many of them slept under treated [bednets/mosquito nets]?
+table(main$MN05_3) #You told me that one person slept under [bednets/mosquito nets] last night, did this person sleep under treated [bednets/mosquito nets]?
+table(main$HH_13)  #Did you sleep here last  night? 
+```
+
+
+```{r, eval=FALSE}
+#Step 1: Create a composite variable to capture the number of people that slept under ITN in the household, the previous night.
+main <- main %>%
+  mutate(
+    final_sleep_ITN = case_when(
+      !is.na(MN05_2) ~ MN05_2,  # Take MN05_2 if it is not empty
+      is.na(MN05_2) & !is.na(MN05_3) ~ MN05_3,  # Take MN05_3 if MN05_2 is empty but MN05_3 is not
+      is.na(MN05_2) & is.na(MN05_3) ~ NA_real_  # Assign NA if both are empty
+    )
+  )
+```
+
+```{r, eval=FALSE}
+#Step 2: Calculate the total number of household members who slept it the household the night before 
+HHroster <- HHroster %>%
+mutate(
+    sleep_HH = case_when(
+      member == 1 & HH_13 == 1 ~ 1, 
+      TRUE ~ NA_real_))
+
+mosquito_members <- HHroster %>%
+  group_by(uuid) %>%
+  summarise(
+    totalmembermosq = if (all(is.na(sleep_HH))) NA_real_ else sum(sleep_HH == 1, na.rm = TRUE)
+  )
+
+# Join with the main data set
+main <- main %>%
+  left_join(mosquito_members, by = "uuid")
+```
+
+```{r, eval=FALSE}
+#ILGI: This is the start of the calculation at a household level - % of people in each household that slept under an ITN the night before. 
+#Step 3: Calculate the % of people that slept under mosquito nets in each household 
+main <- main %>%
+  mutate(
+    sleep_ITN_HH = case_when(
+      !is.na(final_sleep_ITN) & !is.na(totalmembermosq) ~ final_sleep_ITN/totalmembermosq,  
+      is.na(final_sleep_ITN) | is.na(totalmembermosq) ~ NA_real_))  # NA if nominator or denominator are NA
+ 
+
+```
+```{r, eval=FALSE}
+# Calculate the average percentage, ignoring NAs
+average_sleep_ITN <- main %>%
+  summarise(
+    avg_sleep_ITN_HH = mean(sleep_ITN_HH, na.rm = TRUE)
+  )
+
+avg_value <- (average_sleep_ITN$avg_sleep_ITN_HH)*100
+
+# Print the result
+print(average_sleep_ITN)
+cat("The average % of people per household who slept under ITN the previous night is:", avg_value, "%\n")
+
+```
+```{r, eval=FALSE}
+# Step: Calculate the weighted average percentage of ITN usage
+weighted_average_ITN <- main %>%
+  summarise(
+    numerator = sum(sleep_ITN_HH * totalmembermosq, na.rm = TRUE),  # Weighted sum
+    denominator = sum(totalmembermosq, na.rm = TRUE),  # Total population
+    weighted_avg_sleep_ITN = (numerator / denominator) * 100  # Weighted average
+  )
+
+# Extract the weighted average
+malaria_per <- weighted_average_ITN$weighted_avg_sleep_ITN
+
+# Print the result
+print(weighted_average_ITN)
+cat("The weighted average % of people per household who slept under an ITN the previous night is:", malaria_per,"%\n")
+
+```
+
+```{r, eval=FALSE}
+#ILGI: This is the start of the calculation at an individual level - % of people who slept under an ITN the previous night.
+result <- main %>%
+  summarise(
+    total_ITN = sum(final_sleep_ITN, na.rm = TRUE),  # Total people who used ITN
+    total_population = sum(totalmembermosq, na.rm = TRUE),  # Total population in malaria-endemic areas
+    percentage_ITN = (total_ITN / total_population) * 100  # Calculate percentage
+  )
+
+# Print the final result
+print(result)
+cat("The percentage of population in malaria-endemic areas who slept under an ITN the previous night is:", result$percentage_ITN, "%\n")
+
+```
+
+##### Water, sanitation and hygiene
+Percentage of population using at least basic sanitation services, that is, improved sanitation facilities that are not shared with other households. 
+
+**Unit of observation**: Individual (based on household size)
+
+**Numerator**:  Number of individuals with access to sanitation facility at their household
+
+**Denominator**: Total number of individuals
+
+**Dataset**: main
+
+```{r, eval=FALSE}
+table(main$SAN01) #What kind of toilet facility do members of your household use most of the time?
+table(main$SAN02) #To the best of your knowledge, has this toilet ever been emptied?
+table(main$SAN03) #The last time it was emptied, where were the contents emptied to?
+table(main$SAN05) #Do you share this toilet facility with others who are not members of your household?
+```
+```{r, eval=FALSE}
+#Step 1: Create a variable to check if the household uses an improved or unimproved sanitation facility 
+main <- main %>%
+  mutate(type_san_facility = case_when(
+    SAN01 %in% c("11", "12", "13", "14", "18", "21", "22", "31") ~ 1,  # Improved sanitation facility
+    SAN01 %in% c("23", "41", "51", "95", "96") ~ 0,  # Unimproved sanitation facility
+    TRUE ~ NA_real_ 
+    ))# Missing or invalid
+```
+```{r, eval=FALSE}
+#Step 2: Create a variable to check if the contents of the toilet are safely disposed
+main <- main %>%
+ mutate(disposal_san_facility = case_when(
+    SAN02 == 1 & SAN03 %in% c("5", "96", "98") ~ 0,  # Unsafe disposal
+    SAN02 == 1 & SAN03 %in% c("1", "2", "3", "4") ~ 1,  # Safe disposal
+    SAN02 == 2 ~ 0,  # Unsafe if no toilet
+    SAN02 == 98 ~ 0,  # Unavailable information
+    TRUE ~ NA_real_ )) # Missing or invalid
+```
+```{r, eval=FALSE}
+#Step 3: Create a variable to check if the household shares the toilet facility with other households 
+main <- main %>%
+  mutate(shared_san_facility = case_when(
+    SAN05 == 1 ~ 0,             # Shared toilet
+    SAN05 == 2 ~ 1,             # Not shared
+    SAN05 %in% c("98", "99") ~ NA # NA for 98 or 99
+  ))
+
+```
+```{r, eval=FALSE}
+#Step 4: Combine all three conditions
+main <- main %>%
+mutate(wash = case_when(
+    type_san_facility == 1 & disposal_san_facility == 1 & shared_san_facility == 1 ~ 1,  # Basic sanitation service
+    TRUE ~ 0  # If any condition fails
+  ))
+
+table(main$wash)
+```
+```{r, eval=FALSE}
+# Step 5: Calculate weighted percentage
+sanitation_percentage <- main %>%
+  summarise(
+    numerator = sum(wash * HHmembersize, na.rm = TRUE),  # Total individuals with access to basic sanitation
+    denominator = sum(HHmembersize, na.rm = TRUE),  # Total population
+    percentage_sanitation = (numerator / denominator) * 100  # Weighted percentage
+  )
+
+# Extract the final percentage
+final_sanitation_per <- sanitation_percentage$percentage_sanitation
+
+# Print the results
+print(sanitation_percentage)
+cat("The percentage of population using at least basic sanitation services is:", final_sanitation_per, "%\n")
+```
+
+##### Final calculation of the tracer - Access to Basic Health Care Services
+
+```{r, eval=FALSE}
+#Step 1: Calculate geometric mean of each of the two health care service areas
+#Area 1: Reproductive, maternal, newborn and child health (RMNCH)
+RMNCH <- (child_immun_per + antenatal_care_per)/2
+
+#Area 2: Infectious diseases (ID)
+ID <- (malaria_per + final_sanitation_per)/2
+```
+```{r, eval=FALSE}
+#Step 2: Calculate the geometric mean of the two values to calculate the final UHC Service Coverage Index of the two health care service areas 
+UHC <- (RMNCH + ID)/2
+print(UHC)
+```
+
+### Final calculation of the SDG 1.4.1
+
+This indicator is a combination of various components of basic services which on their own are mostly existing as standalone indicators of the SDGs. As a result, the team of experts advised and agreed that these should be presented as a dashboard. Their metadata provide the specific methodologies for computing each of the constituent measures used to report on this indicator.
 
 ## 1.4.2 SDG Indicator
 
@@ -634,40 +942,6 @@ Indicator 1.4.2 measures the relevant part of Target 1.4 (ensure men and women h
 
 Indicator 1.4.2 covers (a) all types of land use (such as residential, commercial, agricultural, forestry, grazing, wetlands based on standard land-use classification) in both rural and urban areas; and (b) all land tenure types as recognized at the country level, such as freehold, leasehold, public land, customary land. An individual can hold land in his/her own name, jointly with other individuals, as a member of a household, or collectively as member of group1, cooperative or other type of association.
 
-**Sources**  
-1.[SDG 2.2.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-02-02-01.docx&wdOrigin=BROWSELINK)
-2.[UNICEF - Anthropometric indicators in children under 5 years old](https://data.unicef.org/resources/data-collection-analysis-reporting-on-anthropometric-indicators-in-children-under-5/)
-
-```{r}
-#Step 1: Install and load the anthro package - This is the package needed for facilitating the calculations 
-install.packages("anthro")
-library(anthro)
-```
-```{r}
-#Step 2: We are going to create temporary dataset only for anthropocentric variables, and add all variables which are needed to calcuate Z-scores. 
-anthropometrics <- data.frame(
-  sex = RA_caregiver$childnametouseSEX,
-  age = RA_caregiver$childnametouseAGE,
-  height = RA_caregiver$AN7,
-  uuid = RA_caregiver$uuid,
-  rosterposition_child = RA_caregiver$rosterposition_child
-)
-```
-```{r}
-#Step 3: 
-# Convert age in months to days
-anthropometrics$age_in_days <- anthropometrics$age * 30.4375
-
-# Calculate z-scores for height-for-age using age in days
-result <- anthro_zscores(
-  sex = anthropometrics$sex,
-  age_in_days = anthropometrics$age_in_days, # Provide age in days
-  lenhei = anthropometrics$height,
-  measure = "H" # Use "H" for standing height or "L" for recumbent length
-)
-
-```
-
 
 ## 2.2.1 SDG Indicator
 
@@ -679,13 +953,152 @@ Prevalence of stunting (height-for-age <-2 standard deviation from the median of
 
 Child growth is an internationally accepted outcome reflecting child nutritional status. Child stunting refers to a child who is too short for his or her age and is the result of chronic or recurrent malnutrition. Stunting is a contributing risk factor to child mortality and is also a marker of inequalities in human development. Stunted children fail to reach their physical and cognitive potential. Child stunting is one of the World Health Assembly nutrition target indicators.
 
+For the calculation of this indicator we will use the [anthro](https://cran.r-project.org/web/packages/anthro/anthro.pdf) package which provides WHO Child Growth Standards (z-scores) with confidence intervals and standard errors around the prevalence estimates, taking into account complex sample designs.The output needed for the calculation of this indicator is: "zlen" Length/Height-for-age z-score
 
+| Standard Questions    |
+|:---------------------:|
+|    AN7,AN8            |
+
+**Unit of observation**: Individual
+
+**Dataset**: RA_caregiver
+
+**Sources**  
+1.[SDG 2.2.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-02-02-01.docx&wdOrigin=BROWSELINK)
+2.[UNICEF - Anthropometric indicators in children under 5 years old](https://data.unicef.org/resources/data-collection-analysis-reporting-on-anthropometric-indicators-in-children-under-5/)
+3.[Child growth standard](https://www.who.int/tools/child-growth-standards)
+4.[Anthro package github](https://github.com/worldhealthorganization/anthro)
+
+```{r, eval=FALSE}
+#Step 1: Install and load the anthro package - This is the package needed for facilitating the calculations 
+install.packages("anthro")
+remotes::install_github("worldhealthorganization/anthro")
+library(anthro)
+```
+
+```{r, eval=FALSE}
+#Step 2: Calculate z-scores
+RA_caregiver <- RA_caregiver %>%
+  bind_cols(
+with(
+  RA_caregiver,
+  anthro_zscores(
+    sex = childnametouseSEX, # Column indicating child sex
+    age = childnametouseAGE, # Column indicating child age
+    weight = AN6,  # Column indicating weight measurement
+    lenhei = AN7,  # Column indicating height/length measurement
+    measure = AN8, # Column indicating measurement type
+    is_age_in_month = TRUE      # Specify that age is in months
+  )
+))
+
+```
+```{r, eval=FALSE}
+#Step 3: Calculate the indicator: 
+RA_caregiver <- RA_caregiver %>%
+  mutate(
+    C020201 = case_when(
+      zlen < -2 ~ 1, 
+      zlen > -2 ~ 0,
+      TRUE ~ NA_real_  ))
+      
+```
+```{r, eval=FALSE}
+stunting_prevalence <- RA_caregiver %>%
+  summarize(prevalence = mean(C020201, na.rm = TRUE) * 100)
+
+cat("Prevalence of stunting: ", stunting_prevalence$prevalence, "%\n")
+```
 
 ## 2.2.2 SDG Indicator 
 
 **Prevalence of malnutrition (weight for height >+2 or <-2 standard deviation from the median of the WHO Child Growth Standards) among children under 5 years of age, by type (wasting and overweight)**
 
 Indicator Code: C020202
+
+In the context of FDS, which is 
+
+
+Child growth is an internationally accepted outcome reflecting child nutritional status. 
+
+Child wasting refers to a child who is too thin for his or her height and is the result of recent rapid weight loss or the failure to gain weight. A child who is moderately or severely wasted has an increased risk of death, but treatment is possible.
+
+Child overweight refers to a child who is too heavy for his or her height. This form of malnutrition results from expending too few calories for the amount of food consumed and increases the risk of noncommunicable diseases later in life.
+
+For the calculation of this indicator we will use the [anthro](https://cran.r-project.org/web/packages/anthro/anthro.pdf) package which provides WHO Child Growth Standards (z-scores) with confidence intervals and standard errors around the prevalence estimates, taking into account complex sample designs.The output needed for the calculation of this indicator is: "zwfl" weight-for-length/height z-score
+
+| Standard Questions             |
+|:------------------------------:|
+|    AN6, AN7, AN8               |
+
+**Unit of observation**: Individual
+
+**Dataset**: RA_caregiver
+
+**Sources**  
+1.[SDG 2.2.2b Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-02-02-02b.docx&wdOrigin=BROWSELINK)
+2.[SDG 2.2.2a Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-02-02-02a.docx&wdOrigin=BROWSELINK)
+3.[UNICEF - Anthropometric indicators in children under 5 years old](https://data.unicef.org/resources/data-collection-analysis-reporting-on-anthropometric-indicators-in-children-under-5/)
+4.[Child growth standard](https://www.who.int/tools/child-growth-standards)
+5.[Anthro package github](https://github.com/worldhealthorganization/anthro)
+
+```{r, eval=FALSE}
+#Step 1: Install and load the anthro package - This is the package needed for facilitating the calculations 
+install.packages("anthro")
+remotes::install_github("worldhealthorganization/anthro")
+library(anthro)
+```
+
+```{r, eval=FALSE}
+#Step 2: Calculate z-scores
+RA_caregiver <- RA_caregiver %>%
+  bind_cols(
+with(
+  RA_caregiver,
+  anthro_zscores(
+    sex = childnametouseSEX, # Column indicating child sex
+    age = childnametouseAGE, # Column indicating child age
+    weight = AN6,  # Column indicating weight measurement
+    lenhei = AN7,  # Column indicating height/length measurement
+    measure = AN8, # Column indicating measurement type
+    is_age_in_month = TRUE      # Specify that age is in months
+  )
+))
+
+```
+```{r, eval=FALSE}
+#Step 3: Calculate the tracer for wasting: 
+RA_caregiver <- RA_caregiver %>%
+  mutate(
+    C020202b = case_when(
+      zwfl < -2 ~ 1, 
+      zwfl > -2 ~ 0,
+      TRUE ~ NA_real_  ))
+      
+```
+```{r, eval=FALSE}
+wasting_prevalence <- RA_caregiver %>%
+  summarize(prevalence = mean(C020202b, na.rm = TRUE) * 100)
+
+cat("Prevalence of wasting: ", wasting_prevalence$prevalence, "%\n")
+```
+```{r, eval=FALSE}
+#Step 4: Calculate the tracer for overweight: 
+RA_caregiver <- RA_caregiver %>%
+  mutate(
+    C020202a = case_when(
+      zwfl > 2 ~ 1, 
+      zwfl < 2 ~ 0,
+      TRUE ~ NA_real_  ))
+      
+```
+```{r, eval=FALSE}
+overweight_prevalence <- RA_caregiver %>%
+  summarize(prevalence = mean(C020202a, na.rm = TRUE) * 100)
+
+cat("Prevalence of overweight: ", overweight_prevalence$prevalence, "%\n")
+```
+
 
 ## 3.1.2 SDG Indicator 
 
@@ -766,7 +1179,7 @@ In FDS, we are able to evaluate two health service areas, area I. and II. throug
 
 
 **Sources**  
-1.[SDG 3.8.2 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-03-08-01.docx&wdOrigin=BROWSELINK)
+1.[SDG 3.8.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-03-08-01.docx&wdOrigin=BROWSELINK)
 
 ### Calculate variables for tracer indicators {.tabset}
 
@@ -783,12 +1196,12 @@ Percentage of women aged 15-49 years with a live birth in a given time period wh
 **Dataset**: RA_woman
 
 
-```{r}
+```{r, eval=FALSE}
 table(RA_woman$BA4) #Did you see anyone for a follow-up visit during your last pregnancy?
 table(RA_woman$BA6_1) #Overall during your pregnancy, how many times did you have a follow-up visit with a health professional?
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 1: Create a variable assessing if women aged 15−49 years with a live birth in the last 2 years received antenatal care four or more times
 RA_woman <- RA_woman %>%
   mutate(
@@ -798,7 +1211,7 @@ RA_woman <- RA_woman %>%
       BA4 == 1 & BA6_1 < 4 ~ 0))           # Assign 0 when antenatal care was received less than 4 times
       
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 2: Calculate the percentage of women aged 15−49 years with a live birth in the last 2 years who received antenatal care four or more times
 antenatal_care_per <- RA_woman %>%
   filter(!is.na(pregnancy_care)) %>%  # Exclude rows with NA in pregnancy_care
@@ -825,13 +1238,13 @@ Percentage of infants receiving three doses of diphtheria-tetanus-pertussis cont
 
 **Dataset**: RA_caregiver
 
-```{r}
+```{r, eval=FALSE}
 table(RA_caregier$MV7)  #Has the child received Pentavalent vaccine (DPT + Hep B + Hib) that is, three shots in the arm by the age of 14 weeks - to prevent from getting Diphtheriae, Pertussis, Tetanus, Hepatitis B and Haemophilus Influenza type B - HIB)
 table(RA_caregiver$MV8) #How many times did the child receive the Pentavalent vaccine?
 summary(RA_caregiver$child_age_immunization) #Age of the child 
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 1: Create a variable assessing if the children 1 year of age have received three shots of pentavalent vaccine
 RA_caregiver <- RA_caregiver %>%
   mutate(
@@ -843,7 +1256,7 @@ RA_caregiver <- RA_caregiver %>%
   )           
       
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 2: Calculate the percentage of infants receiving three doses of diphtheria-tetanus-pertussis containing vaccine
 
 child_immun_per <- RA_caregiver %>%
@@ -868,14 +1281,14 @@ Percentage of population in malaria-endemic areas who slept under an ITN the pre
 
 **Dataset**: main
 
-```{r}
+```{r, eval=FALSE}
 table(main$MN05_2) #You told me that X people slept under [bednets/mosquito nets] last night, how many of them slept under treated [bednets/mosquito nets]?
 table(main$MN05_3) #You told me that one person slept under [bednets/mosquito nets] last night, did this person sleep under treated [bednets/mosquito nets]?
 table(main$HH_13)  #Did you sleep here last  night? 
 ```
 
 
-```{r}
+```{r, eval=FALSE}
 #Step 1: Create a composite variable to capture the number of people that slept under ITN in the household, the previous night.
 main <- main %>%
   mutate(
@@ -887,7 +1300,7 @@ main <- main %>%
   )
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 2: Calculate the total number of household members who slept it the household the night before 
 HHroster <- HHroster %>%
 mutate(
@@ -906,7 +1319,7 @@ main <- main %>%
   left_join(mosquito_members, by = "uuid")
 ```
 
-```{r}
+```{r, eval=FALSE}
 #ILGI: This is the start of the calculation at a household level - % of people in each household that slept under an ITN the night before. 
 #Step 3: Calculate the % of people that slept under mosquito nets in each household 
 main <- main %>%
@@ -917,7 +1330,7 @@ main <- main %>%
  
 
 ```
-```{r}
+```{r, eval=FALSE}
 # Calculate the average percentage, ignoring NAs
 average_sleep_ITN <- main %>%
   summarise(
@@ -931,7 +1344,7 @@ print(average_sleep_ITN)
 cat("The average % of people per household who slept under ITN the previous night is:", avg_value, "%\n")
 
 ```
-```{r}
+```{r, eval=FALSE}
 # Step: Calculate the weighted average percentage of ITN usage
 weighted_average_ITN <- main %>%
   summarise(
@@ -949,7 +1362,7 @@ cat("The weighted average % of people per household who slept under an ITN the p
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 #ILGI: This is the start of the calculation at an individual level - % of people who slept under an ITN the previous night.
 result <- main %>%
   summarise(
@@ -962,27 +1375,6 @@ result <- main %>%
 print(result)
 cat("The percentage of population in malaria-endemic areas who slept under an ITN the previous night is:", result$percentage_ITN, "%\n")
 
-```
-```{r}
-main <- main %>%
-  mutate(
-    mosq_test = case_when(
-      MN01 == 1 & MN08 == 2 ~ final_sleep_ITN, 
-      MN01 == 1 & MN08 == 1 & MN09 > 0 & (MN07 > (totalmembermosq + MN09)) ~ totalmembermosq, 
-      MN01 == 1 & MN08 == 1 & MN09 > 0 & (MN07 < (totalmembermosq + MN09)) ~final_sleep_ITN, #Assuming HH members have priority in sleeping under ITNs. 
-      TRUE ~ NA_real_)) 
-```
-```{r}
-result1 <- main %>%
-  summarise(
-    total_ITN = sum(mosq_test, na.rm = TRUE),  # Total people who used ITN
-    total_population = sum(totalmembermosq, na.rm = TRUE),  # Total population in malaria-endemic areas
-    percentage_ITN = (total_ITN / total_population) * 100  # Calculate percentage
-  )
-
-# Print the final result
-print(result1)
-cat("The percentage of population in malaria-endemic areas who slept under an ITN the previous night is:", result1$percentage_ITN, "%\n")
 ```
 
 #### Water, sanitation and hygiene
@@ -1041,7 +1433,7 @@ mutate(wash = case_when(
 
 table(main$wash)
 ```
-```{r}
+```{r, eval=FALSE}
 # Step 5: Calculate weighted percentage
 sanitation_percentage <- main %>%
   summarise(
@@ -1060,7 +1452,7 @@ cat("The percentage of population using at least basic sanitation services is:",
 
 ### Final calculation of the SDG 3.8.1 
 
-```{r}
+```{r, eval=FALSE}
 #Step 1: Calculate geometric mean of each of the two health care service areas
 #Area 1: Reproductive, maternal, newborn and child health (RMNCH)
 RMNCH <- (child_immun_per + antenatal_care_per)/2
@@ -1068,7 +1460,7 @@ RMNCH <- (child_immun_per + antenatal_care_per)/2
 #Area 2: Infectious diseases (ID)
 ID <- (malaria_per + final_sanitation_per)/2
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 2: Calculate the geometric mean of the two values to calculate the final UHC Service Coverage Index of the two health care service areas 
 UHC <- (RMNCH + ID)/2
 print(UHC)
@@ -1104,7 +1496,7 @@ The intended age for the last grade of each level of education is the age at whi
 2.[ISCED Diagrams](https://isced.uis.unesco.org/visualizations/)
 
 
-```{r}
+```{r, eval=FALSE}
 summary(HHroster$agetouse) # Age of the individual
 table(HHroster$HH_Educ02a) # Are you currently going to school?  If it is school holiday between two school years, tell us about the last school year.Do not include kindergarten or preschool.
 table(HHroster$HH_Educ03)  #What [grade / year] are you/is he/she attending?
@@ -1115,7 +1507,7 @@ table(HHroster$lowersec_complete) #If an individual has completed lower secondar
 table(HHroster$uppersec_complete) #If an individual has completed upper secondary school
 ```
 1. Calculation for the SDG 4.1.2 - following the age cut off - 3 to 5 years above the official entrance age a into the last grade of level n
-```{r}
+```{r, eval=FALSE}
 #Primary education
 HHroster <- HHroster %>%
 mutate(C040102_primary = case_when(
@@ -1124,7 +1516,7 @@ mutate(C040102_primary = case_when(
   TRUE ~ NA_real_)) 
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Lower secondary education
 HHroster <- HHroster %>%
 mutate(C040102_lowersec = case_when(
@@ -1133,7 +1525,7 @@ mutate(C040102_lowersec = case_when(
   TRUE ~ NA_real_)) 
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Upper secondary complete
 HHroster <- HHroster %>%
 mutate(C040102_uppersec = case_when(
@@ -1142,14 +1534,14 @@ mutate(C040102_uppersec = case_when(
   TRUE ~ NA_real_)) 
 ```
 
-```{r}
+```{r, eval=FALSE}
 table(HHroster$C040102_primary)
 table(HHroster$C040102_lowersec)
 table(HHroster$C040102_uppersec)
 ```
 
 2. 1. Calculation for the SDG 4.1.2 - open age, without the upper age limit per education level. This is based on [IRRS recommendation](https://egrisstats.org/wp-content/uploads/2021/12/International-Recommendations-on-Refugee-Statistics.pdf)
-```{r}
+```{r, eval=FALSE}
 #Primary education
 HHroster <- HHroster %>%
 mutate(C040102_primary_open = case_when(
@@ -1158,7 +1550,7 @@ mutate(C040102_primary_open = case_when(
   TRUE ~ NA_real_)) 
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Lower secondary education
 HHroster <- HHroster %>%
 mutate(C040102_lowersec_open = case_when(
@@ -1167,7 +1559,7 @@ mutate(C040102_lowersec_open = case_when(
   TRUE ~ NA_real_)) 
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Upper secondary complete
 HHroster <- HHroster %>%
 mutate(C040102_uppersec_open = case_when(
@@ -1176,7 +1568,7 @@ mutate(C040102_uppersec_open = case_when(
   TRUE ~ NA_real_)) 
 ```
 
-```{r}
+```{r, eval=FALSE}
 table(HHroster$C040102_primary_open)
 table(HHroster$C040102_lowersec_open)
 table(HHroster$C040102_uppersec_open)
@@ -1206,12 +1598,12 @@ The participation rate in organized learning (one year before the official prima
 1.[SDG 4.2.2 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-04-02-02.docx&wdOrigin=BROWSELINK)
 2.[ISCED Diagrams](https://isced.uis.unesco.org/visualizations/)
 
-```{r}
+```{r, eval=FALSE}
 summary(HHroster$agetouse) # Age of the individual
 table(HHroster$HH_Educ00) # Is [child name] currently going to pre-school?
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Prior to calculating the indicator, check the official entry age to primary school in the country where the survey took place. Our calculation is done on the data from FDS Pakistan, where the official entry age to primary education is 5. 
 HHroster <- HHroster %>%
 mutate(C040202 = case_when(
@@ -1224,7 +1616,7 @@ mutate(C040202 = labelled(C040202, #Add labels
                                ),
                                label = "participation rate in organized learning one year before the official entry age to primary education "))
 ```
-```{r}
+```{r, eval=FALSE}
 table(HHroster$C040202)
 ```
 
@@ -1260,7 +1652,7 @@ Additionally, we are only able to assess the current enrollment in education and
 1.[SDG 4.3.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-04-03-01.docx&wdOrigin=BROWSELINK)
 
 
-```{r}
+```{r, eval=FALSE}
 table(RA_adult$HH_Educ02a_RA) #Are you currently going to school? 
 table(RA_adult$EducR08)       #Have you ever completed an apprenticeship?
 table(RA_adult$EducR13)       #Have you ever participated in any training courses, such as work-related training or private skills training, that lasted at least 5 days or 30 hours, and not part of the formal educational system?
@@ -1272,7 +1664,7 @@ ILGI: We can only make the calculation for those who are currently in school and
 ILGI: Questions on current enrollment in formal education are asked in the roster to everyone, vs questions on apprenticeship and training are asked only to the random adult. Here I took the current educ enrollment status of the Random Adult and pulled it to the RA_adult dataset, and then calculated the indicator on the basis of the responded from the RA_adult. 
 
 
-```{r}
+```{r, eval=FALSE}
 #Step 1: Calculate indicator for age group 15-24 year
 RA_adult <- RA_adult %>%
   mutate(
@@ -1286,10 +1678,10 @@ mutate(C040301_15_24 = labelled(C040301_15_24, #Add labels
                                ),
                                label = "Participation rate of youth and adults (15 - 24 years) in formal and non-formal education and training"))
 ```
-```{r}
+```{r, eval=FALSE}
 table(RA_adult$C040301_15_24)
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 1: Calculate indicator for age group 25-45 years
 RA_adult <- RA_adult %>%
   mutate(
@@ -1303,7 +1695,7 @@ mutate(C040301_25_45 = labelled(C040301_25_45, #Add labels
                                ),
                                label = "Participation rate of youth and adults (25 - 45 years) in formal and non-formal education and training"))
 ```
-```{r}
+```{r, eval=FALSE}
 table(RA_adult$C040301_25_45)
 ```
 
@@ -1339,11 +1731,11 @@ Marriage before the age of 18 is a fundamental violation of human rights. Child 
 **Sources**  
 1.[SDG 5.3.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-05-03-01.docx&wdOrigin=BROWSELINK)
 
-```{r}
+```{r, eval=FALSE}
 summary(HHroster$HH_09) #How old were you when you first married? 
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Married or in union before age 15 
 
 HHroster <- HHroster %>%
@@ -1365,7 +1757,7 @@ proportion_15 <- (numerator / denominator) * 100
 cat("Proportion of women aged 20-24 married before age 15:", round(proportion_15, 2), "%\n")
 
 ```
-```{r}
+```{r, eval=FALSE}
 #Married or in union before age 18 
 
 HHroster <- HHroster %>%
@@ -1410,13 +1802,13 @@ A mobile (cellular) telephone refers to a portable telephone subscribing to a pu
 **Sources**  
 1.[SDG 5. b. 1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-05-0B-01.docx&wdOrigin=BROWSELINK)
 
-```{r}
+```{r, eval=FALSE}
 #Step 1: check all variables
 table(RA_adult$IA01)   #Do you yourself  have your own  mobile phone?
 table(RA_adult$IA01_1) #Does the mobile phone you own have an active SIM card?  An active SIM card is a card that has been used in the past three months.
 ```
 
-```{r}
+```{r, eval=FALSE}
 #ILGI: A response option in both above questions is Not needed. Those that do not need a mobile phone or an active sim card. I have put them in 0 for now, as even if they don't need it they still don't have it. Do you agree? 
 ## Step 2: Add a column specifying if the household uses improved or unimproved source of drinking water 
 RA_adult <- RA_adult %>%
@@ -1456,7 +1848,7 @@ Access to Basic Drinking Water Services refers to the use of drinking water from
 **Dataset**: main
 
 **Sources**  
-1.[SDG 1.4.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-01-04-01.docx&wdOrigin=BROWSELINK)
+1.[SDG 6.1.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-06-01-01.docx&wdOrigin=BROWSELINK)
 2.[JMP WASH guidance](https://washdata.org/sites/default/files/documents/reports/2019-03/JMP-2018-core-questions-for-household-surveys.pdf).
 
 ```{r, eval=FALSE}
@@ -1633,7 +2025,7 @@ Calculation is based on the World Bank Multi-Tier Framework for Measuring Electr
 1.[SDG 7.1.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-07-01-01.docx&wdOrigin=BROWSELINK)
 2.[World Bank LSMS Energy guidance](https://documents1.worldbank.org/curated/en/557341633679857128/pdf/Measuring-Energy-Access-A-Guide-to-Collecting-Data-Using-the-Core-Questions-on-Household-Energy-Use.pdf)
 
-```{r}
+```{r, eval=FALSE}
 table(main$HE01)  #What source of electricity is used **most** of the time in this household?
 table(main$HE02a) #Which of your household appliances are powered using this household’s ${HE01_response}?
 table(main$HE02b) #How many light bulbs can be powered using this household's ${HE01_response}?
@@ -1641,7 +2033,7 @@ table(main$HE04_summinutes)  #In the **past 7 days**, on average how many hours 
 table(main$HE05_summinutes)  #In the past 7 days, on average how many hours of electricity were available each evening, from 6:00pm to 10:00pm from ${HE01_response}?
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 1: Assess the capacity of electricity 
 main <- main %>%
   mutate(
@@ -1715,18 +2107,18 @@ main <- main %>%
     )
   ) 
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$clean_cook)
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 2: Calculate clean fuel for heating
 table(main$HHT01) #Does this household use any heating device or fire to keep the dwelling/living quarters warm at any time during the year?
 table(main$HHT04) #What kind of device does this household use to heat the home when needed? For example, do you use a space heater(s), or use your cookstove in the winter for warmth?
 table(main$HHT06) #What type of fuel or energy source does this household use **most of the time for heating** in ${HHT04_response}?
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Note that the following types of heating: manufactured space heater, traditional space heater, manufactured cookstove and traditional cookstove are only considered clean when the brand of them is considered a clean brand based on the WHO guidelines. However we do not have the needed information to classify a brand as clean or unclean. Therefore households that use these types of heating have been classified as clean without including the brand names in the calculation. 
 main <- main %>%
   mutate(
@@ -1739,11 +2131,11 @@ main <- main %>%
   )
 
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$clean_heating)
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 3: Calculate clean lightning
 table(main$HL01) #Does this household use anything for lightning? 
 table(main$HL03) # What does this household use **most of the time** as energy for lighting, or as a light source?
@@ -1758,11 +2150,11 @@ main <- main %>%
   )
 
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$clean_lightning)
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 4: Combine the three conditions above into a final indicator
 main <- main %>%
   mutate(
@@ -1771,7 +2163,7 @@ main <- main %>%
       clean_cook == 0 | clean_heating == 0 | clean_lightning == 0 ~ 0))
   
 ```
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
    mutate(C070102 = labelled(C070102,
                                 labels = c(
@@ -1819,7 +2211,7 @@ Percent (%)
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-05-02.docx&wdOrigin=BROWSELINK)
 2. [Labour Force Statistics](https://ilostat.ilo.org/methods/concepts-and-definitions/description-labour-force-statistics/)
 
-```{r}
+```{r, eval=FALSE}
 #Step 2: Determine who is employed based on various conditions 
 main <- main %>%
   mutate(employed = case_when(
@@ -1834,7 +2226,7 @@ main <- main %>%
   ))
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 2: Define unemployed: those not employed but actively looking for work and available to carry out activities
 main <- main %>%
   mutate(unemployed = case_when(
@@ -1843,7 +2235,7 @@ main <- main %>%
   ))
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 3: Define labour force: anyone employed or unemployed
 main <- main %>%
   mutate(labour_force = case_when(
@@ -1852,7 +2244,7 @@ main <- main %>%
   ))
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 4: Outcome - Unemployment rate
 main <- main %>%
   mutate(SDG_8_5_2 = case_when(
@@ -1862,7 +2254,7 @@ main <- main %>%
   ))
 ```
 
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
    mutate(SDG_8_5_2 = labelled(SDG_8_5_2,
                                 labels = c(
@@ -1906,7 +2298,7 @@ For the purpose of this indicator, persons are considered to be in training if t
 **Sources** 
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-06-01.docx&wdOrigin=BROWSELINK)
 2. [Labour Force Statistics](https://ilostat.ilo.org/methods/concepts-and-definitions/description-labour-force-statistics/)
-```{r}
+```{r, eval=FALSE}
 table(main$EMP01) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you work for someone else for pay, for one or more hours?
 table(main$EMP02) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you run or do any kind of business, farming or other activity to make money?
 table(main$EMP03) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you help in a family business or farm?
@@ -1925,7 +2317,7 @@ table(main$educ_now) # Are you currently going to school?  If it is school holid
 ILGI: *Note: Apart from the above variables, this indicator should also include other forms of training (not only apprenticeship). With questioins posted in FDS, we are unable to determine if an individual is currently participating in training other than apprenticeship. 
 Check the entire calculation with Ilgi. 
 
-```{r}
+```{r, eval=FALSE}
 #Step 2: Create a variable identifying unemployed youth
 main <- main %>%
   mutate(employed_youth = case_when(
@@ -1941,7 +2333,7 @@ main <- main %>%
   ))
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 2: Define unemployed and those outside of the labour force
 main <- main %>%
   mutate(unemployed_youth = case_when(
@@ -1951,7 +2343,7 @@ main <- main %>%
   ))
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 3: Create a variable identifying youth in education 
 main <- main %>%
   mutate(youth_education = case_when(
@@ -1961,7 +2353,7 @@ main <- main %>%
   ))
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 3: Create a variable identifying youth doing currently in training (apprenticeship). 
 main <- main %>%
   mutate(youth_training = case_when(
@@ -1971,7 +2363,7 @@ main <- main %>%
   ))
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 4: Combine Unemployed youth +Youth outside the labour force
 main <- main %>%
   mutate(unemployed_outsidelabour = case_when(
@@ -1980,7 +2372,7 @@ main <- main %>%
   ))
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 4: Combine Unemployed youth +Youth outside the labour force
 main <- main %>%
   mutate(unemployed_outsidelabour = case_when(
@@ -1988,7 +2380,7 @@ main <- main %>%
     TRUE ~ 0 
   ))
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 5: Unemployed youth in educator or training
 main <- main %>%
   mutate(unemployed_ineduc_tr = case_when(
@@ -1997,7 +2389,7 @@ main <- main %>%
   ))
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 5: Out of labour youth in educator or training
 main <- main %>%
   mutate(outoflabour_ineduc_tr = case_when(
@@ -2005,7 +2397,7 @@ main <- main %>%
     TRUE ~ 0 
   ))
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 6: Define the numerator
 numerator <- main %>%
   filter(between(age_selected, 15, 24)) %>%
@@ -2016,14 +2408,14 @@ numerator <- main %>%
   mutate(numerator = total_unemployed_outside_labour - in_education_or_training) %>%
   pull(numerator)
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 7: Define the denominator 
 denominator <- main %>%
   filter(between(age_selected, 15, 24)) %>%
   nrow()
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 8: Calculate the indicator 
 SDG8_6_1 <- (numerator / denominator)*100
 ```
@@ -2067,14 +2459,14 @@ Child labour for the 12 to 14 age range: children working for 14 hours or more p
 
 Child labour for the 15 to 17 age range: children working for 43 hours or more per week in economic activity.
 
-```{r}
+```{r, eval=FALSE}
 table(main$CL01_1) #Did child do any work or help in a farm, food garden or looked after animals either for the household or someone else? For example, growing farm produce, harvesting, or feeding, grazing or milking animals?
 table(main$CL01_2) #Did child help in a family business or a relative’s business with or without pay, or run ${proB} own business?
 table(main$CL01_3) #Did child produce or sell articles, handicrafts, clothes, food or agricultural products?
 table(main$CL01_4) #During the past 7 days, did child engage in any other activity in return for income in cash or in kind, even for only one hour?
 summary(main$CL02) #During the past 7 days, about how many hours did child engage in his/her activities, in total?
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 1: Create a variable identifying children who were engaged in any of the economic activities. 
 main <- main %>%
   mutate(child_economic_activity = case_when(
@@ -2083,7 +2475,7 @@ main <- main %>%
     TRUE ~ NA                # assign NA for all other cases 
   ))
 ```
-```{r}
+```{r, eval=FALSE}
 
 #Step 2: Create a variable identifying the children who have been exposed to child labor. That is engaged in an economic activity at or above age-specific hourly thresholds. 
 main <- main %>%
@@ -2098,7 +2490,7 @@ main <- main %>%
 ```
 
 
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
   mutate(C080701a = labelled(C080701a,
                              labels = c(
@@ -2109,7 +2501,7 @@ main <- main %>%
 ```
 
 
-```{r}
+```{r, eval=FALSE}
 table(main$C080701a)
 ```
 
@@ -2123,7 +2515,7 @@ Child labour for the 15 to 17 age range: children working for 43 hours or more p
 
 For the calculation of the 2nd indicator, we will use the calculations from the 1st indicator and the below additional calculations for unpaid household services. 
 
-```{r}
+```{r, eval=FALSE}
 table(main$CL01_1) #Did child do any work or help in a farm, food garden or looked after animals either for the household or someone else? For example, growing farm produce, harvesting, or feeding, grazing or milking animals?
 table(main$CL01_2) #Did child help in a family business or a relative’s business with or without pay, or run ${proB} own business?
 table(main$CL01_3) #Did child produce or sell articles, handicrafts, clothes, food or agricultural products?
@@ -2142,10 +2534,10 @@ table(main$CL08_10)#Other household tasks?
 summary(main$CL09) # In the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, about how many hours did CHILD engage in his/her activity(ies), in total?
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 1: Create a variable identifying children who were engaged in any of the economic activities - variable created under the calculations for the 1st indicator - variable name: "child_economic_activity". 
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 2: Create a variable identifying children who were engaged in household chores
 main <- main %>%
   mutate(child_household_chores = case_when(
@@ -2154,7 +2546,7 @@ main <- main %>%
     TRUE ~ NA                # assign NA for all other cases 
   ))
 ```
-```{r}
+```{r, eval=FALSE}
 
 #Step 2: Create a variable identifying the children who have been engaged in an economic activity at or above age-specific hourly thresholds. 
 #main <- main %>%
@@ -2173,7 +2565,7 @@ main <- main %>%
   ))
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 2: Create a variable identifying the children who have been engaged in household chores at or above age-specific hourly thresholds.
 mutate(child_labor_household_chores  = case_when(
     # Condition for children aged 5-11: engaged in household chores for at least 21 hours
@@ -2189,14 +2581,14 @@ mutate(child_labor_household_chores  = case_when(
     TRUE ~ 0
   ))
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 3: Combine both categories to compute the indicator
 main <- main %>%
   mutate(C080701b = case_when(child_labor_economic_activity == 1 | child_labor_household_chores == 1 ~ 1,
   child_labor_economic_activity == 0 & child_labor_household_chores == 0 ~ 0 ))
    
 ```
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
   mutate(C080701b = labelled(C080701b,
                              labels = c(
@@ -2206,7 +2598,7 @@ main <- main %>%
                              label = "Proportion of children aged 5-17 years engaged in economic activities and household chores at or above age-specific hourly thresholds"))
 
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$C080701b)
 ```
 
@@ -2232,14 +2624,14 @@ Percent (%)
 **Sources** 
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-10-02.docx&wdOrigin=BROWSELINK)
 
-```{r}
+```{r, eval=FALSE}
 table(main$FI01) #Do you, either by yourself or together with someone else, currently have an account at a bank or another type of formal financial institution in the host country?
 table(main$FI02) #Do you, personally, have a debit card in the host country?
 table(main$FI03) #Do you, personally, have a credit card in the host country?
 table(main$FI10) #In the past 12 months, have you personally used a mobile phone to make payments, buy things, or to send or receive money using a service such as [country specific example]?
 ```
 
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
   mutate(SDG08_10_2 = case_when(
    FI01 == 1 | FI02 == 1 | FI03 == 1 | FI10 == 1 ~ 1,
@@ -2248,7 +2640,7 @@ main <- main %>%
   ))
 
 ```
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
    mutate(SDG08_10_2 = labelled(SDG08_10_2,
                                 labels = c(
@@ -2258,7 +2650,7 @@ main <- main %>%
                                 label = "Proportion of people above with an account at a bank or other financial institution or with a mobile-money-service provider"
   ))
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$SDG08_10_2)
 ```
 ## 10.3.1 SDG Indicator
@@ -2286,7 +2678,7 @@ Percent (%)
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-10-03-01.docx&wdOrigin=BROWSELINK)
 2. [Guidance Note for Implementation of Survey Module on SDG Indicator 16.b.1 & 10.3.1](https://www.ohchr.org/sites/default/files/Documents/Issues/HRIndicators/SDG_Indicator_16b1_10_3_1_Guidance_Note_.pdf)
 
-```{r}
+```{r, eval=FALSE}
 #In the past 12 month, in your day-to-day life in the host country, how often do any of the following things happen to you? Would you say  almost every day, at least once a week, a few times a month, a few times a year, less than once a year or never?:
 table(main$DI01_01) #You are treated with less politeness than other people are.
 table(main$DI01_02) #You are treated with less respect than other people are.
@@ -2298,7 +2690,7 @@ table(main$DI01_07) #People act as if they’re better than you are.
 table(main$DI01_08) #You are called names or insulted.
 table(main$DI01_09) #You are threatened or harassed.```
 ```
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
   mutate(SDG16_b_1 = case_when(
     # If any value is 1, 2, 3, 4, or 5, assign 1
@@ -2322,7 +2714,7 @@ main <- main %>%
   ))
 
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$SDG10_3_1)
 ```
 ## 16.1.4 SDG Indicator
@@ -2349,10 +2741,10 @@ Percent (%)
 **Sources** 
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-01-04.docx&wdOrigin=BROWSELINK)
 
-```{r}
+```{r, eval=FALSE}
 table(main$FS01) # How safe do you feel walking alone in your area after dark? Very safe, fairly safe, bit unsafe, very unsafe?
 ```
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
   mutate(
   SDG16_1_4 = case_when(
@@ -2363,7 +2755,7 @@ main <- main %>%
 )
 
 ```
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
    mutate(
     SDG16_1_4 = labelled(
@@ -2376,7 +2768,7 @@ main <- main %>%
     )
   )
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$SDG16_1_4)
 ```
 
@@ -2414,7 +2806,7 @@ Variabale "Justice16" is not present in all countries where FDS is carried out. 
 
 **Sources** 
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-03-03.docx&wdOrigin=BROWSELINK)
-```{r}
+```{r, eval=FALSE}
 table(main$Justice01) #In the past two years while in the host country, have you had any disputes?
 table(main$Justice05) #Did you or someone acting on your behalf try to seek information, advice or representation to help you better understand or resolve your dispute?  
 #Justice07 - Did any of the following things happen while you were dealing with this dispute? Please note that when I say 'you' here, I mean you or somebody acting on your behalf. And when I say 'other party', I mean the other party involved in the dispute. 
@@ -2429,7 +2821,7 @@ table(main$Justice07h)#You participated in formal mediation, conciliation or arb
 table(main$Justice07i)#There was no negotiation or third party involvement.
 #table(main$Justice16) #Why didn’t you seek independent advice to help resolve this dispute?  - Check if this variable is present in your data set. 
 ```
-```{r}
+```{r, eval=FALSE}
 #Case 1:
 #Step 1: Identify individuals who experienced a dispute in the past two years 
 main <- main %>%
@@ -2438,7 +2830,7 @@ main <- main %>%
     Justice01 == 2 ~ 0, # Assigns 2 for no
     TRUE ~ NA_real_))   # Handle missing cases or "99 - Refuse to answer". 
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 2: Identify individuals who voluntarily self-excluded themselves from seeking formal or informal dispute resolution mechanism. 
 #main <- main %>%
  # mutate(selfexclusion = case_when(
@@ -2446,14 +2838,14 @@ main <- main %>%
  #   Justice01 == 1 & Justice05 == 1 ~ 2,
   #  Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("E", "F", "G", "H", "J", "K", "OT", "RF") ~ 0 )) #Assign 2 for those who did not self-exclude
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 3: Combine "dispute" and "selfexclusion" to compute the population at risk - those who experiences a dispute and did not voluntary self-exclude from seeking for a formal or informal resolution. 
 #main <- main %>%
  # mutate(popatrisk = case_when(
   #  dispute == 1 & selfexclusion == 0 ~ 1, 
   #  TRUE ~ 0))
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 4: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
 main <- main %>%
   mutate(resolution = case_when(
@@ -2461,7 +2853,7 @@ main <- main %>%
     Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 0)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Case 2: 
 #Step 1: Identify individuals who experienced a dispute in the past two years 
 main <- main %>%
@@ -2471,7 +2863,7 @@ main <- main %>%
     TRUE ~ NA_real_))   # Handle missing cases or "99 - Refuse to answer". 
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 2: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
 main <- main %>%
   mutate(resolution = case_when(
@@ -2512,11 +2904,11 @@ Percent (%) of children under 5 years of age
 
 **Sources** 
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-09-01.docx&wdOrigin=BROWSELINK)
-```{r}
+```{r, eval=FALSE}
 hhroster$HH_07a # Does [name] have a birth certificate?
 hhroster$HH_07b # Has [name]’s birth been registered with the [civil authorities]?
 ```
-```{r}
+```{r, eval=FALSE}
 # Step 1:Identify children who have a birth certificate
 hhroster <- hhroster %>%
   mutate(birthCertificate = case_when(
@@ -2535,7 +2927,7 @@ hhroster <- hhroster %>%
   ))
 
 ```
-```{r}
+```{r, eval=FALSE}
 # Step 2:Identify children whose birth has been registered with civil authorities
 hhroster <- hhroster %>%
   mutate(birthRegistered = case_when(
@@ -2553,7 +2945,7 @@ hhroster <- hhroster %>%
     label = "Children under 5 birth registered with civil authorities"
   ))
 ```
-```{r}
+```{r, eval=FALSE}
 #Step 3:Create outcome1_2 variable
 hhroster <- hhroster %>%
   mutate(SDG16_9_1 = case_when(
@@ -2571,7 +2963,7 @@ hhroster <- hhroster %>%
     label = "Proportion of children under 5 years of age whose births have been registered with a civil authority"
   ))
 ```
-```{r}
+```{r, eval=FALSE}
 table(hhroster$SDG16_9_1)
 ```
 
@@ -2600,7 +2992,7 @@ Percent (%)
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-0b-01.docx&wdOrigin=BROWSELINK)
 2. [Guidance Note for Implementation of Survey Module on SDG Indicator 16.b.1 & 10.3.1](https://www.ohchr.org/sites/default/files/Documents/Issues/HRIndicators/SDG_Indicator_16b1_10_3_1_Guidance_Note_.pdf)
 
-```{r}
+```{r, eval=FALSE}
 #In the past 12 month, in your day-to-day life in the host country, how often do any of the following things happen to you? Would you say  almost every day, at least once a week, a few times a month, a few times a year, less than once a year or never?:
 table(main$DI01_01) #You are treated with less politeness than other people are.
 table(main$DI01_02) #You are treated with less respect than other people are.
@@ -2612,7 +3004,7 @@ table(main$DI01_07) #People act as if they’re better than you are.
 table(main$DI01_08) #You are called names or insulted.
 table(main$DI01_09) #You are threatened or harassed.```
 ```
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
   mutate(SDG16_b_1 = case_when(
     # If any value is 1, 2, 3, 4, or 5, assign 1
@@ -2636,7 +3028,7 @@ main <- main %>%
   ))
 
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$SDG16_b_1)
 ```
 *Limitations:* 
@@ -2669,12 +3061,12 @@ Percent (%)
 2. [ITU Manual for Measuring ICT Access and Use by Households and Individuals 2020:](https://www.itu.int/en/ITU-D/Statistics/Pages/publications/manual.aspx)
 
 
-```{r}
+```{r, eval=FALSE}
 table(main$IA07)   #Have you used the Internet in the past 30 days?
 table(main$IA07_1) #How about in the past 3 months? Have you used the Internet in the past 3 months?
 ```
 
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
   mutate(SDG17_8_1 = case_when(IA07 == 1 ~ 1,
                                IA07 == 2 & IA07_1 == 1 ~ 1,
@@ -2686,7 +3078,7 @@ main <- main %>%
                                ),
                                label = "Proportion of individuals using the internet" ))
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$SDG17_8_1)
 ```
 
