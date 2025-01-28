@@ -1540,13 +1540,14 @@ table(HHroster$C040102_lowersec)
 table(HHroster$C040102_uppersec)
 ```
 
-2. 1. Calculation for the SDG 4.1.2 - open age, without the upper age limit per education level. This is based on [IRRS recommendation](https://egrisstats.org/wp-content/uploads/2021/12/International-Recommendations-on-Refugee-Statistics.pdf)
+2. 1. Alternative approach to calculation for the SDG 4.1.2 - open age, upper limit of 34 based on 
+[Expert Group on Refugee and Internally Displaced Persons Statistics — International Recommendations on Refugee Statistics](https://egrisstats.org/wp-content/uploads/2021/12/International-Recommendations-on-Refugee-Statistics.pdf)
 ```{r, eval=FALSE}
 #Primary education
 HHroster <- HHroster %>%
 mutate(C040102_primary_open = case_when(
-  agetouse %in% 12:45 & primary_complete == 1 ~ 1, #Primary school complete
-  agetouse %in% 12:45 & is.na(primary_complete) ~ 0, #Primary school not complete
+  agetouse %in% 12:34 & primary_complete == 1 ~ 1, #Primary school complete
+  agetouse %in% 12:34 & is.na(primary_complete) ~ 0, #Primary school not complete
   TRUE ~ NA_real_)) 
 ```
 
@@ -1554,8 +1555,8 @@ mutate(C040102_primary_open = case_when(
 #Lower secondary education
 HHroster <- HHroster %>%
 mutate(C040102_lowersec_open = case_when(
-  agetouse %in% 15:45 & lowersec_complete == 1 ~ 1, #Lower secondary school complete
-  agetouse %in% 15:45 & is.na(lowersec_complete) ~ 0, #Lower secondary not complete
+  agetouse %in% 15:34 & lowersec_complete == 1 ~ 1, #Lower secondary school complete
+  agetouse %in% 15:34 & is.na(lowersec_complete) ~ 0, #Lower secondary not complete
   TRUE ~ NA_real_)) 
 ```
 
@@ -1563,8 +1564,8 @@ mutate(C040102_lowersec_open = case_when(
 #Upper secondary complete
 HHroster <- HHroster %>%
 mutate(C040102_uppersec_open = case_when(
-  agetouse %in% 19:45 & uppersec_complete == 1 ~ 1, #Upper secondary complete
-  agetouse %in% 19:45 & is.na(uppersec_complete) ~ 0, #Upper secondary not complete
+  agetouse %in% 19:34 & uppersec_complete == 1 ~ 1, #Upper secondary complete
+  agetouse %in% 19:34 & is.na(uppersec_complete) ~ 0, #Upper secondary not complete
   TRUE ~ NA_real_)) 
 ```
 

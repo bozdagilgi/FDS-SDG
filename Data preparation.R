@@ -19,12 +19,12 @@ RA_caregiver <- read_dta ("RA_caregiver.dta")
 #For those currently in school 
 HHroster <- HHroster %>%
   mutate(primary_complete_cur = case_when(
-    HH_Educ02a == 1 & HH_Educ03 %in% 9:19 ~ 1, #Currently enrolled in secondary school or higher, therefore primary is completed. 
+    HH_Educ02a == 1 & HH_Educ03 %in% 6:19 ~ 1, #Currently enrolled in secondary school or higher, therefore primary is completed. 
     TRUE ~ NA_real_))
 
 HHroster <- HHroster %>%
   mutate(primary_complete_past = case_when(
-    HH_Educ17 == 1 & HH_Educ18 %in% 8:19 ~ 1, #Primary education completed in Pakistan
+    HH_Educ17 == 1 & HH_Educ18 %in% 5:19 ~ 1, #Primary education completed in Pakistan
     HH_Educ17 == 2 & HH_Educ17_other == "AFG" & HH_Educ18 %in% 6:19 ~ 1, #Primary education completed in Afghanistan
     HH_Educ17 == 2 & HH_Educ17_other == "IRN" & HH_Educ18 %in% 6:15 ~ 1, #Primary education completed in Iran
     HH_Educ17 == 2 & (!is.na(HH_Educ17_other) & HH_Educ17_other != "IRN" & HH_Educ17_other != "AFG") & HH_Educ18 %in% 1:12 ~ 1, #Primary education completed somewhere else
@@ -40,12 +40,12 @@ HHroster <- HHroster %>%
 #For those currently in school 
 HHroster <- HHroster %>%
   mutate(lowseco_complete_cur = case_when(
-    HH_Educ02a == 1 & HH_Educ03 %in% 11:19 ~ 1, #Currently enrolled in higher secondary school or higher, therefore lower secondary is completed. 
+    HH_Educ02a == 1 & HH_Educ03 %in% 9:19 ~ 1, #Currently enrolled in higher secondary school or higher, therefore lower secondary is completed. 
     TRUE ~ NA_real_))
 
 HHroster <- HHroster %>%
   mutate(lowersec_complete_past = case_when(
-    HH_Educ17 == 1 & HH_Educ18 %in% 10:19 ~ 1, #Lower Secondary education completed in Pakistan
+    HH_Educ17 == 1 & HH_Educ18 %in% 8:19 ~ 1, #Lower Secondary education completed in Pakistan
     HH_Educ17 == 2 & HH_Educ17_other == "AFG" & HH_Educ18 %in% 9:19 ~ 1, #Lower Secondary education completed in Afghanistan
     HH_Educ17 == 2 & HH_Educ17_other == "IRN" & HH_Educ18 %in% 9:15 ~ 1, #Lower Secondary education completed in Iran
     HH_Educ17 == 2 & (!is.na(HH_Educ17_other) & HH_Educ17_other != "IRN" & HH_Educ17_other != "AFG") & HH_Educ18 %in% 4:12 ~ 1, #Lower Secondary education completed somewhere else
