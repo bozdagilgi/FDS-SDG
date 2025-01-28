@@ -1010,6 +1010,105 @@ stunting_prevalence <- RA_caregiver %>%
 cat("Prevalence of stunting: ", stunting_prevalence$prevalence, "%\n")
 ```
 
+```{r, eval=FALSE}
+
+##This indicator is located in the 'RA_caregiver' dataset
+
+##Add weights when/if available
+FDS_PAK_2024_RA_caregiver <- RA_caregiver %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = , # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+```
+
+###Figure for SDG 2.2.1 
+
+```{r, eval=FALSE}
+#Table by population groups 
+#This table is done as an example on the FDS PAK dataset. Ensure to re-name your table if you are working on a different dataset.
+
+####Standard tables 
+
+
+SDG_2_2_1 <- RA_caregiver %>%
+  select(Intro_07, childnametouseSEX, C020201) %>%
+  group_by(Intro_07, childnametouseSEX) %>%
+  summarise(prevalence = mean(C020201, na.rm = TRUE) * 100) %>%
+  ungroup()
+```
+```{r}
+SDG_2_2_1 <- SDG_2_2_1 %>%
+  mutate(
+    sex_label = dplyr::recode(
+      childnametouseSEX,
+      "M" = "Male",
+      "F" = "Female"
+    )
+  )
+
+```
+```{r}
+SDG_2_2_1 %>%
+  ggplot(aes(x = sex_label, y = prevalence, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(
+    aes(label = round(prevalence, 1)),
+    position = position_dodge(width = 0.9),
+    vjust = -0.5,
+    size = 3
+  ) +
+  scale_fill_unhcr_d() +
+  scale_y_continuous(limits = c(0, 110), expand = c(0, 0)) +
+  labs(
+    title = "Prevalence of Stunting by Sex and Population Group",
+    x = "Sex of Child",
+    y = "Stunting Prevalence (%)",
+    fill = "Population Groups"
+  ) +
+  theme_unhcr() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+```{r}
+### Figure for SDG 2.2.1 by Population Groups 
+
+##Indicator Results 
+
+# Table by population groups
+C020201 <- FDS_PAK_2024_RA_caregiver %>%    
+  filter(!is.na(Intro_07)) %>%    # Exclude if population groups is NA
+  group_by(Intro_07) %>%          # Group by population groups
+  summarise(                      # Summarise the variables
+    var_name = "stunting_prevalence",        # Name of the variable
+    num_obs_uw = unweighted(n()), # Unweighted total count
+    denominator = survey_total(), # Weighted total count
+    mean_value = survey_mean(C020201, vartype = c("ci", "se"), na.rm = TRUE) # Weighted mean with CI and SE
+  ) 
+
+# Chart for RBM10202 by population groups
+ggplot(C020201, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value_low, ymax = mean_value_upp),  # Confidence intervals
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Prevalence of Stunting by Population Groups",
+    x = "Population Groups",
+    y = "Weighted Prevalence with Standard Errors"
+  ) +
+  scale_fill_unhcr_d() + 
+  theme_unhcr() +         # Apply UNHCR theme 
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+
+
 ## 2.2.2 SDG Indicator 
 
 **Prevalence of malnutrition (weight for height >+2 or <-2 standard deviation from the median of the WHO Child Growth Standards) among children under 5 years of age, by type (wasting and overweight)**
@@ -1099,6 +1198,102 @@ overweight_prevalence <- RA_caregiver %>%
 cat("Prevalence of overweight: ", overweight_prevalence$prevalence, "%\n")
 ```
 
+```{r, eval=FALSE}
+
+##This indicator is located in the 'RA_caregiver' dataset
+
+##Add weights when/if available
+FDS_PAK_2024_RA_caregiver <- RA_caregiver %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = , # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+```
+
+###Figure for SDG 2.2.2b 
+
+```{r, eval=FALSE}
+#Table by population groups 
+#This table is done as an example on the FDS PAK dataset. Ensure to re-name your table if you are working on a different dataset.
+
+####Standard tables 
+
+
+SDG_2_2_2b <- RA_caregiver %>%
+  select(Intro_07, childnametouseSEX, C020202b) %>%
+  group_by(Intro_07, childnametouseSEX) %>%
+  summarise(prevalence = mean(C020202b, na.rm = TRUE) * 100) %>%
+  ungroup()
+```
+```{r}
+
+SDG_2_2_2b <- SDG_2_2_2b %>%
+  mutate(
+    sex_label = dplyr::recode(
+      childnametouseSEX,
+      "M" = "Male",
+      "F" = "Female"
+    )
+  )
+```
+```{r}
+SDG_2_2_2b %>%
+  ggplot(aes(x = sex_label, y = prevalence, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(
+    aes(label = round(prevalence, 1)),
+    position = position_dodge(width = 0.9),
+    vjust = -0.5,
+    size = 3
+  ) +
+  scale_fill_unhcr_d() +
+  scale_y_continuous(limits = c(0, 110), expand = c(0, 0)) +
+  labs(
+    title = "Prevalence of wasting by Sex and Population Group",
+    x = "Sex of Child",
+    y = "Wasting Prevalence (%)",
+    fill = "Population Groups"
+  ) +
+  theme_unhcr() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+```{r}
+### Figure for SDG 2.2.2b by Population Groups 
+
+##Indicator Results 
+
+# Table by population groups
+C020202b <- FDS_PAK_2024_RA_caregiver %>%    
+  filter(!is.na(Intro_07)) %>%    # Exclude if population groups is NA
+  group_by(Intro_07) %>%          # Group by population groups
+  summarise(                      # Summarise the variables
+    var_name = "wasting_prevalence",        # Name of the variable
+    num_obs_uw = unweighted(n()), # Unweighted total count
+    denominator = survey_total(), # Weighted total count
+    mean_value = survey_mean(C020202b, vartype = c("ci", "se"), na.rm = TRUE) # Weighted mean with CI and SE
+  ) 
+
+# Chart for RBM10202 by population groups
+ggplot(C020202b, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value_low, ymax = mean_value_upp),  # Confidence intervals
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Prevalence of Wasting by Population Groups",
+    x = "Population Groups",
+    y = "Weighted Prevalence with Standard Errors"
+  ) +
+  scale_fill_unhcr_d() + 
+  theme_unhcr() +         # Apply UNHCR theme 
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
 
 ## 3.1.2 SDG Indicator 
 

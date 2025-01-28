@@ -104,3 +104,70 @@ RA_caregiver$AN7 <- as.numeric(RA_caregiver$AN7)
 RA_caregiver$AN6 <- as.numeric(RA_caregiver$AN6)
 RA_caregiver$AN8 <- as.character(RA_caregiver$AN8)
 
+
+# Define labels for population groups
+popgroup_labels <- c(
+  "1" = "Refugees and Asylum Seekers",
+  "2" = "Host Community"
+)
+
+HHroster <- HHroster %>%
+  mutate(
+    Intro_07 = as_factor(Intro_07) %>%          # Convert to factor
+      recode_factor(!!!popgroup_labels)        # Apply recoding
+  )
+
+RA_caregiver  <- RA_caregiver %>%
+  mutate(
+    Intro_07 = as_factor(Intro_07) %>%          # Convert to factor
+      recode_factor(!!!popgroup_labels)        # Apply recoding
+  )
+main <- main %>%
+  mutate(
+    Intro_07 = as_factor(Intro_07) %>%          # Convert to factor
+      recode_factor(!!!popgroup_labels)        # Apply recoding
+  )
+
+RA_adult  <- RA_adult %>%
+  mutate(
+    Intro_07 = as_factor(Intro_07) %>%          # Convert to factor
+      recode_factor(!!!popgroup_labels)        # Apply recoding
+  )
+RA_woman  <- RA_woman %>%
+  mutate(
+    Intro_07 = as_factor(Intro_07) %>%          # Convert to factor
+      recode_factor(!!!popgroup_labels)        # Apply recoding
+  )
+#### Define labels for gender
+gender_labels <- c(
+  "1" = "Male",
+  "2" = "Female"
+)
+# Apply labels to all gender variables in one block
+HHroster <- HHroster %>%
+  mutate(
+    HH_02 = as_factor(HH_02) %>%          # Convert to factor
+      recode_factor(!!!gender_labels)        # Apply recoding
+  )
+
+RA_caregiver  <- RA_caregiver %>%
+  mutate(
+    HH_02_RC = as_factor(HH_02_RC) %>%          # Convert to factor
+      recode_factor(!!!gender_labels)        # Apply recoding
+  )
+main <- main %>%
+  mutate(
+    HH_02_HoH = as_factor(HH_02_HoH) %>%          # Convert to factor
+      recode_factor(!!!gender_labels)        # Apply recoding
+  )
+
+RA_adult  <- RA_adult %>%
+  mutate(
+    HH_02_RA = as_factor(HH_02_RA) %>%          # Convert to factor
+      recode_factor(!!!gender_labels)        # Apply recoding
+  )
+RA_caregiver  <- RA_caregiver %>%
+  mutate(
+    childnametouseSEX = as_factor(childnametouseSEX) %>%          # Convert to factor
+      recode_factor(!!!gender_labels)        # Apply recoding
+  )
