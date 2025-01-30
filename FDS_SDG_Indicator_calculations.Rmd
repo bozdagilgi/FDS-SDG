@@ -1769,6 +1769,260 @@ table(HHroster$C040102_primary_open)
 table(HHroster$C040102_lowersec_open)
 table(HHroster$C040102_uppersec_open)
 ```
+
+### Figure for SDG 4.1.2 - Primary school by Population Groups
+```{r}
+##Table by population groups
+
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C040102_primary_open <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%      # Show results disaggregated by pop groups
+  summarise(                                         # put all variables here
+    var_name = "SDG4_2_2",                          # name of the variable
+    num_obs_uw = unweighted(n()),                    # unweighted total count
+    denominator = survey_total(),                      # weighted total count
+    mean_value = survey_mean(C040102_primary_open, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+  )
+
+##Chart for the indicator above
+
+ggplot(C040102_primary_open, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 4.1.2",
+    subtitle = "Completion rate of primary school amongst those age 12 - 34 years.",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+
+### Figure for SDG 4.1.2 -Primary school by Population Groups, Gender and disability
+
+```{r, eval=FALSE}
+#### Table and chart that shows results by age/sex/disability
+
+C040102_primary_open_AGD <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07) & !is.na(HH_02) & !is.na(disability)) %>%  # Ensure disability is not missing
+  group_by(Intro_07, HH_02, disability) %>%                          # Include disability in grouping
+  summarise(
+    var_name = "SDG 4.1.2 - primary",                
+    num_obs_uw = survey_total(!is.na(C040102_primary_open), vartype = NULL),  
+    denominator = survey_total(),                                
+    mean_value = survey_mean(C040102_primary_open, vartype = c("ci", "se"), na.rm = TRUE)  
+  )
+
+## **Figure**
+
+ggplot(C040102_primary_open_AGD, aes(x = HH_02, y = mean_value, fill = disability)) +  # Fill by disability
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  
+  facet_wrap(~ Intro_07) +  
+  labs(
+     title = "Results of SDG 4.1.2",
+    subtitle = "Completion rate of primary school amongst those age 12 - 34 years",
+    x = "Gender",
+    y = "Completed primary school",  
+    fill = "Disability Status"   # Update legend label to reflect disability
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  theme_unhcr() +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  
+  )
+
+```
+
+### Figure for SDG 4.1.2 - Lower secondary school by Population Groups
+```{r}
+##Table by population groups
+
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C040102_lowersec_open <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%      # Show results disaggregated by pop groups
+  summarise(                                         # put all variables here
+    var_name = "SDG4_2_2 lower secondary",                          # name of the variable
+    num_obs_uw = unweighted(n()),                    # unweighted total count
+    denominator = survey_total(),                      # weighted total count
+    mean_value = survey_mean(C040102_lowersec_open, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+  )
+
+##Chart for the indicator above
+
+ggplot(C040102_lowersec_open, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 4.1.2",
+    subtitle = "Completion rate of lower secondary school amongst those age 15 - 34 years.",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+### Figure for SDG 4.1.2 - Lower secondary school by Population Groups, Gender and disability
+
+```{r, eval=FALSE}
+#### Table and chart that shows results by age/sex/disability
+
+C040102_lowersec_open_AGD <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07) & !is.na(HH_02) & !is.na(disability)) %>%  # Ensure disability is not missing
+  group_by(Intro_07, HH_02, disability) %>%                          # Include disability in grouping
+  summarise(
+    var_name = "SDG 4.1.2 - lower secondary",                
+    num_obs_uw = survey_total(!is.na(C040102_primary_open), vartype = NULL),  
+    denominator = survey_total(),                                
+    mean_value = survey_mean(C040102_lowersec_open, vartype = c("ci", "se"), na.rm = TRUE)  
+  )
+
+## **Figure**
+
+ggplot(C040102_lowersec_open_AGD, aes(x = HH_02, y = mean_value, fill = disability)) +  # Fill by disability
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  
+  facet_wrap(~ Intro_07) +  
+  labs(
+     title = "Results of SDG 4.1.2",
+    subtitle = "Completion rate of lower secondary school amongst those age 15 - 34 years",
+    x = "Gender",
+    y = "Completed lower secondary school",  
+    fill = "Disability Status"   # Update legend label to reflect disability
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  theme_unhcr() +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  
+  )
+
+```
+
+### Figure for SDG 4.1.2 - Upper secondary school by Population Groups
+```{r}
+##Table by population groups
+
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C040102_uppersec_open <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%      # Show results disaggregated by pop groups
+  summarise(                                         # put all variables here
+    var_name = "SDG4_2_2 upper secondary",                          # name of the variable
+    num_obs_uw = unweighted(n()),                    # unweighted total count
+    denominator = survey_total(),                      # weighted total count
+    mean_value = survey_mean(C040102_uppersec_open, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+  )
+
+##Chart for the indicator above
+
+ggplot(C040102_uppersec_open, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 4.1.2",
+    subtitle = "Completion rate of upper secondary school amongst those age 19 - 34 years.",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+### Figure for SDG 4.1.2 - Upper secondary school by Population Groups, Gender and disability
+
+```{r, eval=FALSE}
+#### Table and chart that shows results by age/sex/disability
+
+C040102_uppersec_open_AGD <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07) & !is.na(HH_02) & !is.na(disability)) %>%  # Ensure disability is not missing
+  group_by(Intro_07, HH_02, disability) %>%                          # Include disability in grouping
+  summarise(
+    var_name = "SDG 4.1.2 - upper secondary",                
+    num_obs_uw = survey_total(!is.na(C040102_primary_open), vartype = NULL),  
+    denominator = survey_total(),                                
+    mean_value = survey_mean(C040102_uppersec_open, vartype = c("ci", "se"), na.rm = TRUE)  
+  )
+
+## **Figure**
+
+ggplot(C040102_uppersec_open_AGD, aes(x = HH_02, y = mean_value, fill = disability)) +  # Fill by disability
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  
+  facet_wrap(~ Intro_07) +  
+  labs(
+     title = "Results of SDG 4.1.2",
+    subtitle = "Completion rate of upper secondary school amongst those age 19 - 34 years",
+    x = "Gender",
+    y = "Completed lower secondary school",  
+    fill = "Disability Status"   # Update legend label to reflect disability
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  theme_unhcr() +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  
+  )
+
+```
+
+
+
+
+
 ## 4.2.2 SDG Indicator
 
 **Participation rate in organized learning (one year before the official primary entry age), by sex**
@@ -1814,6 +2068,87 @@ mutate(C040202 = labelled(C040202, #Add labels
 ```
 ```{r, eval=FALSE}
 table(HHroster$C040202)
+```
+### Figure for SDG 4.2.2 by Population Groups
+```{r}
+##Table by population groups
+
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C040202 <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%      # Show results disaggregated by pop groups
+  summarise(                                         # put all variables here
+    var_name = "SDG4_2_2",                          # name of the variable
+    num_obs_uw = unweighted(n()),                    # unweighted total count
+    denominator = survey_total(),                      # weighted total count
+    mean_value = survey_mean(C040202, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+  )
+
+##Chart for the indicator above
+
+ggplot(C040202, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 4.2.2",
+    subtitle = "Participation rate in organized learning one year before the official entry age to primary education (children age 4 years)",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+### Figure for SDG 4.2.2 by Population Groups and Gender 
+
+```{r, eval=FALSE}
+#### Table and chart that shows results by age/sex/diversity
+
+C040202_AGD <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07) & !is.na(HH_02)) %>%  #
+  group_by(Intro_07, HH_02) %>%                          
+  summarise(
+    var_name = "SDG 4.2.2",                
+    num_obs_uw = survey_total(!is.na(C040202), vartype = NULL),  
+    denominator = survey_total(),                                
+    mean_value = survey_mean(C040202, vartype = c("ci", "se"), na.rm = TRUE)  
+  )
+
+## **Figure**
+
+ggplot(C040202_AGD, aes(x = HH_02, y = mean_value, fill = HH_02)) + 
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  
+  facet_wrap(~ Intro_07) +  
+  labs(
+     title = "Results of SDG 4.2.2",
+    subtitle = "Participation rate in organized learning one year before the official entry age to primary education (children age 4 years)",
+    x = "Gender",
+    y = "Proportion of children enrolled in primary school at age 4",  
+    fill = "Gender"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  theme_unhcr() +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  
+  )
 ```
 
 ## 4.3.1 SDG Indicator 
@@ -1896,6 +2231,179 @@ table(RA_adult$C040301_25_45)
 ```
 
 
+### Figure for SDG 4.3.1 - AGE GROUP 15 - 24 by Population Groups
+
+
+```{r, eval=FALSE}
+###Table standard 
+
+
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+
+C040301_15_24 <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(Intro_07)) %>%                     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%                           # Group by pop_groups
+  summarise(                                         # Summarise to compute values
+    var_name = "SDG4.3.1 (15 - 24 years of age)",                          # Name of the variable
+    num_obs_uw = unweighted(n()),                    # Unweighted total count
+    denominator = survey_total(),                    # Weighted total count
+    mean_value = survey_mean(C040301_15_24, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
+  )
+
+
+##Chart for the indicator above
+
+
+
+ggplot(C040301_15_24, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 4.3.1",
+    subtitle = "Participation rate of youth and adults (15 - 24 years) in formal and non-formal education and training",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+### Figure for SDG 4.3.1 -  AGE GROUP 15 - 24 by Population Groups, Gender and Disability
+
+```{r, eval=FALSE}
+#### Table and chart that shows results by age/sex/diversity
+
+C040301_15_24_AGD <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  # Exclude HH07_cat categories 1, 2, and 5
+  group_by(Intro_07, HH_02_RA,disability_RA) %>%
+  summarise(
+    var_name = "SDG4.3.1 (15 - 24 years of age)",                # Name of the variable
+    num_obs_uw = survey_total(!is.na(C040301_15_24), vartype = NULL),  # Unweighted total count
+    denominator = survey_total(),                                # Weighted total count
+    mean_value = survey_mean(C040301_15_24, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
+  )
+
+## figure
+
+ggplot(C040301_15_24_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  # Add values on bars
+  facet_wrap(~ Intro_07) +  # Create separate plots for each pop_group
+  labs(
+    title = "Results of SDG 4.3.1",
+    subtitle = "Participation rate of youth and adults (15 - 24 years) in formal and non-formal education and training",
+    x = "Gender ",
+    y = "Proportion of those participating",
+    fill = "Disability Status"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  theme_unhcr() +  # Apply UNHCR theme
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  )
+```
+
+### Figure for SDG 4.3.1 - AGE GROUP 25 - 45 by Population Groups
+
+
+```{r, eval=FALSE}
+###Table standard 
+
+
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+
+C040301_25_45 <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(Intro_07)) %>%                     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%                           # Group by pop_groups
+  summarise(                                         # Summarise to compute values
+    var_name = "SDG4.3.1 (25 - 45 years of age)",                          # Name of the variable
+    num_obs_uw = unweighted(n()),                    # Unweighted total count
+    denominator = survey_total(),                    # Weighted total count
+    mean_value = survey_mean(C040301_25_45, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
+  )
+
+
+##Chart for the indicator above
+
+
+
+ggplot(C040301_25_45, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 4.3.1",
+    subtitle = "Participation rate of youth and adults (25 - 45 years) in formal and non-formal education and training",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+### Figure for SDG 4.3.1 -  AGE GROUP 25 - 45 by Population Groups, Gender and Disability
+
+```{r, eval=FALSE}
+#### Table and chart that shows results by age/sex/diversity
+
+C040301_25_45_AGD <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  # Exclude HH07_cat categories 1, 2, and 5
+  group_by(Intro_07, HH_02_RA,disability_RA) %>%
+  summarise(
+    var_name = "SDG4.3.1 (25 - 45 years of age)",                # Name of the variable
+    num_obs_uw = survey_total(!is.na(C040301_15_24), vartype = NULL),  # Unweighted total count
+    denominator = survey_total(),                                # Weighted total count
+    mean_value = survey_mean(C040301_25_45, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
+  )
+
+## figure
+
+ggplot(C040301_25_45_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  # Add values on bars
+  facet_wrap(~ Intro_07) +  # Create separate plots for each pop_group
+  labs(
+    title = "Results of SDG 4.3.1",
+    subtitle = "Participation rate of youth and adults (25 - 45 years) in formal and non-formal education and training",
+    x = "Gender ",
+    y = "Proportion of those participating",
+    fill = "Disability Status"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  theme_unhcr() +  # Apply UNHCR theme
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  )
+```
 ## 4.5.1 SDG Indicator
 
 **Parity indices (female/male, rural/urban, bottom/top wealth quintile and others such as disability status, indigenous peoples and conflict-affected, as data become available) for all education indicators on this list that can be disaggregated**

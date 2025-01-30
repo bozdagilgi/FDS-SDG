@@ -171,3 +171,37 @@ RA_caregiver  <- RA_caregiver %>%
     childnametouseSEX = as_factor(childnametouseSEX) %>%          # Convert to factor
       recode_factor(!!!gender_labels)        # Apply recoding
   )
+
+# Define labels for disability
+disability_labels <- c(
+  "1" = "Disabled",
+  "2" = "Non-Disabled"
+)
+
+HHroster <- HHroster %>%
+  mutate(
+    disability = as_factor(disability) %>%          # Convert to factor
+      recode_factor(!!!disability_labels))       # Apply recoding
+  
+
+RA_caregiver  <- RA_caregiver %>%
+  mutate(
+    disability_RC = as_factor(disability_RC) %>%          # Convert to factor
+      recode_factor(!!!disability_labels)        # Apply recoding
+  )
+main <- main %>%
+  mutate(
+    disability_HoH = as_factor(disability_HoH) %>%          # Convert to factor
+      recode_factor(!!!disability_labels)        # Apply recoding
+  )
+
+RA_adult  <- RA_adult %>%
+  mutate(
+    disability_RA = as_factor(disability_RA) %>%          # Convert to factor
+      recode_factor(!!!disability_labels)        # Apply recoding
+  )
+RA_woman <- RA_woman %>%
+  mutate(
+    disability_RW = as_factor(disability_RW) %>%          # Convert to factor
+      recode_factor(!!!disability_labels)        # Apply recoding
+  )
