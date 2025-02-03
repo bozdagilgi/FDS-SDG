@@ -1001,7 +1001,6 @@ RA_caregiver <- RA_caregiver %>%
       zlen < -2 ~ 1, 
       zlen > -2 ~ 0,
       TRUE ~ NA_real_  ))
-      
 ```
 ```{r, eval=FALSE}
 stunting_prevalence <- RA_caregiver %>%
@@ -1344,7 +1343,53 @@ mutate(C030102 = labelled(C030102,
                                 label = "Proportion of births attended by skilled health personnel"
   ))
 ```
+### Figure for SDG 3.1.2 by Population Groups
+```{r, eval=FALSE}
 
+##This indicator is located in the 'RA_woman' dataset
+
+##Add weights when/if available
+FDS_PAK_2024_RA_woman <- RA_woman %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = , # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+C030102 <- FDS_PAK_2024_RA_woman %>%
+  filter(!is.na(Intro_07)) %>%                     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%                           # Group by pop_groups
+  summarise(                                         # Summarise to compute values
+    var_name = "SDG3_1_2",                          # Name of the variable
+    num_obs_uw = unweighted(n()),                    # Unweighted total count
+    denominator = survey_total(),                    # Weighted total count
+    mean_value = survey_mean(C030102, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
+  )
+
+
+##Chart for the indicator above
+
+
+
+ggplot(C030102, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 3.1.2",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+Note* This indicator should not be dissagregated by disability 
 
 ## 3.8.1 SDG Indicator
 
@@ -1736,7 +1781,7 @@ table(HHroster$C040102_uppersec)
 ```
 
 2. 1. Alternative approach to calculation for the SDG 4.1.2 - open age, upper limit of 34 based on 
-[Expert Group on Refugee and Internally Displaced Persons Statistics — International Recommendations on Refugee Statistics](https://egrisstats.org/wp-content/uploads/2021/12/International-Recommendations-on-Refugee-Statistics.pdf)
+[Expert Group on Refugee and Internally Displaced Persons Statistics — International Recommendations on Refugee Statistics](https://egrisstats.org/wp-content/uploads/2021/12/International-Recommendations-on-Refugee-Statistics.pdf). Note that this approach does not directly correspond to the SDG indicator calculation. 
 ```{r, eval=FALSE}
 #Primary education
 HHroster <- HHroster %>%
@@ -2527,6 +2572,89 @@ mutate(C050b01 = case_when(
 table(RA_adult$C050b01)
 ```
 
+### Figure for SDG 5.b.1 by Population Groups
+
+
+```{r, eval=FALSE}
+###Table standard 
+
+
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+
+C050b01 <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(Intro_07)) %>%                     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%                           # Group by pop_groups
+  summarise(                                         # Summarise to compute values
+    var_name = "SDG5_b_1",                          # Name of the variable
+    num_obs_uw = unweighted(n()),                    # Unweighted total count
+    denominator = survey_total(),                    # Weighted total count
+    mean_value = survey_mean(C050b01, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
+  )
+
+
+##Chart for the indicator above
+
+
+
+ggplot(C050b01, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 5.b.1",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+### Figure for SDG 5.b.1 by Population Groups, Gender and Disability
+
+```{r, eval=FALSE}
+#### Table and chart that shows results by age/sex/diversity
+
+C050b01_AGD <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(HH_02_RA) & !is.na(Intro_07)) %>%  
+  group_by(Intro_07, HH_02_RA) %>%  
+  summarise(
+    var_name = "impact3_3",                                      # Name of the variable
+    num_obs_uw = survey_total(!is.na(C050b01), vartype = NULL),  # Unweighted total count
+    denominator = survey_total(),                                # Weighted total count
+    mean_value = survey_mean(C050b01, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
+  )
+
+ggplot(C050b01_AGD, aes(x = HH_02_RA, y = mean_value, fill = HH_02_RA)) +  # Removed disability_RA from fill
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  # Add values on bars
+  facet_wrap(~ Intro_07) +  # Create separate plots for each pop_group
+  labs(
+    title = "Proportion of adults owning a mobile phone",
+    x = "Gender",
+    y = "Those who declare feeling safe",
+    fill = "Gender"  # Adjusted fill label
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
+  theme_unhcr() +  # Apply UNHCR theme
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  )
+
+```
 ## 6.1.1 SDG Indicator
 
 **Proportion of population using safely managed drinking water services**
@@ -2622,6 +2750,57 @@ table(main$C060101)
 
 ```
 
+### Figure for SDG 6.1.1 by Population Groups
+
+
+```{r, eval=FALSE}
+
+
+##Table by population groups
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C060101 <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%      # Show results disaggregated by pop groups
+  summarise(                                         # put all variables here
+    var_name = "SDG6.1.1",                          # name of the variable
+    num_obs_uw = unweighted(n()),                    # unweighted total count
+    denominator = survey_total(),                      # weighted total count
+    mean_value = survey_mean(C060101, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+  )
+
+
+###Chart of SDG 6.1.1 by pop groups
+
+ggplot(C060101, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
+  scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 6.1.1",
+    x = "Population Groups",
+    y = "Mean Value with Standard Errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+
+
+```
+
 ## 6.2.1 SDG Indicator
 
 **Proportion of population using (a) safely managed sanitation services and (b) a hand-washing facility with soap and water**
@@ -2694,7 +2873,57 @@ table(main$C060102)
 
 ```
 
-Indicator Code: C060201
+### Figure for SDG 6.1.2 by Population Groups
+
+
+```{r, eval=FALSE}
+
+
+##Table by population groups
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C060102 <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%      # Show results disaggregated by pop groups
+  summarise(                                         # put all variables here
+    var_name = "outcome12_1",                          # name of the variable
+    num_obs_uw = unweighted(n()),                    # unweighted total count
+    denominator = survey_total(),                      # weighted total count
+    mean_value = survey_mean(C060102, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+  )
+
+
+###Chart of outcome 12_1 by pop groups
+
+ggplot(C060102, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
+  scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 6.1.2",
+    x = "Population Groups",
+    y = "Mean Value with Standard Errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+
+
+```
+
 
 ## 7.1.1 SDG Indicator
 
@@ -2742,7 +2971,7 @@ main <- main %>%
       (HE01 %in% c(1,2) & (HE05_hours >= 1 & HE05_hours != 98)) ~ 1, #If the main source of electricity is national gird or mini-grid which is available at least 1 hour every evening, then Capacity is above tier 1.  
       HE01 %in% c(3,5,6) & HE02a %in% c("A", "B", "C", "D", "E", "F", "G") ~ 1, #If the main source of electricity is solar home system, electric generator or rechargeable batter & the household is able to power at least a small device, then Capacity is above tier 1.
       HE01 == 4 & HE02a %in% c("A", "B") & HE02b >= 2  ~ 1, # If households use a solar lantern, can power either a mobile charger or radio, and use multiple light bulbs, capacity tier is at least 1. 
-      TRUE ~ 2)) #All other cases, capacity of electricity is below tier 1.  
+      TRUE ~ 0)) #All other cases, capacity of electricity is below tier 1.  
 
 main <- main %>%
    mutate(C070101 = labelled(C070101,
@@ -2752,8 +2981,60 @@ main <- main %>%
                                 ),
                                 label = "Proportion of households with access to electricity from TIER 1 or above"))
 ```
-      
+```{r}
+table(main$C070101)
+```
 
+## Figure for SDG 7.1.1 by Population Groups
+
+
+```{r, eval=FALSE}
+
+
+##Table by population groups
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C070101 <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%      # Show results disaggregated by pop groups
+  summarise(                                         # put all variables here
+    var_name = "SDG7.1.1",                          # name of the variable
+    num_obs_uw = unweighted(n()),                    # unweighted total count
+    denominator = survey_total(),                      # weighted total count
+    mean_value = survey_mean(C070101, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+  )
+
+
+###Chart of SDG 7.1.1 by pop groups
+
+ggplot(C070101, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
+  scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 7.1.1",
+    x = "Population Groups",
+    y = "Mean Value with Standard Errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+
+
+```
 
 ## 7.1.2 SDG Indicator
 
