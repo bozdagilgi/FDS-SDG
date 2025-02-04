@@ -2329,7 +2329,7 @@ ggplot(C040301_15_24, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 #### Table and chart that shows results by age/sex/diversity
 
 C040301_15_24_AGD <- FDS_PAK_2024_RA_adult %>%
-  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  # Exclude HH07_cat categories 1, 2, and 5
+  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  
   group_by(Intro_07, HH_02_RA,disability_RA) %>%
   summarise(
     var_name = "SDG4.3.1 (15 - 24 years of age)",                # Name of the variable
@@ -2416,7 +2416,7 @@ ggplot(C040301_25_45, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 #### Table and chart that shows results by age/sex/diversity
 
 C040301_25_45_AGD <- FDS_PAK_2024_RA_adult %>%
-  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  # Exclude HH07_cat categories 1, 2, and 5
+  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%
   group_by(Intro_07, HH_02_RA,disability_RA) %>%
   summarise(
     var_name = "SDG4.3.1 (25 - 45 years of age)",                # Name of the variable
@@ -3155,6 +3155,52 @@ main <- main %>%
                                 label = "Proportion of population with primary reliance on clean fuels and technology"))
 ```
 
+### Figure for SDG 7.1.2 by Population Groups
+
+```{r, eval=FALSE}
+###Table standard 
+
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+
+C070102 <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%                     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%                           # Group by pop_groups
+  summarise(                                         # Summarise to compute values
+    var_name = "SDG7.1.2",                          # Name of the variable
+    num_obs_uw = unweighted(n()),                    # Unweighted total count
+    denominator = survey_total(),                    # Weighted total count
+    mean_value = survey_mean(C070102, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
+  )
+
+
+##Chart for the indicator above
+
+ggplot(C070102, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 7.1.2",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
 ## 8.5.1 SDG Indicator
 
 **Average hourly earnings of employees, by sex, age, occupation and persons with disabilities**
@@ -3179,6 +3225,8 @@ Percent (%)
 
 **Denominator:** Total number of individuals in the labour force
 
+**Dataset:** RA_adult
+
 **Concepts**:
 
 *Unemployed persons* are defined as all those of working age (usually aged 15 and above) who were not in employment, carried out activities to seek employment during a specified recent period and were currently available to take up employment given a job opportunity.
@@ -3194,8 +3242,22 @@ Percent (%)
 2. [Labour Force Statistics](https://ilostat.ilo.org/methods/concepts-and-definitions/description-labour-force-statistics/)
 
 ```{r, eval=FALSE}
-#Step 2: Determine who is employed based on various conditions 
-main <- main %>%
+table(RA_adult$EMP01) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you work for someone else for pay, for one or more hours?
+table(RA_adult$EMP02) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you run or do any kind of business, farming or other activity to make money?
+table(RA_adult$EMP03) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you help in a family business or farm?
+table(RA_adult$EMP04) #Even though you did not work, during the past 7 days, did you have a paid job from which you were temporarily absent?
+table(RA_adult$EMP05) #Even though you did not work, during the past 7 days, did you have a business or a helper job in a family business/farm from which you were temporarily absent?
+table(RA_adult$EMP06a) #During the past 7 days, did you do any work in farming or rearing farm animals, fishing or fish farming, or none of these?
+table(RA_adult$EMP06b) #Was this work that you mentioned in farming or rearing farming animals, fishing or fish farming, or none of these?
+table(RA_adult$EMP06c) #Thinking about this work, are the products intended only for sale, mainly for sale, only for family use, or mainly for family use?
+table(RA_adult$EMP25a) #During the past 30 days, did you do anything to find a paid job?
+table(RA_adult$EMP25aa)#During the past 30 days, did you do anything to start a business?
+table(RA_adult$EMP29)  #Could you start working within the next 14 days if you were offered a job?
+```
+
+```{r, eval=FALSE}
+#Step 1: Determine who is employed based on various conditions 
+RA_adult <- RA_adult %>%
   mutate(employed = case_when(
     EMP01 == 1  ~ 1,  # Paid employment - employees
     EMP02 == 1 & EMP06b == 3~ 1,  # Self-employment
@@ -3210,7 +3272,7 @@ main <- main %>%
 
 ```{r, eval=FALSE}
 #Step 2: Define unemployed: those not employed but actively looking for work and available to carry out activities
-main <- main %>%
+RA_adult <- RA_adult %>%
   mutate(unemployed = case_when(
     (employed == 0 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) ~ 1,  # Actively looking for work
     TRUE ~ 0  # Not unemployed if not actively looking or employed
@@ -3219,7 +3281,7 @@ main <- main %>%
 
 ```{r, eval=FALSE}
 #Step 3: Define labour force: anyone employed or unemployed
-main <- main %>%
+RA_adult <- RA_adult %>%
   mutate(labour_force = case_when(
     (employed == 1 | unemployed == 1) ~ 1,  # Employed or actively seeking work
     TRUE ~ 0  # Not in labour force
@@ -3228,8 +3290,8 @@ main <- main %>%
 
 ```{r, eval=FALSE}
 #Step 4: Outcome - Unemployment rate
-main <- main %>%
-  mutate(SDG_8_5_2 = case_when(
+RA_adult <- RA_adult %>%
+  mutate(C080502 = case_when(
     employed == 1 & labour_force == 1 ~ 0,  # If employed, outcome is 2 (not unemployed)
     unemployed == 1 & labour_force == 1 ~ 1,  # If unemployed, outcome is 1
     TRUE ~ NA_real_  # Catch-all for cases not in the labor force or with missing data
@@ -3237,13 +3299,100 @@ main <- main %>%
 ```
 
 ```{r, eval=FALSE}
-main <- main %>%
-   mutate(SDG_8_5_2 = labelled(SDG_8_5_2,
+RA_adult <- RA_adult %>%
+   mutate(C080502 = labelled(C080502,
                                 labels = c(
                                   "Unemployed" = 1,  # Label for Yes
                                   "Not unemployed" = 0   # Label for No
                                 ),
                                 label = "Proportion of people (working age) who are unemployed"))
+```
+
+
+### Figure for SDG 8.5.2 by Population Groups
+
+```{r, eval=FALSE}
+###Table standard 
+
+
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+
+C080502 <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(Intro_07)) %>%                     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%                           # Group by pop_groups
+  summarise(                                         # Summarise to compute values
+    var_name = "SDG8.5.2",                          # Name of the variable
+    num_obs_uw = unweighted(n()),                    # Unweighted total count
+    denominator = survey_total(),                    # Weighted total count
+    mean_value = survey_mean(C080502, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
+  )
+
+
+##Chart for the indicator above
+
+ggplot(C080502, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 8.5.2",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+
+### Figure for SDG 8.5.2 by Population Groups, Gender and Disability
+
+```{r, eval=FALSE}
+#### Table and chart that shows results by age/sex/diversity
+
+C080502_AGD <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  
+  group_by(Intro_07, HH_02_RA,disability_RA) %>%
+  summarise(
+    var_name = "SDG8_5_2",                # Name of the variable
+    num_obs_uw = survey_total(!is.na(C080502), vartype = NULL),  # Unweighted total count
+    denominator = survey_total(),                                # Weighted total count
+    mean_value = survey_mean(C080502, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
+  )
+
+## figure
+
+ggplot(C080502_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  # Add values on bars
+  facet_wrap(~ Intro_07) +  # Create separate plots for each pop_group
+  labs(
+    title = "Proportion of people (working age) who are unemployed",
+    x = "Gender ",
+    y = "Proportion of people who are unemployed",
+    fill = "Disability Status"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  theme_unhcr() +  # Apply UNHCR theme
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  )
+```
+```{r}
+
 ```
 
 ## 8.6.1 SDG Indicator 
@@ -3296,11 +3445,11 @@ table(main$EMP29)  #Could you start working within the next 14 days if you were 
 table(main$EducR08)#Have you ever completed an apprenticeship?
 table(main$educ_now) # Are you currently going to school?  If it is school holiday between two school years, tell us about the last school year.Do not include kindergarten or preschool.
 ```
-ILGI: *Note: Apart from the above variables, this indicator should also include other forms of training (not only apprenticeship). With questioins posted in FDS, we are unable to determine if an individual is currently participating in training other than apprenticeship. 
+ILGI: *Note: Apart from the above variables, this indicator should also include other forms of training (not only apprenticeship). With questions posted in FDS, we are unable to determine if an individual is currently participating in training other than apprenticeship. 
 Check the entire calculation with Ilgi. 
 
 ```{r, eval=FALSE}
-#Step 2: Create a variable identifying unemployed youth
+#Step 1: Create a variable identifying unemployed youth
 main <- main %>%
   mutate(employed_youth = case_when(
     EMP01 == 1 & between(age_selected, 15, 24) ~ 1,  # Paid employment - employees
@@ -3487,6 +3636,54 @@ main <- main %>%
 table(main$C080701a)
 ```
 
+
+### Figure for SDG 8.7.1a by Population Groups
+
+```{r, eval=FALSE}
+###Table standard 
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+
+C080701a <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%                     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%                           # Group by pop_groups
+  summarise(                                         # Summarise to compute values
+    var_name = "SDG8.7.1a",                          # Name of the variable
+    num_obs_uw = unweighted(n()),                    # Unweighted total count
+    denominator = survey_total(),                    # Weighted total count
+    mean_value = survey_mean(C080701a, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
+  )
+
+
+##Chart for the indicator above
+
+ggplot(C080701a, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 8.7.1a",
+    subtitle = "Proportion of children aged 5-17 years engaged in economic activities at or above age-specific hourly thresholds",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+
 *2nd Indicator* - Proportion and number of children aged 5-17 years engaged in economic activities and household chores at or above age-specific hourly thresholds (general production boundary basis):
 
 Child labour for the 5 to 11 age range: children working for 1 hour or more per week in economic activity and/or involved in unpaid household services for 21 hours or more per week;
@@ -3523,7 +3720,7 @@ summary(main$CL09) # In the past 7 days, from [the same week day as the day of t
 #Step 2: Create a variable identifying children who were engaged in household chores
 main <- main %>%
   mutate(child_household_chores = case_when(
-   CL08_1 == 1 | CL08_2 == 1 | CL08_3 == 1 | CL08_4 == 1 | CL08_5 == 1 | CL08_5 == 1 | CL08_6 == 1 | CL08_8 == 1 | CL08_9 | CL08_10 == 1 == 1 ~ 1, #assign 1 if the child has been engaged in any household chore
+   CL08_1 == 1 | CL08_2 == 1 | CL08_3 == 1 | CL08_4 == 1 | CL08_5 == 1 | CL08_6 == 1 | CL08_8 == 1 | CL08_9 == 1 | CL08_10 == 1 ~ 1, #assign 1 if the child has been engaged in any household chore
    CL08_1 == 2 & CL08_2 == 2 & CL08_3 == 2 & CL08_4 == 2 & CL08_5 == 2 & CL08_6 == 2 & CL08_6 == 2 & CL08_8 == 2 & CL08_9 == 2 & CL08_10 == 2 ~ 0, #assign 2 if the child has not been engaged in any household chore
     TRUE ~ NA                # assign NA for all other cases 
   ))
@@ -3531,7 +3728,7 @@ main <- main %>%
 ```{r, eval=FALSE}
 
 #Step 2: Create a variable identifying the children who have been engaged in an economic activity at or above age-specific hourly thresholds. 
-#main <- main %>%
+main <- main %>%
   mutate(child_labor_economic_activity  = case_when(
     # Condition for children aged 5-11: engaged in economic activity for at least 1 hour
     child_labor_age >= 5 & child_labor_age <= 11 & child_economic_activity == 1 & CL02 >= 1 ~ 1,
@@ -3548,7 +3745,8 @@ main <- main %>%
 ```
 
 ```{r, eval=FALSE}
-#Step 2: Create a variable identifying the children who have been engaged in household chores at or above age-specific hourly thresholds.
+#Step 3: Create a variable identifying the children who have been engaged in household chores at or above age-specific hourly thresholds.
+main <- main %>%
 mutate(child_labor_household_chores  = case_when(
     # Condition for children aged 5-11: engaged in household chores for at least 21 hours
    child_labor_age >= 5 & child_labor_age <= 11 & child_household_chores == 1 & CL09 >= 21 ~ 1,
@@ -3564,7 +3762,7 @@ mutate(child_labor_household_chores  = case_when(
   ))
 ```
 ```{r, eval=FALSE}
-#Step 3: Combine both categories to compute the indicator
+#Step 4: Combine both categories to compute the indicator
 main <- main %>%
   mutate(C080701b = case_when(child_labor_economic_activity == 1 | child_labor_household_chores == 1 ~ 1,
   child_labor_economic_activity == 0 & child_labor_household_chores == 0 ~ 0 ))
@@ -3583,6 +3781,53 @@ main <- main %>%
 ```{r, eval=FALSE}
 table(main$C080701b)
 ```
+
+### Figure for SDG 8.7.1b by Population Groups
+
+```{r, eval=FALSE}
+###Table standard 
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+
+C080701b <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%                     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%                           # Group by pop_groups
+  summarise(                                         # Summarise to compute values
+    var_name = "SDG8.7.1b",                          # Name of the variable
+    num_obs_uw = unweighted(n()),                    # Unweighted total count
+    denominator = survey_total(),                    # Weighted total count
+    mean_value = survey_mean(C080701b, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
+  )
+
+
+##Chart for the indicator above
+
+ggplot(C080701b, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 8.7.1b",
+    subtitle = "Proportion of children aged 5-17 years engaged in economic activities and household chores at or above age-specific hourly thresholds",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
 
 ## 8.10.2 SDG Indicator
 
@@ -3603,19 +3848,21 @@ Percent (%)
 
 **Denominator**: Total number of individuals 15 or above
 
+**Dataset:** RA_adult
+
 **Sources** 
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-10-02.docx&wdOrigin=BROWSELINK)
 
 ```{r, eval=FALSE}
-table(main$FI01) #Do you, either by yourself or together with someone else, currently have an account at a bank or another type of formal financial institution in the host country?
-table(main$FI02) #Do you, personally, have a debit card in the host country?
-table(main$FI03) #Do you, personally, have a credit card in the host country?
-table(main$FI10) #In the past 12 months, have you personally used a mobile phone to make payments, buy things, or to send or receive money using a service such as [country specific example]?
+table(RA_adult$FI01) #Do you, either by yourself or together with someone else, currently have an account at a bank or another type of formal financial institution in the host country?
+table(RA_adult$FI02) #Do you, personally, have a debit card in the host country?
+table(RA_adult$FI03) #Do you, personally, have a credit card in the host country?
+table(RA_adult$FI10) #In the past 12 months, have you personally used a mobile phone to make payments, buy things, or to send or receive money using a service such as [country specific example]?
 ```
 
 ```{r, eval=FALSE}
-main <- main %>%
-  mutate(SDG08_10_2 = case_when(
+RA_adult <- RA_adult %>%
+  mutate(C081002 = case_when(
    FI01 == 1 | FI02 == 1 | FI03 == 1 | FI10 == 1 ~ 1,
    FI01 == 2 & FI02 == 2 & FI03 == 2 & FI10 %in% c(2,3) ~ 0,
     TRUE ~ NA                # For individuals under 18 and all other cases, assigns NA
@@ -3623,8 +3870,8 @@ main <- main %>%
 
 ```
 ```{r, eval=FALSE}
-main <- main %>%
-   mutate(SDG08_10_2 = labelled(SDG08_10_2,
+RA_adult <- RA_adult %>%
+   mutate(C081002 = labelled(C081002,
                                 labels = c(
                                   "Yes" = 1,  # Label for Yes
                                   "No" = 0    # Label for No
@@ -3633,8 +3880,91 @@ main <- main %>%
   ))
 ```
 ```{r, eval=FALSE}
-table(main$SDG08_10_2)
+table(RA_adult$C081002)
 ```
+
+### Figure for SDG 8.10.2 by Population Groups
+
+```{r, eval=FALSE}
+###Table standard 
+
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+
+C081002 <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(Intro_07)) %>%                     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%                           # Group by pop_groups
+  summarise(                                         # Summarise to compute values
+    var_name = "SDG8.10.2",                          # Name of the variable
+    num_obs_uw = unweighted(n()),                    # Unweighted total count
+    denominator = survey_total(),                    # Weighted total count
+    mean_value = survey_mean(C081002, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
+  )
+
+
+##Chart for the indicator above
+
+ggplot(C081002, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 8.10.2",
+    subtitle = "Proportion of people above with an account at a bank or other financial institution or with a mobile-money-service provider",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+### Figure for SDG 8.10.1 by Population Groups, Gender and Disability
+
+```{r, eval=FALSE}
+#### Table and chart that shows results by age/sex/diversity
+
+C081002_AGD <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  
+  group_by(Intro_07, HH_02_RA,disability_RA) %>%
+  summarise(
+    var_name = "SDG 8.10.2",                # Name of the variable
+    num_obs_uw = survey_total(!is.na(C081002), vartype = NULL),  # Unweighted total count
+    denominator = survey_total(),                                # Weighted total count
+    mean_value = survey_mean(C081002, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
+  )
+
+## figure
+
+ggplot(C081002_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  # Add values on bars
+  facet_wrap(~ Intro_07) +  # Create separate plots for each pop_group
+  labs(
+    title = "Proportion of people above with an account at a bank or other financial institution or with a mobile-money-service provider",
+    x = "Gender ",
+    y = "Proportion of people with an account",
+    fill = "Disability Status"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  theme_unhcr() +  # Apply UNHCR theme
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  )
+```
+
 ## 10.3.1 SDG Indicator
 
 **10.3.1 Proportion of population reporting having personally felt discriminated against or harassed in the previous 12 months on the basis of a ground of discrimination prohibited under international human rights law**
@@ -3674,7 +4004,7 @@ table(RA_adult$DI01_09) #You are threatened or harassed.```
 ```
 ```{r, eval=FALSE}
 RA_adult <- RA_adult %>%
-  mutate(SDG10_3_1 = case_when(
+  mutate(C200204 = case_when(
     # If any value is 1, 2, 3, 4, or 5, assign 1
     rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
                      DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . %in% 1:5)) > 0 ~ 1,
@@ -3686,8 +4016,8 @@ RA_adult <- RA_adult %>%
                      DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 7)) == 9 ~ NA_real_,
     TRUE ~ NA_real_
   )) %>%
-  mutate(SDG10_3_1 = labelled(
-    SDG10_3_1,
+  mutate(C200204 = labelled(
+    C200204,
     labels = c(
       'Yes' = 1,
       'No' = 0
@@ -3697,10 +4027,10 @@ RA_adult <- RA_adult %>%
 
 ```
 ```{r, eval=FALSE}
-table(RA_adult$SDG10_3_1)
+table(RA_adult$C200204)
 ```
 
-### Figure for SDG 16.b.1 by Population Group
+### Figure for SDG 10.3.1 by Population Group
 
 ```{r}
 
@@ -3715,20 +4045,20 @@ FDS_PAK_2024_RA_adult <- RA_adult %>%
 
 ###Table 
 
-SDG10_3_1 <- FDS_PAK_2024_RA_adult %>%
+C200204 <- FDS_PAK_2024_RA_adult %>%
   filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
   group_by(Intro_07) %>%      # Show results disaggregated by pop groups
   summarise(                                         # put all variables here
     var_name = "SDG10_3_1",                          # name of the variable
     num_obs_uw = unweighted(n()),                    # unweighted total count
     denominator = survey_total(),                      # weighted total count
-    mean_value = survey_mean(SDG10_3_1, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+    mean_value = survey_mean(C200204, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
   )
 
 
 ###Chart of outcome 16.b.1 by pop groups
 
-ggplot(SDG10_3_1, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+ggplot(C200204, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
   geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
                 width = 0.2, position = position_dodge(0.7)) +
@@ -3750,23 +4080,23 @@ ggplot(SDG10_3_1, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 ```
 
 
-### Figure for SDG 16.b.1 by Population Groups, Gender and Disability
+### Figure for SDG10.3.1 by Population Groups, Gender and Disability
 
 ```{r, eval=FALSE}
 #### Table and chart that shows results by age/sex/diversity
-SDG10_3_1_AGD <- FDS_PAK_2024_RA_adult %>%
-  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  # Exclude HH07_cat categories 1, 2, and 5
+C200204_AGD <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  
   group_by(Intro_07, HH_02_RA,disability_RA) %>%
   summarise(
     var_name = "SDG10_3_1",                                      # Name of the variable
-    num_obs_uw = survey_total(!is.na(SDG10_3_1), vartype = NULL),  # Unweighted total count
+    num_obs_uw = survey_total(!is.na(C200204), vartype = NULL),  # Unweighted total count
     denominator = survey_total(),                                # Weighted total count
-    mean_value = survey_mean(SDG10_3_1, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
+    mean_value = survey_mean(C200204, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
   )
 
 
 
-ggplot(SDG10_3_1_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
+ggplot(C200204_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
   geom_text(aes(label = sprintf("%.2f", mean_value)), 
             position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  # Add values on bars
@@ -3817,7 +4147,7 @@ table(RA_adult$FS01) # How safe do you feel walking alone in your area after dar
 ```{r, eval=FALSE}
 RA_adult <- RA_adult %>%
   mutate(
-  SDG16_1_4 = case_when(
+  C160105 = case_when(
     FS01 == 1 | FS01 == 2 ~ 1,     # Assign 1 for Yes (feels safe)
     FS01 == 3 | FS01 == 4 | FS01 == 5 | FS01 == 98 ~ 0,  # Assign 2 for No (does not feel safe)
     TRUE ~ NA_real_                 # Assign NA for any other values (if needed)
@@ -3828,8 +4158,8 @@ RA_adult <- RA_adult %>%
 ```{r, eval=FALSE}
 RA_adult <- RA_adult %>%
    mutate(
-    SDG16_1_4 = labelled(
-      SDG16_1_4,
+    C160105 = labelled(
+      C160105,
       labels = c(
         "Yes" = 1,  # Label for Yes (1)
         "No" = 0    # Label for No (2)
@@ -3839,7 +4169,7 @@ RA_adult <- RA_adult %>%
   )
 ```
 ```{r, eval=FALSE}
-table(RA_adult$SDG16_1_4)
+table(RA_adult$C160105)
 ```
 
 ### Figure for SDG 16.1.4 by Population Groups
@@ -3857,20 +4187,20 @@ FDS_PAK_2024_RA_adult <- RA_adult %>%
   )
 
 
-SDG16_1_4 <- FDS_PAK_2024_RA_adult %>%
+C160105 <- FDS_PAK_2024_RA_adult %>%
   filter(!is.na(Intro_07)) %>%                     # Exclude if pop groups is NA
   group_by(Intro_07) %>%                           # Group by pop_groups
   summarise(                                         # Summarise to compute values
     var_name = "SDG16_1_4",                          # Name of the variable
     num_obs_uw = unweighted(n()),                    # Unweighted total count
     denominator = survey_total(),                    # Weighted total count
-    mean_value = survey_mean(SDG16_1_4, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
+    mean_value = survey_mean(C160105, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
   )
 
 
 ##Chart for the indicator above
 
-ggplot(SDG16_1_4, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+ggplot(C160105, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
   geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
                 width = 0.2, position = position_dodge(0.7)) +
@@ -3894,19 +4224,19 @@ ggplot(SDG16_1_4, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 ```{r, eval=FALSE}
 #### Table and chart that shows results by age/sex/diversity
 
-SDG16_1_4_AGD <- FDS_PAK_2024_RA_adult %>%
-  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  # Exclude HH07_cat categories 1, 2, and 5
+C160105_AGD <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  
   group_by(Intro_07, HH_02_RA,disability_RA) %>%
   summarise(
-    var_name = "impact3_3",                                      # Name of the variable
-    num_obs_uw = survey_total(!is.na(SDG16_1_4), vartype = NULL),  # Unweighted total count
+    var_name = "SDG16.4.1",                                      # Name of the variable
+    num_obs_uw = survey_total(!is.na(C160105), vartype = NULL),  # Unweighted total count
     denominator = survey_total(),                                # Weighted total count
-    mean_value = survey_mean(SDG16_1_4, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
+    mean_value = survey_mean(C160105, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
   )
 
 
 
-ggplot(SDG16_1_4_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
+ggplot(C160105_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
   geom_text(aes(label = sprintf("%.2f", mean_value)), 
             position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  # Add values on bars
@@ -4102,14 +4432,14 @@ HHroster <- HHroster %>%
 ```{r, eval=FALSE}
 #Step 3:Create outcome1_2 variable
 HHroster <- HHroster %>%
-  mutate(SDG16_9_1 = case_when(
+  mutate(C160901 = case_when(
     (birthRegistered == 1 | birthCertificate == 1) ~ 1,  # Child has been registered or has birth certificate
     (birthRegistered == 0 & birthCertificate == 0) ~ 0,  # Child not registered and has no birth certificate
     (is.na(birthRegistered) & birthCertificate == 0) | (birthRegistered == 0 & is.na(birthCertificate)) ~ 0,  # One is NA, the other is No
     TRUE ~ NA_real_  # Handle cases where data is missing or unknown
   )) %>%
-  mutate(SDG16_9_1 = labelled(
-    SDG16_9_1,
+  mutate(C160901 = labelled(
+    C160901,
     labels = c(
       'Yes' = 1,
       'No' = 0
@@ -4118,7 +4448,7 @@ HHroster <- HHroster %>%
   ))
 ```
 ```{r, eval=FALSE}
-table(HHroster$SDG16_9_1)
+table(HHroster$C160901)
 ```
 
 ### Figure for SDG 16.9.1 by Population Groups
@@ -4135,20 +4465,20 @@ FDS_PAK_2024_HHroster <- HHroster %>%
 
 ###Table 
 
-SDG16_9_1 <- FDS_PAK_2024_HHroster %>%
+C160901 <- FDS_PAK_2024_HHroster %>%
   filter(!is.na(Intro_07)) %>%         # Exclude if pop groups is NA
   group_by(Intro_07) %>%                           # Group by pop_groups
   summarise(                                         # Summarise to compute values
     var_name = "outcome1_2",                          # Name of the variable
     num_obs_uw = unweighted(n()),                    # Unweighted total count
     denominator = survey_total(),                    # Weighted total count
-    mean_value = survey_mean(SDG16_9_1, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
+    mean_value = survey_mean(C160901, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with NA removed
   )
 
 
 ##Chart for the indicator above
 
-ggplot(SDG16_9_1, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+ggplot(C160901, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
   geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
                 width = 0.2, position = position_dodge(0.7)) +
@@ -4175,21 +4505,21 @@ ggplot(SDG16_9_1, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 ##Table with gender and population groups - disability is not asked under 5
 
 
-SDG16_9_1_AGD <- FDS_PAK_2024_HHroster %>%
+C160901_AGD <- FDS_PAK_2024_HHroster %>%
   filter(!is.na(HH_02) & !is.na(Intro_07) ) %>%  
   group_by(Intro_07, HH_02) %>%
   summarise(
     var_name = "outcome1_2",                                      # Name of the variable
-    num_obs_uw = survey_total(!is.na(SDG16_9_1), vartype = NULL),  # Unweighted total count
+    num_obs_uw = survey_total(!is.na(C160901), vartype = NULL),  # Unweighted total count
     denominator = survey_total(),                                # Weighted total count
-    mean_value = survey_mean(SDG16_9_1, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
+    mean_value = survey_mean(C160901, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
   )
 
 
 ##Figure 
 
 
-ggplot(SDG16_9_1_AGD, aes(x = HH_02, y = mean_value, fill = Intro_07)) +
+ggplot(C160901_AGD, aes(x = HH_02, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
   geom_text(aes(label = sprintf("%.2f", mean_value)), 
             position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +
@@ -4244,7 +4574,7 @@ table(RA_adult$DI01_09) #You are threatened or harassed.```
 ```
 ```{r, eval=FALSE}
 RA_adult <- RA_adult %>%
-  mutate(SDG16_b_1 = case_when(
+  mutate(C200204 = case_when(
     # If any value is 1, 2, 3, 4, or 5, assign 1
     rowSums(across(c(DI01_01, DI01_02, DI01_03, DI01_04, 
                      DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . %in% 1:5)) > 0 ~ 1,
@@ -4256,8 +4586,8 @@ RA_adult <- RA_adult %>%
                      DI01_05, DI01_06, DI01_07, DI01_08, DI01_09), ~ . == 7)) == 9 ~ NA_real_,
     TRUE ~ NA_real_
   )) %>%
-  mutate(SDG16_b_1 = labelled(
-    SDG16_b_1,
+  mutate(C200204 = labelled(
+    C200204,
     labels = c(
       'Yes' = 1,
       'No' = 0
@@ -4269,12 +4599,13 @@ RA_adult <- RA_adult %>%
 ```{r, eval=FALSE}
 table(RA_adult$SDG16_b_1)
 ```
+
 *Limitations:* 
 The methodology used for this module in the FDS differs in some aspects from the methodology described in the SDG metadata guidance. More details on the FDS methodology for the discrimination module can be found here. ADD LINK - PETRA
 
 ### Figure for SDG 16.b.1 by Population Group
 
-```{r}
+```{r, eval=FALSE}
 
 ##Table by population groups
 
@@ -4287,20 +4618,20 @@ FDS_PAK_2024_RA_adult <- RA_adult %>%
 
 ###Table 
 
-SDG16_b_1 <- FDS_PAK_2024_RA_adult %>%
+C200204 <- FDS_PAK_2024_RA_adult %>%
   filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
   group_by(Intro_07) %>%      # Show results disaggregated by pop groups
   summarise(                                         # put all variables here
     var_name = "SDG16_b_1",                          # name of the variable
     num_obs_uw = unweighted(n()),                    # unweighted total count
     denominator = survey_total(),                      # weighted total count
-    mean_value = survey_mean(SDG16_b_1, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+    mean_value = survey_mean(C200204, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
   )
 
 
 ###Chart of outcome 16.b.1 by pop groups
 
-ggplot(SDG16_b_1, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+ggplot(C200204, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
   geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
                 width = 0.2, position = position_dodge(0.7)) +
@@ -4326,19 +4657,19 @@ ggplot(SDG16_b_1, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 
 ```{r, eval=FALSE}
 #### Table and chart that shows results by age/sex/diversity
-SDG16_b_1_AGD <- FDS_PAK_2024_RA_adult %>%
-  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  # Exclude HH07_cat categories 1, 2, and 5
+C200204_AGD <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(HH_02_RA) & !is.na(disability_RA) & !is.na(Intro_07) ) %>%  
   group_by(Intro_07, HH_02_RA,disability_RA) %>%
   summarise(
     var_name = "SDG16_b_1",                                      # Name of the variable
-    num_obs_uw = survey_total(!is.na(SDG16_b_1), vartype = NULL),  # Unweighted total count
+    num_obs_uw = survey_total(!is.na(C200204), vartype = NULL),  # Unweighted total count
     denominator = survey_total(),                                # Weighted total count
-    mean_value = survey_mean(SDG16_b_1, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
+    mean_value = survey_mean(C200204, vartype = c("ci", "se"), na.rm = TRUE)  # Compute mean with CI and SE
   )
 
 
 
-ggplot(SDG16_b_1_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
+ggplot(C200204_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
   geom_text(aes(label = sprintf("%.2f", mean_value)), 
             position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  # Add values on bars
@@ -4392,10 +4723,10 @@ table(RA_adult$IA07_1) #How about in the past 3 months? Have you used the Intern
 
 ```{r, eval=FALSE}
 RA_adult <- RA_adult %>%
-  mutate(SDG17_8_1 = case_when(IA07 == 1 ~ 1,
+  mutate(C170801 = case_when(IA07 == 1 ~ 1,
                                IA07 == 2 & IA07_1 == 1 ~ 1,
                                TRUE ~ 0)) %>%
-  mutate(SDG17_8_1 = labelled(SDG17_8_1,
+  mutate(C170801 = labelled(C170801,
                               labels = c(
                                  'Yes' = 1,
                                  'No' = 0
@@ -4403,7 +4734,7 @@ RA_adult <- RA_adult %>%
                                label = "Proportion of individuals using the internet" ))
 ```
 ```{r, eval=FALSE}
-table(RA_adult$SDG17_8_1)
+table(RA_adult$C170801)
 ```
 
 
@@ -4422,20 +4753,20 @@ FDS_PAK_2024_RA_adult <- RA_adult %>%
 
 ###Table 
 
-SDG17_8_1 <- FDS_PAK_2024_RA_adult %>%
+C170801 <- FDS_PAK_2024_RA_adult %>%
   filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
   group_by(Intro_07) %>%      # Show results disaggregated by pop groups
   summarise(                                         # put all variables here
     var_name = "SDG_17_8_1",                          # name of the variable
     num_obs_uw = unweighted(n()),                    # unweighted total count
     denominator = survey_total(),                      # weighted total count
-    mean_value = survey_mean(SDG17_8_1, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+    mean_value = survey_mean(C170801, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
   )
 
 
 ###Chart of outcome 8_2 by pop groups
 
-ggplot(SDG17_8_1, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+ggplot(C170801, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
   geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
                 width = 0.2, position = position_dodge(0.7)) +
@@ -4461,14 +4792,14 @@ ggplot(SDG17_8_1, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 
 ```{r, eval=FALSE}
 #### Table and chart that shows results by age/sex/diversity
-SDG17_8_1_AGD <- FDS_PAK_2024_RA_adult %>%
+C170801_AGD <- FDS_PAK_2024_RA_adult %>%
   filter(!is.na(HH_02_RA) & !is.na(Intro_07)) %>%
   group_by(Intro_07, HH_02_RA) %>%
   summarise(
     var_name = "SDG17_8_1",
-    num_obs_uw = survey_total(!is.na(SDG17_8_1), vartype = NULL),
+    num_obs_uw = survey_total(!is.na(C170801), vartype = NULL),
     denominator = survey_total(),
-    mean_value = survey_mean(SDG17_8_1, vartype = c("ci", "se"), na.rm = TRUE)
+    mean_value = survey_mean(C170801, vartype = c("ci", "se"), na.rm = TRUE)
   )
 
 ggplot(SDG17_8_1_AGD, aes(x = HH_02_RA, y = mean_value, fill = HH_02_RA)) +
