@@ -3201,6 +3201,95 @@ ggplot(C070102, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   )
 ```
 
+## 8.3.1 SDG Indicator
+
+**Proportion of informal employment in total employment, by sector and sex**
+Indicator Code: C080302
+
+This indicator presents the share of employment which is classified as informal employment in the total economy, and separately in agriculture and in non-agriculture.
+
+| Standard Questions                                                                           |
+|:--------------------------------------------------------------------------------------------:|
+| EMP01, EMP02, EMP03, EMP04, EMP05, EMP06a, EMP06b, EMP06c, EMP06d, EMP25a, EMP25aa, EMP29    |
+
+**Employment** comprises all persons of working age who, during a short reference period (one week), were engaged in any activity to produce goods or provide services for pay or profit.
+
+**Informal employment** comprises persons who in their main or secondary jobs were in one of the following categories:
+- Own-account workers, employers and members of producers’ cooperatives employed in their own informal sector enterprise
+- Own-account workers engaged in the production of goods exclusively for own final use by their household
+- Contributing family workers if they work in formal or informal sector enterprises
+- Employees holding informal jobs, whether employed by formal sector enterprises, informal sector enterprises, or as paid domestic workers by households. 
+
+To classify persons into formal or informal employment for this indicator, only the characteristics of the main job are considered. 
+
+**Unit of measure:**
+Percent (%)
+
+1. For: Proportion of informal employment in total employment 
+
+**Numerator:** Informal employment
+
+**Denominator:** Total employment 
+
+**Dataset:** RA_adult
+
+2. For: Proportion of informal employment in agriculture 
+
+**Numerator:** Informal employment in agricultural activities
+
+**Denominator:** Total employment in agriculture 
+
+**Dataset:** RA_adult
+
+3. For: Proportion of informal employment in non agriculture employment
+
+**Numerator:** Informal employment in agricultural activities
+
+**Denominator:** Total employment in non agricultural activities 
+
+**Dataset:** RA_adult
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-03-01.docx&wdOrigin=BROWSELINK)
+2. [Labour Force Statistics](https://ilostat.ilo.org/methods/concepts-and-definitions/description-labour-force-statistics/)
+
+
+```{r, eval=FALSE}
+table(RA_adult$EMP01) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you work for someone else for pay, for one or more hours?
+table(RA_adult$EMP02) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you run or do any kind of business, farming or other activity to make money?
+table(RA_adult$EMP03) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you help in a family business or farm?
+table(RA_adult$EMP04) #Even though you did not work, during the past 7 days, did you have a paid job from which you were temporarily absent?
+table(RA_adult$EMP05) #Even though you did not work, during the past 7 days, did you have a business or a helper job in a family business/farm from which you were temporarily absent?
+table(RA_adult$EMP06a) #During the past 7 days, did you do any work in farming or rearing farm animals, fishing or fish farming, or none of these?
+table(RA_adult$EMP06b) #Was this work that you mentioned in farming or rearing farming animals, fishing or fish farming, or none of these?
+table(RA_adult$EMP06c) #Thinking about this work, are the products intended only for sale, mainly for sale, only for family use, or mainly for family use?
+```
+
+```{r}
+#Step 1: Determine who is employed based on various conditions 
+RA_adult <- RA_adult %>%
+  mutate(employed = case_when(
+    EMP01 == 1 ~ 1,  # Paid employment - employees
+    (EMP02 == 1 & EMP06b == 3)  ~ 1,  # Self-employment
+    (EMP03 == 1 & EMP06b == 3)  ~ 1,  # Unpaid contributing family workers
+    EMP04 == 1  ~ 1,  # Absent but still employed
+    (EMP05 == 1 & EMP06a == 3)  ~ 1,  # Absent but self-employed
+    (EMP02 == 1 & EMP06b %in% c(1, 2) & EMP06c %in% c(1, 2))  ~ 1,  # Farming/rearing/fishing for sale
+    (EMP05 == 1 & EMP06a %in% c(1, 2) & EMP06c %in% c(1, 2))  ~ 1,  # Absent but farming for sale
+    TRUE ~ 0
+  ))
+```
+
+```{r}
+#Step 2: Informal employment
+RA_adult <- RA_adult %>%
+  mutate(employed_informal = case_when(
+    EMP01 == 1 & EMP10_4 ~ 1
+
+
+```
+
+
 ## 8.5.1 SDG Indicator
 
 **Average hourly earnings of employees, by sex, age, occupation and persons with disabilities**
