@@ -1,3 +1,6 @@
+#setwd("C:/Users/KAPS/OneDrive - UNHCR/300 - ST - Survey Team - Main/Survey Programme Team/Projects/FDS/Countries/Pakistan/Data Management/4 Analysis")
+
+
 ## Install pacman if not already installed
 if(!require(pacman)) install.packages('pacman')
 
@@ -205,3 +208,129 @@ RA_woman <- RA_woman %>%
     disability_RW = as_factor(disability_RW) %>%          # Convert to factor
       recode_factor(!!!disability_labels)        # Apply recoding
   )
+
+
+#Reshaping data for the calculation of **Proportion of total adult population with secure tenure 
+#rights to land, (a) with legally recognized documentation, and (b) who perceive their rights to land as secure, by sex and type of tenure**
+
+
+# Create a subset with `uuid` and all variables starting with `Land`
+main_subset_land <- main %>%
+  select(uuid, starts_with("Land12b"))
+
+
+
+main_subset_land <- main_subset_land %>%
+  mutate(across(starts_with("Land12b"), as.numeric))  # Convert to consistent type
+
+main_long <- main_subset_land %>%
+  pivot_longer(
+    cols = starts_with("Land12b"), 
+    names_to = "variable", 
+    values_to = "ownership")
+
+#Label various documents 
+main_long <- main_long %>%
+  mutate(
+    document_label = case_when(
+      str_detect(variable, "^Land12b_A") ~ "Certificate of customary ownership",
+      str_detect(variable, "^Land12b_B") ~ "Certificate of occupancy",
+      str_detect(variable, "^Land12b_C") ~ "Certificate of hereditary acquisition listed in registry",
+      str_detect(variable, "^Land12b_D") ~ "Rental contract registered",
+      str_detect(variable, "^Land12b_E") ~ "Rental contract unregistered",
+      str_detect(variable, "^Land12b_F") ~ "Lease registered",
+      str_detect(variable, "^Land12b_G") ~ "Title deed",
+      str_detect(variable, "^Land12b_H") ~ "Survey plan",
+      str_detect(variable, "^Land12b_I") ~ "Note on a sharecropping arrangement",
+      TRUE ~ NA_character_  # For any unmatched variables
+    )
+  )
+
+main_long <- main_long %>%
+  mutate(member_id = as.numeric(str_extract(variable, "(?<=Land12b_[A-I])\\d+"))) %>%
+  filter(member_id >= 1 & member_id <= 50)  # Keep only valid member IDs
+
+
+main_long <- main_long %>%
+  mutate(ownership = ifelse(ownership >= 1 & ownership <= 50, 1, ownership))
+
+main_long <- main_long %>%
+  rename(rosterposition = member_id)
+
+main_long <- main_long %>%
+  filter(ownership == 1)
+
+
+# Aggregate data so that each member gets 1 per document type if they have at least one
+main_aggregated <- main_long %>%
+  group_by(uuid, rosterposition, document_label) %>%
+  summarise(ownership = max(ownership, na.rm = TRUE), .groups = "drop")
+
+main_aggregated <- main_aggregated %>%
+  mutate(
+    document_label = as.character(document_label),  # Convert to character
+    ownership = as.numeric(ownership)  # Convert to numeric
+  )
+
+
+main_wide <- main_aggregated %>%
+  pivot_wider(
+    names_from = document_label,  # Create separate columns for each document type
+    values_from = ownership,      # Fill these columns with ownership values
+    values_fill = list(ownership = 0)  # If missing, assume no ownership (0)
+  )
+
+# Define a mapping of new names to the expected labels
+document_rename_mapping <- c(
+  "Certificate of customary ownership" = "Land12b_A",
+  "Certificate of occupancy" = "Land12b_B",
+  "Certificate of hereditary acquisition listed in registry" = "Land12b_C",
+  "Rental contract registered" = "Land12b_D",
+  "Rental contract unregistered" = "Land12b_E",
+  "Lease registered" = "Land12b_F",
+  "Title deed" = "Land12b_G",
+  "Survey plan" = "Land12b_H",
+  "Note on a sharecropping arrangement" = "Land12b_I"
+)
+
+# Filter the mapping for columns that actually exist in the dataset
+existing_mapping <- document_rename_mapping[names(document_rename_mapping) %in% names(main_wide)]
+
+# Apply renaming only to the columns that exist
+main_wide <- main_wide %>%
+  rename_with(
+    .fn = ~ existing_mapping[.x],
+    .cols = names(existing_mapping)
+  )
+
+
+# Define the mapping of column names to labels
+label_mapping <- list(
+  Land12b_A = "Certificate of customary ownership",
+  Land12b_B = "Certificate of occupancy",
+  Land12b_C = "Certificate of hereditary acquisition listed in registry",
+  Land12b_D = "Rental contract registered",
+  Land12b_E = "Rental contract unregistered",
+  Land12b_F = "Lease registered",
+  Land12b_G = "Title deed",
+  Land12b_H = "Survey plan",
+  Land12b_I = "Note on a sharecropping arrangement"
+)
+
+# Apply labels only to existing columns
+existing_labels <- label_mapping[names(label_mapping) %in% names(main_wide)]
+
+main_wide <- main_wide %>%
+  set_variable_labels(!!!existing_labels)  # Use dynamic labeling
+
+HHroster <- HHroster %>%
+  mutate(rosterposition = as.numeric(rosterposition))
+
+main_wide <- main_wide %>%
+  mutate(rosterposition = as.numeric(rosterposition))
+
+
+# Merge `main_wide` with `HHroster`
+HHroster <- HHroster %>%
+  left_join(main_wide, by = c("uuid", "rosterposition"))
+
