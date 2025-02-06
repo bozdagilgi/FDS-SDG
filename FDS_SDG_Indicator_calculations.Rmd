@@ -942,7 +942,212 @@ Indicator 1.4.2 measures the relevant part of Target 1.4 (ensure men and women h
 
 Indicator 1.4.2 covers (a) all types of land use (such as residential, commercial, agricultural, forestry, grazing, wetlands based on standard land-use classification) in both rural and urban areas; and (b) all land tenure types as recognized at the country level, such as freehold, leasehold, public land, customary land. An individual can hold land in his/her own name, jointly with other individuals, as a member of a household, or collectively as member of group1, cooperative or other type of association.
 
+**Secure tenure rights:** comprised of two sub-components: (i) legally recognized documentation and (ii) perception of the security of tenure, which are both necessary to provide a full measurement of tenure security.
 
+
+**Legally recognized documentation:** Legal documentation of rights refers to the recording and publication of information on the nature and location of land, rights and right holders in a form that is recognized by government, and is therefore official. For purposes of computing SDG Indicator 1.4.2, the country specific metadata will define what documentation on land rights will be counted as legally recognized.
+
+
+**Perceived security of tenure:** Perception of tenure security refers to an individual’s perception of the likelihood of involuntary loss of land, such as disagreement of the ownership rights over land or ability to use it, regardless of the formal status and can be more optimistic or pessimistic. Although those without land rights’ documentation may frequently be perceived to be under threat, and those with documentation perceived as protected, there may be situations where documented land rights alone are insufficient to guarantee tenure security. Conversely, even without legally recognized documentation, individuals may feel themselves to be protected against eviction or dispossession. Therefore, capturing and analysing these diverse ranges of situations will enable a more comprehensive understanding of land tenure security, based on a country specific context.
+
+
+For purposes of constructing the indicator (see next section for rationale), we define perceptions of tenure to be secure if:
+
+(i) The landholder does not report a fear of involuntary loss of the land within the next five years due to, for example, intra-family, community or external threats and
+
+(ii) The landholder reports having the right to bequeath the land.
+
+
+| Standard Questions    |
+|:---------------------:|
+| Land10, Land14, Land15|
+
+**Unit of observation**: Individual
+
+**Dataset**: RA_caregiver
+
+1. SDG 1.4.2 a
+
+**Unit of observation**: Individual (based on household size)
+
+**Numerator**:  People (adults) with legally recognized documentation over land
+
+**Denominator**: Total adult population
+
+**Dataset**: main
+
+2. SDG 1.4.2 b
+
+**Unit of observation**: Individual (based on household size)
+
+**Numerator**:  People (adults) who perceive their rights as secure
+
+**Denominator**: Total adult population
+
+**Dataset**: main
+
+**Sources**  
+1.[SDG 1.4.2 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-01-04-02.docx&wdOrigin=BROWSELINK)
+
+ILGI: Guidance does not mention how to compute the indicator when various plots are involved. Therefore, I have looked at if at least for one plot, the household has legal documents, can bequeath the plot, and is unlikely to loose it. Additionally, this is an individual level indicator and we do have individual data on documentation, however we do not have individual info for security of tenure and bequeath (we do but only from HOH not all members). Moreover, for documents, if counts that someone has a document even if he/she has it as a member of a household. Therefore I looked at the data from a perspective of a household, not individual household members. 
+
+
+```{r, eval=FALSE}
+#table(main$Land10) #Does your household have a document for [current plot] from any government Agency, which formally recognizes the use rights/ownership rights?
+#table(main$Land14) #Does anyone in the household have the right to bequeath [current plot], either alone or jointly with someone else?
+#table(main$Land15) # How likely is it that someone would take [current plot] from your household in the next 5 years? Very unlikely, somewhat unlikely, somewhat likely, or very likely?
+```
+
+```{r, eval=FALSE}
+#Step 1: Questions on land are asked for each plot the household might own or use. Therefore we first need to check all coloumns and create new variables which will assign 1 based on specific conditions: 
+main <- main %>%
+  mutate(
+    # Land10: Assign 1 if the household has a legal document for at least one plot
+    documents = ifelse(rowSums(across(starts_with("Land10"), ~ .x == 1), na.rm = TRUE) > 0, 1, 0),
+    
+    # Land14: Assign 1 if the household can bequeath at least one plot
+    bequeath = ifelse(rowSums(across(starts_with("Land14"), ~ .x == 1), na.rm = TRUE) > 0, 1, 0),
+    
+    # Land15: Assign 1 if the loss of tenure is very unlikely or somewhat unlikely for at least one plot
+    tenure = ifelse(rowSums(across(starts_with("Land15"),  ~ .x %in% c(1, 2)), na.rm = TRUE) > 0, 1, 0)
+  )
+```
+
+```{r, eval=FALSE}
+#Step 2: SDG 1.4.2 a -  People (adults) with legally recognized documentation over land
+main <- main %>%
+mutate(C010402a = case_when(documents == 1~ 1,  #Assigns 1 if the household has a legal document for at least one plot
+    TRUE ~ 0))
+```
+```{r, eval=FALSE}
+table(main$legal_doc)
+```
+```{r, eval=FALSE}
+main <- main %>%
+   mutate(C010402a = labelled(C010402a,
+                                labels = c(
+                                  "Has Legal document" = 1,  # Label for Yes
+                                  "No legal documents" = 0   # Label for No
+                                ),
+                                label = "People (adults) with legally recognized documentation over land"))
+```
+
+```{r, eval=FALSE}
+#Step 2: 2. SDG 1.4.2 b - People (adults) who perceive their rights as secure
+main <- main %>%
+mutate(C010402b = case_when(bequeath == 1 & tenure == 1 ~ 1,  #Assigns 1 if the household can bequeath at least one plot and is very unlikely or somewhat unlikely to loose the tenure of at least one plot 
+    TRUE ~ 0))
+```
+```{r, eval=FALSE}
+table(main$tenure)
+```
+```{r, eval=FALSE}
+main <- main %>%
+   mutate(C010402b = labelled(C010402b,
+                                labels = c(
+                                  "Tenure secure" = 1,  # Label for Yes
+                                  "Tenure unsecure" = 0   # Label for No
+                                ),
+                                label = "People (adults) who perceive their rights as secure"))
+```
+ILGI: Is household size as weight incorporated into the total weight which will be created by Grayson? 
+
+### Figure for SDG 1.4.2a by Population Groups
+
+```{r, eval=FALSE}
+
+##Table by population groups
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C010402a <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%      # Show results disaggregated by pop groups
+  summarise(                                         # put all variables here
+    var_name = "SDG 1.4.1a",                          # name of the variable
+    num_obs_uw = unweighted(n()),                    # unweighted total count
+    denominator = survey_total(),                      # weighted total count
+    mean_value = survey_mean(C010402a, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+  )
+
+
+###Chart of SDH 1.4.2 a by pop groups
+
+ggplot(C010402a, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 1.4.2a",
+    x = "Population Groups",
+    y = "Mean Value with Standard Errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+
+
+```
+### Figure for SDG 1.4.2b by Population Groups
+
+```{r, eval=FALSE}
+
+##Table by population groups
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C010402b <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%      # Show results disaggregated by pop groups
+  summarise(                                         # put all variables here
+    var_name = "SDG 1.4.1b",                          # name of the variable
+    num_obs_uw = unweighted(n()),                    # unweighted total count
+    denominator = survey_total(),                      # weighted total count
+    mean_value = survey_mean(C010402b, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+  )
+
+
+###Chart of SDG 1.4.2b by pop groups
+
+ggplot(C010402b, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 1.4.2b",
+    x = "Population Groups",
+    y = "Mean Value with Standard Errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+
+
+```
 ## 2.2.1 SDG Indicator
 
 **Prevalence of stunting (height for age <-2 standard deviation from the median of the World Health Organization (WHO) Child Growth Standards) among children under 5 years of age**
