@@ -1911,7 +1911,6 @@ UHC <- (RMNCH + ID)/2
 print(UHC)
 ```
 
-
 ## 4.1.2 SDG Indicator
 
 **Completion rate (primary education, lower secondary education, upper secondary education)**
@@ -2691,10 +2690,12 @@ summary(HHroster$HH_09) #How old were you when you first married?
 
 HHroster <- HHroster %>%
   mutate(
-    women20_24 = case_when( #Create a variable to identify women age 20 - 24 (denominator)
-      HH_02 == 2 & agetouse >= 20 & agetouse <= 24 ~ 1,
+    women20_24 = case_when(
+      as.numeric(HH_02) == 2 & (as.numeric(agetouse) >= 20 & as.numeric(agetouse) <= 24) ~ 1,
       TRUE ~ 0
-    ))
+    )
+  )
+
 
 HHroster <- HHroster %>%
   mutate(
@@ -2704,7 +2705,7 @@ HHroster <- HHroster %>%
 
 numerator_15 <- sum(HHroster$married_before_15, na.rm = TRUE)
 denominator_15 <- sum(HHroster$women20_24, na.rm = TRUE)
-proportion_15 <- (numerator / denominator) * 100
+proportion_15 <- (numerator_15 / denominator_15) * 100
 cat("Proportion of women aged 20-24 married before age 15:", round(proportion_15, 2), "%\n")
 
 ```
@@ -2719,9 +2720,111 @@ HHroster <- HHroster %>%
 
 numerator_18 <- sum(HHroster$married_before_18, na.rm = TRUE)
 denominator_18 <- sum(HHroster$women20_24, na.rm = TRUE)
-proportion_18 <- (numerator / denominator) * 100
+proportion_18 <- (numerator_18 / denominator_18) * 100
 cat("Proportion of women aged 20-24 married before age 18:", round(proportion_18, 2), "%\n")
 ```
+
+
+### Figure for SDG 5.3.1a by Population Groups
+
+```{r, eval=FALSE}
+
+###Results of the indicator table
+
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+##Table 
+
+C050301a <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07)) %>%         # Exclude if pop_groups is NA
+  group_by(Intro_07) %>%                  # Group by pop_groups
+  summarise(
+    var_name = "SDG 5.3.1a",                        # Name of the variable
+    num_obs_uw = survey_total(!is.na(women20_24), na.rm = TRUE),  # Unweighted total count
+    denominator = survey_total(women20_24, na.rm = TRUE),         # Weighted total count
+    married_before_15_total = survey_total(married_before_15, na.rm = TRUE),   # Total for edu_primary
+    women20_24_total = survey_total(women20_24, na.rm = TRUE)    # Total for age_primary
+  ) %>%
+  mutate(
+    mean_value = round(married_before_15_total / women20_24_total, 4)  # Calculate the mean value
+  )
+
+
+##Figure 
+
+
+ggplot(C050301a, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +  # Corrected the misplaced `width`
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(width = 0.7)) +  # Correct text positioning
+  scale_y_continuous(limits = c(0, 1.2), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 5.3.1a - Women age 20 - 24 years married before the age of 15",
+    x = "Population Groups",
+    y = "Mean Value"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  )
+
+```
+
+```{r, eval=FALSE}
+
+###Results of the indicator table
+
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+##Table 
+
+C050301b <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07)) %>%         # Exclude if pop_groups is NA
+  group_by(Intro_07) %>%                  # Group by pop_groups
+  summarise(
+    var_name = "SDG 5.3.1b",                        # Name of the variable
+    num_obs_uw = survey_total(!is.na(women20_24), na.rm = TRUE),  # Unweighted total count
+    denominator = survey_total(women20_24, na.rm = TRUE),         # Weighted total count
+    married_before_18_total = survey_total(married_before_18, na.rm = TRUE),   # Total for edu_primary
+    women20_24_total = survey_total(women20_24, na.rm = TRUE)    # Total for age_primary
+  ) %>%
+  mutate(
+    mean_value = round(married_before_18_total / women20_24_total, 4)  # Calculate the mean value
+  )
+
+
+##Figure 
+
+
+ggplot(C050301b, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +  # Corrected the misplaced `width`
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(width = 0.7)) +  # Correct text positioning
+  scale_y_continuous(limits = c(0, 1.2), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 5.3.1a - Women age 20 - 24 years married before the age of 18",
+    x = "Population Groups",
+    y = "Mean Value"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  )
+
+```
+
 
 ## 5.a.1 SDG Indicator 
 
@@ -2869,7 +2972,7 @@ Indicator Code: C060101
 Access to Basic Drinking Water Services refers to the use of drinking water from an improved source with a collection time of not more than 30 minutes for a round trip, including queuing. ‘Improved’ drinking water sources include the following:: piped water, boreholes or tube wells, protected dug wells, protected springs, rainwater, water kiosks, and packaged or delivered water. This definition is based on the WHO/UNICEF Joint Monitoring Programme (JMP) drinking water ladder. 
 
 1. Improved water source.
-2. The main water source is located within the household's dwelling or yard, or it is reachable within a 30-minute round trip, including any time spent queuing.
+2. The RA_adult water source is located within the household's dwelling or yard, or it is reachable within a 30-minute round trip, including any time spent queuing.
 
 | Standard Questions                |
 |:---------------------------------:|
@@ -3468,6 +3571,13 @@ table(RA_adult$EMP05) #Even though you did not work, during the past 7 days, did
 table(RA_adult$EMP06a) #During the past 7 days, did you do any work in farming or rearing farm animals, fishing or fish farming, or none of these?
 table(RA_adult$EMP06b) #Was this work that you mentioned in farming or rearing farming animals, fishing or fish farming, or none of these?
 table(RA_adult$EMP06c) #Thinking about this work, are the products intended only for sale, mainly for sale, only for family use, or mainly for family use?
+table(RA_adult$EMP09)  #Do you work as a paid employee, as a paid apprentice/intern/volunteer, as a paid incentive worker, in your own business, helping in a family or household business, or other?
+table(RA_adult$EMP10_7) #Including yourself, how many people currently work in this business?
+table(RA_adult$EMP10)  #In this job are you working in the government or a state-owned enterprise; a farm; a private non-farm business; a household as a domestic worker; an NGO; non-profit institution; religious institution; an international organization including UNCHR or a foreign embassy?
+table(RA_adult$EMP10_4) #Does your employer pay contributions to the [Pension Fund/ Health/ Unemployment Insurance] for you?
+table(RA_adult$EMP10_5) #Do you get paid annual leave?
+table(RA_adult$EMP10_6) #Would you get paid sick leave in case of illness or injury?
+table(RA_adult$EMP10_6a) #Would you get paid  [maternity/paternity] leave [if you deliver a child/if your spouse delivers a child]?
 ```
 
 ```{r}
@@ -3485,16 +3595,196 @@ RA_adult <- RA_adult %>%
   ))
 ```
 
-```{r}
-#Step 2: Informal employment
+```{r, eval=FALSE}
+#Step 2: Status in employment based on isce93 
 RA_adult <- RA_adult %>%
-  mutate(employed_informal = case_when(
-    EMP01 == 1 & EMP10_4 ~ 1
+  mutate(isce93 = case_when(
+    employed== 1 & EMP09 %in% c(1,2,3) ~ 1, #Employees
+    employed== 1 & EMP09 == 4 & EMP10_7 > 1 ~ 2, #Employers - assuming that all workers are paid
+    employed== 1 & EMP09 == 4 & EMP10_7 == 1 ~ 3, #Own-account workers
+    employed== 1 & EMP09 == 5 ~ 4, # Contributing family workers
+    employed== 1 & (EMP09 == 96 | is.na(EMP09)) ~ 5, #Workers not classifiable by status
+    employed == 0 ~ NA_real_,  # Set to NA when employed == 0
+    TRUE ~ NA_real_  # Default case (catches any unexpected values)
+  ))
+    
+```
+```{r, eval=FALSE}
+#Step 3: Institutional sector of economic activities
+RA_adult <- RA_adult %>%
+  mutate(ins_sector = case_when(
+    employed== 1 & EMP10 %in% c(1,6)~ 1, #Public 
+    employed== 1 & EMP10 %in% c(2,3,5)~ 2, #Private
+    employed== 1 & EMP10 == 4 ~ 3, # Household domestic worker
+    employed== 1 & (EMP10 %in% c(96,98) | is.na(EMP10)) ~ 4)) #Not classified
+```
+```{r, eval=FALSE}
+#Step 4: Employment benefits
+#Social security contribution (proxy:pension fund)
+RA_adult <- RA_adult %>%
+  mutate(socsec = case_when(
+  employed== 1 & EMP10_4 == 1  ~ 1, #Social security
+  employed== 1 & EMP10_4 == 2  ~ 2, #No social security
+  employed== 1 & (EMP10_4 == 98 | is.na(EMP10_4))  ~ 3)) #Not stated
+```
+```{r, eval=FALSE}
+#Paid leave
+RA_adult <- RA_adult %>%
+  mutate(painleave = case_when(
+  employed== 1 & EMP10_5 == 1  ~ 1, #Paid leave
+  employed== 1 & EMP10_5 == 2  ~ 2, #No paid leave
+  employed== 1 & (EMP10_5 == 98 | is.na(EMP10_5))  ~ 3)) #Not stated
+```
+```{r, eval=FALSE}
+#Paid sick leave
+RA_adult <- RA_adult %>%
+  mutate(sickleave = case_when(
+  employed== 1 & EMP10_6 == 1  ~ 1, #Sick leave
+  employed== 1 & EMP10_6 == 2  ~ 2, #No sick leave
+  employed== 1 & (EMP10_6 == 98 | is.na(EMP10_6))  ~ 3)) #Not stated
+```
+```{r, eval=FALSE}
+#Parental leave
+RA_adult <- RA_adult %>%
+  mutate(parentalleave = case_when(
+  employed== 1 & EMP10_6a == 1  ~ 1, #Parental leave
+  employed== 1 & EMP10_6a == 2  ~ 2, #No parental leave
+  employed== 1 & (EMP10_6a == 98 | is.na(EMP10_6a))  ~ 3)) #Not stated
+```
 
+```{r, eval=FALSE}
+##Step 5: Characteristics of the enterprise
+#Registration 
+RA_adult <- RA_adult %>%
+  mutate(registered = case_when(
+  employed== 1 & EMP10_11 == 1 ~ 1, #Registered 
+  employed== 1 & EMP10_11 == 2 ~ 2, #Not registered 
+  employed== 1 & (EMP10_11 == 98 | is.na(EMP10_11)) ~ 3)) #Not stated 
+#Bookkeeping 
+RA_adult <- RA_adult %>%
+  mutate(bookkeep = case_when(
+  employed== 1 & EMP10_12 == 1 ~ 1, #Keep accounts for tax purposes - formal
+  employed== 1 & EMP10_12 %in% c(2,3,4) ~ 2, #Keep accounts not for tax purposes; Personal use only; Does not keep accounts
+  employed== 1 & (EMP10_12 == 98 | is.na(EMP10_12)) ~ 3)) #Not stated 
 
 ```
 
+```{r}
+#Step 6: Informal/formal economy
+#UNIT OF PRODUCTION: FORMAL/INFORMAL SECTOR 
+RA_adult <- RA_adult %>%
+  mutate(unit_prod = case_when(
+    employed == 1 & ins_sector == 3 ~ 3, # Households
+    employed == 1 & (ins_sector == 1 | registered == 1 | bookkeep == 1) ~ 2, # Employment in formal sector
+    employed == 1 & !(ins_sector == 3 | ins_sector == 1 | registered == 1 | bookkeep == 1) ~ 1, # Informal sector
+    TRUE ~ NA_real_ # Default case for missing values
+  ))
+```
+```{r}
+#NATURE OF JOB: FORMAL/INFORMAL EMPLOYMENT 
+RA_adult <- RA_adult %>%
+  mutate(job_nature = case_when(
+    (isce93  %in% c(2,3) & unit_prod !=2) | (isce93  %in% c(1, 5) & socsec !=1) | isce93 == 4 ~ 1, #Informal employment
+    (isce93  %in% c(2,3) & unit_prod ==2) | (isce93  %in% c(1, 5) & (socsec ==1 | (socsec == 3 & painleave ==1 & sickleave ==1))) ~ 0)) #Formal employment 
+    
+```
 
+
+### Figure for SDG 8.3.1 by Population Groups
+
+```{r, eval=FALSE}
+
+###Results of the indicator table
+
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+##Table 
+
+C080302 <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(Intro_07)) %>%         # Exclude if pop_groups is NA
+  group_by(Intro_07) %>%                  # Group by pop_groups
+  summarise(
+    var_name = "SDG8.3.1",                        # Name of the variable
+    num_obs_uw = survey_total(!is.na(employed), na.rm = TRUE),  # Unweighted total count
+    denominator = survey_total(employed, na.rm = TRUE),         # Weighted total count
+    job_nature_total = survey_total(job_nature, na.rm = TRUE),   # Total for edu_primary
+    employed_total = survey_total(employed, na.rm = TRUE)    # Total for age_primary
+  ) %>%
+  mutate(
+    mean_value = round(job_nature_total / employed_total, 4)  # Calculate the mean value
+  )
+
+
+##Figure 
+
+
+ggplot(C080302, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +  # Corrected the misplaced `width`
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(width = 0.7)) +  # Correct text positioning
+  scale_y_continuous(limits = c(0, 1.2), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 8.3.1",
+    x = "Population Groups",
+    y = "Mean Value"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  )
+
+```
+### Figure for SDG 8.3.1  by Gender and Population Groups
+
+
+```{r, eval=FALSE}
+
+###Table with gender included for the chart
+
+C080302_AGD <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(Intro_07) & !is.na(HH_02_RA)) %>%                     # Exclude if pop_groups is NA
+  group_by(Intro_07,HH_02_RA) %>%        # Group by pop_groups
+  summarise(
+    var_name = "SDG 8.3.1",                        # Name of the variable
+    num_obs_uw = survey_total(!is.na(employed), na.rm = TRUE),  # Unweighted total count
+    denominator = survey_total(employed, na.rm = TRUE),         # Weighted total count
+    job_nature_total = survey_total(job_nature, na.rm = TRUE),   # Total for edu_primary
+    employed_total = survey_total(employed, na.rm = TRUE)    # Total for age_primary
+  ) %>%
+  mutate(
+    mean_value = round(job_nature_total / employed_total, 4)  # Calculate the mean value
+  )
+
+
+
+
+###Chart for the above table
+
+
+ggplot(C080302_AGD, aes(x = HH_02_RA, y = mean_value, fill = HH_02_RA)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  # Add values on bars
+  facet_wrap(~ Intro_07) +  # Create separate plots for each pop_group
+  labs(
+    title = "Proportion of informal employment in total employment",
+    x = "Gender ",
+    y = "Proportion of Informal employment in total employment",
+    fill = "Gender"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
+  theme_unhcr() +  # Apply UNHCR theme
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  )
+```
 ## 8.5.1 SDG Indicator
 
 **Average hourly earnings of employees, by sex, age, occupation and persons with disabilities**
@@ -3724,27 +4014,27 @@ For the purpose of this indicator, persons are considered to be in training if t
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-06-01.docx&wdOrigin=BROWSELINK)
 2. [Labour Force Statistics](https://ilostat.ilo.org/methods/concepts-and-definitions/description-labour-force-statistics/)
 ```{r, eval=FALSE}
-table(main$EMP01) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you work for someone else for pay, for one or more hours?
-table(main$EMP02) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you run or do any kind of business, farming or other activity to make money?
-table(main$EMP03) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you help in a family business or farm?
-table(main$EMP04) #Even though you did not work, during the past 7 days, did you have a paid job from which you were temporarily absent?
-table(main$EMP05) #Even though you did not work, during the past 7 days, did you have a business or a helper job in a family business/farm from which you were temporarily absent?
-table(main$EMP06a) #During the past 7 days, did you do any work in farming or rearing farm animals, fishing or fish farming, or none of these?
-table(main$EMP06b) #Was this work that you mentioned in farming or rearing farming animals, fishing or fish farming, or none of these?
-table(main$EMP06c) #Thinking about this work, are the products intended only for sale, mainly for sale, only for family use, or mainly for family use?
-table(main$EMP06d) #How many hours did you spend doing this work during the past 7 days?
-table(main$EMP25a) #During the past 30 days, did you do anything to find a paid job?
-table(main$EMP25aa)#During the past 30 days, did you do anything to start a business?
-table(main$EMP29)  #Could you start working within the next 14 days if you were offered a job?
-table(main$EducR08)#Have you ever completed an apprenticeship?
-table(main$educ_now) # Are you currently going to school?  If it is school holiday between two school years, tell us about the last school year.Do not include kindergarten or preschool.
+table(RA_adult$EMP01) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you work for someone else for pay, for one or more hours?
+table(RA_adul$EMP02) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you run or do any kind of business, farming or other activity to make money?
+table(RA_adul$EMP03) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you help in a family business or farm?
+table(RA_adul$EMP04) #Even though you did not work, during the past 7 days, did you have a paid job from which you were temporarily absent?
+table(RA_adul$EMP05) #Even though you did not work, during the past 7 days, did you have a business or a helper job in a family business/farm from which you were temporarily absent?
+table(RA_adul$EMP06a) #During the past 7 days, did you do any work in farming or rearing farm animals, fishing or fish farming, or none of these?
+table(RA_adul$EMP06b) #Was this work that you mentioned in farming or rearing farming animals, fishing or fish farming, or none of these?
+table(RA_adul$EMP06c) #Thinking about this work, are the products intended only for sale, mainly for sale, only for family use, or mainly for family use?
+table(RA_adul$EMP06d) #How many hours did you spend doing this work during the past 7 days?
+table(RA_adul$EMP25a) #During the past 30 days, did you do anything to find a paid job?
+table(RA_adul$EMP25aa)#During the past 30 days, did you do anything to start a business?
+table(RA_adul$EMP29)  #Could you start working within the next 14 days if you were offered a job?
+table(RA_adul$EducR08)#Have you ever completed an apprenticeship?
+table(RA_adul$educ_now) # Are you currently going to school?  If it is school holiday between two school years, tell us about the last school year.Do not include kindergarten or preschool.
 ```
 ILGI: *Note: Apart from the above variables, this indicator should also include other forms of training (not only apprenticeship). With questions posted in FDS, we are unable to determine if an individual is currently participating in training other than apprenticeship. 
 Check the entire calculation with Ilgi. 
 
 ```{r, eval=FALSE}
 #Step 1: Create a variable identifying unemployed youth
-main <- main %>%
+RA_adult <- RA_adult %>%
   mutate(employed_youth = case_when(
     EMP01 == 1 & between(age_selected, 15, 24) ~ 1,  # Paid employment - employees
     EMP02 == 1 & EMP06b == 3 & between(age_selected, 15, 24) ~ 1,  # Self-employment
@@ -3760,7 +4050,7 @@ main <- main %>%
 
 ```{r, eval=FALSE}
 #Step 2: Define unemployed and those outside of the labour force
-main <- main %>%
+RA_adult <- RA_adult %>%
   mutate(unemployed_youth = case_when(
     (employed_youth == 0 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) & between(age_selected, 15, 24) ~ 1,  # Actively looking for work - unemployed 
     employed_youth == 0 & EMP29 != 1 & between(age_selected, 15, 24) ~ 0,  # Outside of labour force
@@ -3770,7 +4060,7 @@ main <- main %>%
 
 ```{r, eval=FALSE}
 #Step 3: Create a variable identifying youth in education 
-main <- main %>%
+RA_adult <- RA_adult %>%
   mutate(youth_education = case_when(
     (between(age_selected, 15, 24) & educ_now == 1) ~ 1,  # Currently in education
     (between(age_selected, 15, 24) & educ_now == 2) ~ 0,  # Currently not in education
@@ -3779,72 +4069,129 @@ main <- main %>%
 ```
 
 ```{r, eval=FALSE}
-#Step 3: Create a variable identifying youth doing currently in training (apprenticeship). 
-main <- main %>%
+#Step 4: Create a variable identifying youth doing currently in training (apprenticeship). 
+RA_adult <- RA_adult %>%
   mutate(youth_training = case_when(
     (between(age_selected, 15, 24) & EducR08 == 3) ~ 1,  # Currently in training
-    (between(age_selected, 15, 24) & EducR08 == 1 | EducR08 == 2) ~ 0,  # Currently not in education
+    (between(age_selected, 15, 24) & EducR08 == 1 | EducR08 == 2) ~ 0,  # Currently not in training
     TRUE ~ NA_real_  
   ))
 ```
 
-```{r, eval=FALSE}
-#Step 4: Combine Unemployed youth +Youth outside the labour force
-main <- main %>%
-  mutate(unemployed_outsidelabour = case_when(
-    unemployed_youth == 1 | unemployed_youth == 0 ~ 1,  # Unemployed and outside of labour force 
-    TRUE ~ 0 
-  ))
-```
 
 ```{r, eval=FALSE}
-#Step 4: Combine Unemployed youth +Youth outside the labour force
-main <- main %>%
-  mutate(unemployed_outsidelabour = case_when(
-    unemployed_youth == 1 | unemployed_youth == 2 ~ 1,  # Unemployed and outside of labour force 
-    TRUE ~ 0 
-  ))
-```
-```{r, eval=FALSE}
-#Step 5: Unemployed youth in educator or training
-main <- main %>%
-  mutate(unemployed_ineduc_tr = case_when(
-    unemployed_youth == 1 & (youth_education == 1 & youth_training == 1) ~ 1,  # Unemployed youth in educator or training 
-    TRUE ~ 0 
-  ))
-```
-
-```{r, eval=FALSE}
-#Step 5: Out of labour youth in educator or training
-main <- main %>%
-  mutate(outoflabour_ineduc_tr = case_when(
-    unemployed_youth == 0 & (youth_education == 1 & youth_training == 1) ~ 1,  # Out of labour youth in educator or training 
-    TRUE ~ 0 
-  ))
-```
-```{r, eval=FALSE}
-#Step 6: Define the numerator
-numerator <- main %>%
-  filter(between(age_selected, 15, 24)) %>%
-  summarise(
-    total_unemployed_outside_labour = sum(unemployed_outsidelabour == 1, na.rm = TRUE),
-    in_education_or_training = sum(unemployed_ineduc_tr == 1 | outoflabour_ineduc_tr == 1, na.rm = TRUE)
-  ) %>%
-  mutate(numerator = total_unemployed_outside_labour - in_education_or_training) %>%
-  pull(numerator)
+#Step 5: Define the numerator
+RA_adult <- RA_adult %>%
+  mutate(num_C080601 = case_when(
+    unemployed_youth %in% c(0,1) & youth_training == 0 & youth_education == 0 ~ 1, #Youth not in employment, education or training 
+    TRUE ~ 0))
+    
 ```
 ```{r, eval=FALSE}
 #Step 7: Define the denominator 
-denominator <- main %>%
-  filter(between(age_selected, 15, 24)) %>%
-  nrow()
+RA_adult <- RA_adult %>%
+  mutate(denominator_age = case_when(
+    (age_selected >= 15 & age_selected <= 24) ~ 1,
+     TRUE ~ 0))
 ```
+
+
+### Figure for SDG 8.6.1 by Population Groups
 
 ```{r, eval=FALSE}
-#Step 8: Calculate the indicator 
-SDG8_6_1 <- (numerator / denominator)*100
-```
 
+###Results of the indicator table
+
+FDS_PAK_2024_RA_adult <- RA_adult  %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+##Table 
+
+C080601 <- FDS_PAK_2024_RA_adult  %>%
+  filter(!is.na(Intro_07)) %>%         # Exclude if pop_groups is NA
+  group_by(Intro_07) %>%                  # Group by pop_groups
+  summarise(
+    var_name = "impact3_2a",                        # Name of the variable
+    num_obs_uw = survey_total(!is.na(denominator_age), na.rm = TRUE),  # Unweighted total count
+    denominator = survey_total(denominator_age, na.rm = TRUE),         # Weighted total count
+    num_C080601_total = survey_total(num_C080601, na.rm = TRUE),   # Total for num_C080601
+    denominator_age_total = survey_total(denominator_age, na.rm = TRUE)    # Total for denominator_age
+  ) %>%
+  mutate(
+    mean_value = round(num_C080601_total / denominator_age_total, 4)  # Calculate the mean value
+  )
+
+
+##Figure 
+
+
+ggplot(C080601, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +  # Corrected the misplaced `width`
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(width = 0.7)) +  # Correct text positioning
+  scale_y_continuous(limits = c(0, 1.2), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 8.6.1",
+    x = "Population Groups",
+    y = "Mean Value"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  )
+
+```
+### Figure for SDG 8.6.1 by Gender, Disability and Population Groups
+
+
+```{r, eval=FALSE}
+
+###Table with gender and disability included for the chart
+
+C080601_AGD <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(Intro_07) & !is.na(disability_RA) & !is.na(HH_02_RA)) %>%                     # Exclude if pop_groups is NA
+  group_by(Intro_07,disability_RA,HH_02_RA) %>%        # Group by pop_groups
+  summarise(
+    var_name = "SDG 8.6.1",                        # Name of the variable
+    num_obs_uw = survey_total(!is.na(denominator_age), na.rm = TRUE),  # Unweighted total count
+    denominator = survey_total(denominator_age, na.rm = TRUE),         # Weighted total count
+    num_C080601_total = survey_total(num_C080601, na.rm = TRUE),   # Total for num_C080601
+    denominator_age_total = survey_total(denominator_age, na.rm = TRUE)    # Total for denominator_age
+  ) %>%
+  mutate(
+     mean_value = round(num_C080601_total / denominator_age_total, 4)   # Calculate the mean value
+  )
+
+###Chart for the above table
+
+ggplot(C080601_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  # Add values on bars
+  facet_wrap(~ Intro_07) +  # Create separate plots for each pop_group
+  labs(
+    title = "Proportion of youth (aged 15–24 years) not in education, employment or training",
+    x = "Gender ",
+    y = "Proportion of youth",
+    fill = "Disability Status"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
+  theme_unhcr() +  # Apply UNHCR theme
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  )
+
+
+
+
+
+```
 
 ## 8.7.1 SDG Indicator
 
@@ -4585,24 +4932,25 @@ Variabale "Justice16" is not present in all countries where FDS is carried out. 
 **Sources** 
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-03-03.docx&wdOrigin=BROWSELINK)
 ```{r, eval=FALSE}
-table(main$Justice01) #In the past two years while in the host country, have you had any disputes?
-table(main$Justice05) #Did you or someone acting on your behalf try to seek information, advice or representation to help you better understand or resolve your dispute?  
+table(RA_adult$Justice01) #In the past two years while in the host country, have you had any disputes?
+table(RA_adult$Justice03) #Which of the disputes you mentioned was the most recent? - Dispute type 
+table(RA_adult$Justice05) #Did you or someone acting on your behalf try to seek information, advice or representation to help you better understand or resolve your dispute?  
 #Justice07 - Did any of the following things happen while you were dealing with this dispute? Please note that when I say 'you' here, I mean you or somebody acting on your behalf. And when I say 'other party', I mean the other party involved in the dispute. 
-table(main$Justice07a)#You communicated with the other party.
-table(main$Justice07b)#You or the other party made a claim to, or made use of, a court/tribunal.
-table(main$Justice07c)#You or the other party made a claim to, or made use of, an [Indigenous/ customary] dispute resolution process such as [INSERT examples].
-table(main$Justice07d)#The problem was reported to the police or other prosecution authority.
-table(main$Justice07e)#You or the other party asked for the intervention of another state authority such as [INSERT examples].
-table(main$Justice07f)#You or the other party asked for the intervention of a religious authority.
-table(main$Justice07g)#You or the other party asked for the intervention of a community leader such as [INSERT example].
-table(main$Justice07h)#You participated in formal mediation, conciliation or arbitration [INSERT examples].
-table(main$Justice07i)#There was no negotiation or third party involvement.
-#table(main$Justice16) #Why didn’t you seek independent advice to help resolve this dispute?  - Check if this variable is present in your data set. 
+table(RA_adult$Justice07a)#You communicated with the other party.
+table(RA_adult$Justice07b)#You or the other party made a claim to, or made use of, a court/tribunal.
+table(RA_adult$Justice07c)#You or the other party made a claim to, or made use of, an [Indigenous/ customary] dispute resolution process such as [INSERT examples].
+table(RA_adult$Justice07d)#The problem was reported to the police or other prosecution authority.
+table(RA_adult$Justice07e)#You or the other party asked for the intervention of another state authority such as [INSERT examples].
+table(RA_adult$Justice07f)#You or the other party asked for the intervention of a religious authority.
+table(RA_adult$Justice07g)#You or the other party asked for the intervention of a community leader such as [INSERT example].
+table(RA_adult$Justice07h)#You participated in formal mediation, conciliation or arbitration [INSERT examples].
+table(RA_adult$Justice07i)#There was no negotiation or third party involvement.
+#table(RA_adult$Justice16) #Why didn’t you seek independent advice to help resolve this dispute?  - Check if this variable is present in your data set. 
 ```
 ```{r, eval=FALSE}
-#Case 1:
+
 #Step 1: Identify individuals who experienced a dispute in the past two years 
-main <- main %>%
+RA_adult <- RA_adult %>%
   mutate(dispute = case_when(
     Justice01 == 1 ~ 1, # Assigns 1 for yes
     Justice01 == 2 ~ 0, # Assigns 2 for no
@@ -4610,45 +4958,170 @@ main <- main %>%
 ```
 ```{r, eval=FALSE}
 #Step 2: Identify individuals who voluntarily self-excluded themselves from seeking formal or informal dispute resolution mechanism. 
-#main <- main %>%
+#RA_adult<- RA_adult %>%
  # mutate(selfexclusion = case_when(
  #   Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("A", "B", "C", "D", "I","L", "M") ~ 1, #Assign 1 for those who self-excluded
  #   Justice01 == 1 & Justice05 == 1 ~ 2,
   #  Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("E", "F", "G", "H", "J", "K", "OT", "RF") ~ 0 )) #Assign 2 for those who did not self-exclude
 ```
-```{r, eval=FALSE}
-#Step 3: Combine "dispute" and "selfexclusion" to compute the population at risk - those who experiences a dispute and did not voluntary self-exclude from seeking for a formal or informal resolution. 
-#main <- main %>%
- # mutate(popatrisk = case_when(
-  #  dispute == 1 & selfexclusion == 0 ~ 1, 
-  #  TRUE ~ 0))
-```
+
 ```{r, eval=FALSE}
 #Step 4: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
-main <- main %>%
+RA_adult <- RA_adult %>%
   mutate(resolution = case_when(
     Justice01 == 1 & (Justice07b == 1 | Justice07c == 1 | Justice07d == 1  | Justice07e == 1 | Justice07f == 1 | Justice07g == 1 | Justice07h == 1) ~ 1, # Assigns 1 for yes - accessed a formal or informal dispute resolution mechanism
     Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 0)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
 ```
 
-```{r, eval=FALSE}
-#Case 2: 
-#Step 1: Identify individuals who experienced a dispute in the past two years 
-main <- main %>%
-  mutate(dispute = case_when(
-    Justice01 == 1 ~ 1, # Assigns 1 for yes
-    Justice01 == 2 ~ 0, # Assigns 2 for no
-    TRUE ~ NA_real_))   # Handle missing cases or "99 - Refuse to answer". 
+```{r}
+#Step 5: Define numerator and denominator
+#RA_adult <- RA_adult %>%
+  #mutate(C160303_num = case_when(
+   # dispute == 1 & resolution == 1 ~ 1, #Those who have experienced a dispute in the past two years and who accessed a formal or informal dispute resolution mechanism
+    #TRUE ~ 0))
+#RA_adult <- RA_adult %>%
+  #mutate(C160303_den = case_when(
+    #dispute == 1 & selfexclusion !=1 ~ 1, #
+   # TRUE ~ 0)) #Those who experiences a dispute in the past two years and did not voluntarily self-exclude.
+
 ```
 
+### Figure for SDG 16.3.3 by Population Groups
+
 ```{r, eval=FALSE}
-#Step 2: Identify individuals who accessed a formal or informal dispute resolution mechanism. 
-main <- main %>%
-  mutate(resolution = case_when(
-    Justice01 == 1 & (Justice07b == 1 | Justice07c == 1 | Justice07d == 1  | Justice07e == 1 | Justice07f == 1 | Justice07g == 1 | Justice07h == 1) ~ 1, # Assigns 1 for yes - accessed a formal or informal dispute resolution mechanism
-    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 0)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
+
+
+###Results of the indicator table
+
+#FDS_PAK_2024_RA_adult <- RA_adult %>%
+ # as_survey_design(
+    #ids = NULL,           # Specify the column with cluster IDs
+    #weights = NULL, # Specify the column with survey weights
+    #nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+##Table 
+
+#C160303 <- FDS_PAK_2024_RA_adult %>%
+  #filter(!is.na(Intro_07)) %>%         # Exclude if pop_groups is NA
+  #group_by(Intro_07) %>%                  # Group by pop_groups
+  #summarise(
+  #  var_name = "SDG16.3.3",                        # Name of the variable
+   # num_obs_uw = survey_total(!is.na(C160303_den), na.rm = TRUE),  # Unweighted total count
+   # denominator = survey_total(C160303_den, na.rm = TRUE),         # Weighted total count
+   # C160303_num_total = survey_total(C160303_num, na.rm = TRUE),   # Total for C160303_num
+   # C160303_den_total = survey_total(C160303_den, na.rm = TRUE)    # Total for C160303_den
+  #) %>%
+ # mutate(
+   # mean_value = round(C160303_num_total / C160303_den_total, 4)  # Calculate the mean value
+  #)
+
+
+##Figure 
+
+
+#ggplot(C160303, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+ # geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +  # Corrected the misplaced `width`
+  #geom_text(aes(label = round(mean_value, 2)), 
+            #vjust = -0.5, position = position_dodge(width = 0.7)) +  # Correct text positioning
+  #scale_y_continuous(limits = c(0, 1.2), expand = c(0, 0)) +
+  #labs(
+   # title = "Results of SDG 16.3.3",
+   # x = "Population Groups",
+   # y = "Mean Value"
+ # ) +
+  #scale_fill_unhcr_d() +  # Use UNHCR color palette
+  #theme_unhcr() +         # Apply UNHCR theme
+  #theme(
+  #  axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  #)
+
 ```
 
+### Figure for SDG 16.3.3 by Gender, Disability and Population Groups
+
+
+```{r, eval=FALSE}
+
+###Table with gender and disability included for the chart
+
+#C160303_AGD <- FDS_PAK_2024_RA_adult %>%
+  #filter(!is.na(Intro_07) & !is.na(disability_RA) & !is.na(HH_02_RA)) %>%         # Exclude if pop_groups is NA
+  #group_by(Intro_07, disability_RA,HH_02_RA) %>%                  # Group by pop_groups
+  #summarise(
+  #  var_name = "SDG16.3.3",                        # Name of the variable
+   # num_obs_uw = survey_total(!is.na(C160303_den), na.rm = TRUE),  # Unweighted total count
+   # denominator = survey_total(C160303_den, na.rm = TRUE),         # Weighted total count
+   # C160303_num_total = survey_total(C160303_num, na.rm = TRUE),   # Total for C160303_num
+   # C160303_den_total = survey_total(C160303_den, na.rm = TRUE)    # Total for C160303_den
+  #) %>%
+ # mutate(
+   # mean_value = round(C160303_num_total / C160303_den_total, 4)  # Calculate the mean value
+  #)
+
+###Chart for the above table
+
+
+#ggplot(C160303_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
+  #geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  #geom_text(aes(label = sprintf("%.2f", mean_value)), 
+   #         position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  # Add values on bars
+ # facet_wrap(~ Intro_07) +  # Create separate plots for each pop_group
+  #labs(
+   # title = "Proportion of the population who have experienced a dispute in the past two years and who accessed a formal or informal dispute resolution mechanism, by type of mechanism",
+   # x = "Gender ",
+   # y = "Proportion of population",
+   # fill = "Disability Status"
+ # ) +
+ # scale_fill_unhcr_d() +  # Use UNHCR color palette
+  #scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
+  #theme_unhcr() +  # Apply UNHCR theme
+  #theme(
+  #  axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  #)
+```
+
+### Figure for SDG 16.3.3 by Population Groups and dispute type
+
+```{r, eval=FALSE}
+
+###Table with dispute type included for the chart
+
+#C160303_DT <- FDS_PAK_2024_RA_adult %>%
+  #filter(!is.na(Intro_07) & Justice03) %>%         # Exclude if pop_groups is NA
+  #group_by(Intro_07,Justice03) %>%                  # Group by pop_groups
+  #summarise(
+  #  var_name = "SDG16.3.3",                        # Name of the variable
+   # num_obs_uw = survey_total(!is.na(C160303_den), na.rm = TRUE),  # Unweighted total count
+   # denominator = survey_total(C160303_den, na.rm = TRUE),         # Weighted total count
+   # C160303_num_total = survey_total(C160303_num, na.rm = TRUE),   # Total for C160303_num
+   # C160303_den_total = survey_total(C160303_den, na.rm = TRUE)    # Total for C160303_den
+  #) %>%
+ # mutate(
+   # mean_value = round(C160303_num_total / C160303_den_total, 4)  # Calculate the mean value
+  #)
+
+###Chart for the above table
+
+
+#ggplot(C160303_DT, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
+  #geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  #geom_text(aes(label = sprintf("%.2f", mean_value)), 
+   #         position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  # Add values on bars
+ # facet_wrap(~ Intro_07) +  # Create separate plots for each pop_group
+  #labs(
+   # title = "Proportion of the population who have experienced a dispute in the past two years and who accessed a formal or informal dispute resolution mechanism, by type of mechanism",
+   # x = "Gender ",
+   # y = "Proportion of population",
+   # fill = "Disability Status"
+ # ) +
+ # scale_fill_unhcr_d() +  # Use UNHCR color palette
+  #scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
+  #theme_unhcr() +  # Apply UNHCR theme
+  #theme(
+  #  axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  #)
+```
 ## 16.9.1 SDG Indicator
 
 **16.9.1 Proportion of children under 5 years of age whose births have been registered with a civil authority, by age**
