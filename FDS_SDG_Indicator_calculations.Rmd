@@ -3516,9 +3516,9 @@ Indicator Code: C080302
 
 This indicator presents the share of employment which is classified as informal employment in the total economy, and separately in agriculture and in non-agriculture.
 
-| Standard Questions                                                                           |
-|:--------------------------------------------------------------------------------------------:|
-| EMP01, EMP02, EMP03, EMP04, EMP05, EMP06a, EMP06b, EMP06c, EMP06d, EMP25a, EMP25aa, EMP29    |
+| Standard Questions                                                                                                       |
+|:------------------------------------------------------------------------------------------------------------------------:|
+| EMP01, EMP02, EMP03, EMP04, EMP05, EMP06a, EMP06b, EMP06c, EMP09, EMP10, EMP10_4,  EMP10_5, EMP10_6, EMP10_6a, EMP10_7   |
 
 **Employment** comprises all persons of working age who, during a short reference period (one week), were engaged in any activity to produce goods or provide services for pay or profit.
 
@@ -3790,6 +3790,244 @@ ggplot(C080302_AGD, aes(x = HH_02_RA, y = mean_value, fill = HH_02_RA)) +
 **Average hourly earnings of employees, by sex, age, occupation and persons with disabilities**
 
 Indicator Code: C080501
+
+This indicator provides information on the mean hourly earnings from paid employment of employees by sex, occupation, age, and disability status.
+
+Earnings are a key aspect of quality of employment and living conditions. Information on hourly earnings disaggregated by various classifications (sex, age, occupation, disability status) provide some indication of the extent to which pay equality is respected or achieved.
+
+| Standard Questions                                                                           |
+|:--------------------------------------------------------------------------------------------:|
+| EMP10_15a, EMP10_15, EMP10_16, EMP10_17, EMP10_18, EMP10_19_amount, EMP10_19_currency        |
+
+**Unit of measure:**
+Percent (%)
+
+**Numerator:** hourly earning of each employee x hours worked by each employee
+
+**Denominator:** Total number of hours worked by all employees
+
+**Dataset:** RA_adult
+
+**Sources** 
+1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-05-01.docx&wdOrigin=BROWSELINK)
+
+```{r}
+table(RA_adult$EMP10_15a) #In your main job, are you paid for time spent on the job or for the completion of specific tasks?
+summary(RA_adult$EMP10_15) #How many weeks per month do you usually work in this main job?
+summary(RA_adult$EMP10_16) #How many days per week do you usually work in this main job?
+summary(RA_adult$EMP10_17) #How many hours per day do you usually work at this main job?
+table(RA_adult$EMP10_18) #What is the easiest way for you to report how much you earn in this main job, per hour, day, week, every two weeks, or month, year?
+summary(RA_adult$EMP10_19) #What is your earnings per ${EMP10_18_label2}? - EMP10_19_amount, EMP10_19_currency
+summary(RA_adult$EMP10_19a_note) #Please think about the last task you completed at your main job. How much did you earn for that task?  - EMP10_19a_amount, EMP10_19a_currency
+table(RA_adult$EMP10_19b) #What is the easiest way for you to report how much time you spent to complete this task? In hours, days, weeks or months?
+summary(RA_adult$EMP10_19c) #Approximately, how much time did you spend to complete this task?
+```
+
+```{r}
+#Step 1: Calculate hourly earnings
+RA_adult <- RA_adult %>%
+  mutate(hourly_pay = case_when(
+    # Payment frequency 1: Amount is hourly (no division needed)
+    EMP10_15a %in% c(1, 3) & EMP10_18 == 1 & (EMP10_19_amount != 999999 & EMP10_19_amount != 999998) ~ EMP10_19_amount, 
+
+    # Payment frequency 2: Paid per day, so divide by hours per day (EMP10_17) if > 0
+    EMP10_15a %in% c(1, 3) & EMP10_18 == 2 & EMP10_17 > 0 & (EMP10_19_amount != 999999 & EMP10_19_amount != 999998)~ EMP10_19_amount / EMP10_17,
+
+    # Payment frequency 3: Paid per week, so divide by (days per week * hours per day) if > 0
+    EMP10_15a %in% c(1, 3) & EMP10_18 == 3 & EMP10_16 > 0 & EMP10_17 > 0 & (EMP10_19_amount != 999999 & EMP10_19_amount != 999998) ~ EMP10_19_amount / (EMP10_16 * EMP10_17),
+
+    # Payment frequency 4: Paid per every two weeks? (or similar), divide by (2 * EMP10_16 * EMP10_17) if > 0
+    EMP10_15a %in% c(1, 3) & EMP10_18 == 4 & EMP10_16 > 0 & EMP10_17 > 0  & (EMP10_19_amount != 999999 & EMP10_19_amount != 999998) ~ EMP10_19_amount / (2 * EMP10_16 * EMP10_17),
+
+    # Payment frequency 5: Paid per month, so divide by (weeks per month * days per week * hours per day) if > 0
+    EMP10_15a %in% c(1, 3) & EMP10_18 == 5 & EMP10_15 > 0 & EMP10_16 > 0 & EMP10_17 > 0 & (EMP10_19_amount != 999999 & EMP10_19_amount != 999998) ~ EMP10_19_amount / (EMP10_15 * EMP10_16 * EMP10_17),
+
+    # Payment frequency 6: Paid per year, assuming work 12 months per year; check all denominators > 0
+    EMP10_15a %in% c(1, 3) & EMP10_18 == 6 & EMP10_15 > 0 & EMP10_16 > 0 & EMP10_17 > 0 & (EMP10_19_amount != 999999 & EMP10_19_amount != 999998) ~ EMP10_19_amount / (12 * EMP10_15 * EMP10_16 * EMP10_17),
+
+    # Payment frequency 7: Not paid in salary/wage/cash
+    EMP10_15a %in% c(1, 3) & EMP10_18 == 7 ~ NA_real_,
+
+    # Task-based payment cases:
+    EMP10_15a == 2 & EMP10_19b == 1 & EMP10_19c > 0 & (EMP10_19a_amount != 999999 & EMP10_19a_amount != 999998) ~ EMP10_19a_amount / EMP10_19c,
+    EMP10_15a == 2 & EMP10_19b == 2 & EMP10_19c > 0 & EMP10_17 > 0 & (EMP10_19a_amount != 999999 & EMP10_19a_amount != 999998) ~ EMP10_19a_amount / (EMP10_19c * EMP10_17),
+    EMP10_15a == 2 & EMP10_19b == 3 & EMP10_19c > 0 & EMP10_16 > 0 & EMP10_17 > 0 & (EMP10_19a_amount != 999999 & EMP10_19a_amount != 999998) ~ EMP10_19a_amount / (EMP10_19c * EMP10_16 * EMP10_17),
+    EMP10_15a == 2 & EMP10_19b == 4 & EMP10_19c > 0 & EMP10_15 > 0 & EMP10_16 > 0 & EMP10_17 > 0 & (EMP10_19a_amount != 999999 & EMP10_19a_amount != 999998)  ~ EMP10_19a_amount / (EMP10_19c * EMP10_15 * EMP10_16 * EMP10_17),
+    
+    # Default case if none of the conditions are met
+    TRUE ~ NA_real_
+  ))
+RA_adult <- RA_adult %>%
+  mutate(hourly_pay = as.integer(hourly_pay))
+
+```
+
+```{r}
+# Calculate the average of hourly_pay, ignoring NAs
+average_hourly_pay <- RA_adult %>%
+  summarise(avg_hourly_pay = mean(hourly_pay, na.rm = TRUE)) %>%
+  pull(avg_hourly_pay)
+
+# Print the result
+cat("The average hourly pay is:", format(round(average_hourly_pay, 2), nsmall = 2), "\n")
+
+```
+
+### Figure for SDG 8.5.2 by Population Groups
+
+```{r, eval=FALSE}
+###Table standard 
+
+
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+C080501 <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(hourly_pay)) %>%  # Exclude missing hourly pay values
+  group_by(Intro_07) %>%          # Group by your population group variable
+  summarise(
+    avg_hourly_pay = survey_mean(hourly_pay, na.rm = TRUE),  # Calculate weighted mean
+    .groups = "drop"
+  )
+
+# Create the bar chart
+ggplot(C080501, aes(x = Intro_07, y = avg_hourly_pay, fill = Intro_07)) +
+  geom_bar(stat = "identity", width = 0.7, position = "dodge") +
+  geom_text(aes(label = sprintf("%.2f", avg_hourly_pay)),
+            position = position_dodge(width = 0.7), vjust = -0.5, size = 3) +
+  labs(
+    title = "Average Hourly Earnings by Population Group (Weighted)",
+    x = "Population Group",
+    y = "Average Hourly Earnings"
+  ) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, max(C080501$avg_hourly_pay) * 1.2)) +
+  scale_fill_unhcr_d() +   # Use UNHCR color palette if available
+  theme_unhcr() +          # Apply UNHCR theme if available
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#ILGI: Below I removed the outliers and run the table/chart again as a test and the result seems more plausable. Once you review this indicator lets remove this test table and chart, however data for PAK and CAM should be checked and cleaned before running this indicator (if needed). 
+```{r}
+
+lower_percentile <- quantile(RA_adult$hourly_pay, 0.01, na.rm = TRUE)
+upper_percentile <- quantile(RA_adult$hourly_pay, 0.99, na.rm = TRUE)
+
+RA_adult <- RA_adult %>%
+  mutate(percentile_outlier = ifelse(hourly_pay < lower_percentile | hourly_pay > upper_percentile, TRUE, FALSE))
+
+# Exclude outliers and calculate weighted averages
+C080501_test <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(hourly_pay)) %>%  # Exclude missing hourly pay values
+  mutate(
+    lower_percentile = survey_quantile(hourly_pay, 0.01, na.rm = TRUE),
+    upper_percentile = survey_quantile(hourly_pay, 0.99, na.rm = TRUE)
+  ) %>%
+  filter(hourly_pay >= lower_percentile, hourly_pay <= upper_percentile) %>%  # Exclude outliers
+  group_by(Intro_07) %>%          # Group by your population group variable
+  summarise(
+    avg_hourly_pay = survey_mean(hourly_pay, na.rm = TRUE),  # Calculate weighted mean
+    .groups = "drop"
+  )
+
+# Create the bar chart
+ggplot(C080501_test, aes(x = Intro_07, y = avg_hourly_pay, fill = Intro_07)) +
+  geom_bar(stat = "identity", width = 0.7, position = "dodge") +
+  geom_text(aes(label = sprintf("%.2f", avg_hourly_pay)),
+            position = position_dodge(width = 0.7), vjust = -0.5, size = 3) +
+  labs(
+    title = "Average Hourly Earnings by Population Group (Weighted, Excluding Outliers)",
+    x = "Population Group",
+    y = "Average Hourly Earnings"
+  ) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, max(C080501_test$avg_hourly_pay) * 1.2)) +
+  scale_fill_unhcr_d() +   # Use UNHCR color palette if available
+  theme_unhcr() +          # Apply UNHCR theme if available
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+### Figure for SDG 8.5.2 by Gender, Disability and Population Groups
+
+```{r}
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+C080501_AGD <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(hourly_pay) & !is.na(disability_RA) & !is.na(HH_02_RA)) %>%  # Exclude missing hourly pay values
+  group_by(Intro_07, disability_RA,HH_02_RA ) %>%          # Group by your population group variable
+  summarise(
+    avg_hourly_pay = survey_mean(hourly_pay, na.rm = TRUE),  # Calculate weighted mean
+    .groups = "drop"
+  )
+
+ggplot(C080501_AGD, aes(x = HH_02_RA, y = avg_hourly_pay, fill = disability_RA)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", avg_hourly_pay)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +
+  facet_wrap(~ Intro_07) +
+  labs(
+    title = "Average Hourly Earnings by Gender, Disability, and Population Groups",
+    x = "Gender",
+    y = "Average Hourly Earnings",
+    fill = "Disability Status"
+  ) +
+  scale_fill_unhcr_d() +
+  scale_y_continuous(limits = c(0, max(C080501_AGD$avg_hourly_pay) * 1.2), expand = c(0, 0)) +
+  theme_unhcr() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+### Figure for SDG 8.5.2 by Gender, Disability and Population Groups - Treating outliers 
+
+```{r}
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+C080501_AGD <- FDS_PAK_2024_RA_adult %>%
+  filter(!is.na(hourly_pay) & !is.na(disability_RA) & !is.na(HH_02_RA)) %>%  # Exclude missing hourly pay values
+  mutate(
+    lower_percentile = survey_quantile(hourly_pay, 0.01, na.rm = TRUE),
+    upper_percentile = survey_quantile(hourly_pay, 0.99, na.rm = TRUE)
+  ) %>%
+  filter(hourly_pay >= lower_percentile, hourly_pay <= upper_percentile) %>%  # Exclude outliers
+  group_by(Intro_07, disability_RA,HH_02_RA ) %>%          # Group by your population group variable
+  summarise(
+    avg_hourly_pay = survey_mean(hourly_pay, na.rm = TRUE),  # Calculate weighted mean
+    .groups = "drop"
+  )
+
+ggplot(C080501_AGD, aes(x = HH_02_RA, y = avg_hourly_pay, fill = disability_RA)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", avg_hourly_pay)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +
+  facet_wrap(~ Intro_07) +
+  labs(
+    title = "Average Hourly Earnings by Gender, Disability, and Population Groups",
+    x = "Gender",
+    y = "Average Hourly Earnings",
+    fill = "Disability Status"
+  ) +
+  scale_fill_unhcr_d() +
+  scale_y_continuous(limits = c(0, max(C080501_AGD$avg_hourly_pay) * 1.2), expand = c(0, 0)) +
+  theme_unhcr() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+
 ## 8.5.2 SDG Indicator
 
 **8.5.2 Unemployment rate, by sex, age and persons with disabilities**
