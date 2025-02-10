@@ -334,3 +334,15 @@ main_wide <- main_wide %>%
 HHroster <- HHroster %>%
   left_join(main_wide, by = c("uuid", "rosterposition"))
 
+
+
+# Aggregate at household level (uuid), applying max() to all columns that start with "Land12b"
+main_docs <- main_wide %>%
+  group_by(uuid) %>%
+  summarise(across(starts_with("Land12b"), ~ max(.x, na.rm = TRUE), .names = "{.col}"))
+
+
+main <- main %>%
+  left_join(main_docs, by = "uuid")
+
+

@@ -242,9 +242,6 @@ Indicators are obtained as follows:
 
 a) Proportion of population covered by at least one social protection cash benefit: ratio of the population receiving cash benefits under at least one of the contingencies/social protection functions (contributory or non-contributory benefit) or actively contributing to at least one social security scheme to the total population.
 
-
-
-
 ```{r, eval=FALSE}
 
 #Check variables 
@@ -1242,7 +1239,7 @@ SDG_2_2_1 <- RA_caregiver %>%
   summarise(prevalence = mean(C020201, na.rm = TRUE) * 100) %>%
   ungroup()
 ```
-```{r}
+```{r, eval=FALSE}
 SDG_2_2_1 <- SDG_2_2_1 %>%
   mutate(
     sex_label = dplyr::recode(
@@ -1253,7 +1250,7 @@ SDG_2_2_1 <- SDG_2_2_1 %>%
   )
 
 ```
-```{r}
+```{r, eval=FALSE}
 SDG_2_2_1 %>%
   ggplot(aes(x = sex_label, y = prevalence, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge") +
@@ -1275,7 +1272,7 @@ SDG_2_2_1 %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
-```{r}
+```{r, eval=FALSE}
 ### Figure for SDG 2.2.1 by Population Groups 
 
 ##Indicator Results 
@@ -1430,7 +1427,7 @@ SDG_2_2_2b <- RA_caregiver %>%
   summarise(prevalence = mean(C020202b, na.rm = TRUE) * 100) %>%
   ungroup()
 ```
-```{r}
+```{r, eval=FALSE}
 
 SDG_2_2_2b <- SDG_2_2_2b %>%
   mutate(
@@ -1441,7 +1438,7 @@ SDG_2_2_2b <- SDG_2_2_2b %>%
     )
   )
 ```
-```{r}
+```{r, eval=FALSE}
 SDG_2_2_2b %>%
   ggplot(aes(x = sex_label, y = prevalence, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge") +
@@ -1463,7 +1460,7 @@ SDG_2_2_2b %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
-```{r}
+```{r, eval=FALSE}
 ### Figure for SDG 2.2.2b by Population Groups 
 
 ##Indicator Results 
@@ -2020,7 +2017,7 @@ table(HHroster$C040102_uppersec_open)
 ```
 
 ### Figure for SDG 4.1.2 - Primary school by Population Groups
-```{r}
+```{r, eval=FALSE}
 ##Table by population groups
 
 FDS_PAK_2024_HHroster <- HHroster %>%
@@ -2103,8 +2100,9 @@ ggplot(C040102_primary_open_AGD, aes(x = HH_02, y = mean_value, fill = disabilit
 
 ```
 
+
 ### Figure for SDG 4.1.2 - Lower secondary school by Population Groups
-```{r}
+```{r, eval=FALSE}
 ##Table by population groups
 
 FDS_PAK_2024_HHroster <- HHroster %>%
@@ -2185,9 +2183,12 @@ ggplot(C040102_lowersec_open_AGD, aes(x = HH_02, y = mean_value, fill = disabili
   )
 
 ```
+```{r, eval=FALSE}
+
+```
 
 ### Figure for SDG 4.1.2 - Upper secondary school by Population Groups
-```{r}
+```{r, eval=FALSE}
 ##Table by population groups
 
 FDS_PAK_2024_HHroster <- HHroster %>%
@@ -2316,7 +2317,7 @@ mutate(C040202 = labelled(C040202, #Add labels
 table(HHroster$C040202)
 ```
 ### Figure for SDG 4.2.2 by Population Groups
-```{r}
+```{r, eval=FALSE}
 ##Table by population groups
 
 FDS_PAK_2024_HHroster <- HHroster %>%
@@ -2650,12 +2651,581 @@ ggplot(C040301_25_45_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA
     axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
   )
 ```
+
 ## 4.5.1 SDG Indicator
 
 **Parity indices (female/male, rural/urban, bottom/top wealth quintile and others such as disability status, indigenous peoples and conflict-affected, as data become available) for all education indicators on this list that can be disaggregated**
 
 Indicator Code: C040501
 
+To measure the general level of disparity between two sub-populations of interest with regard to a given indicator. The further from 1 the parity index lies, the greater the disparity between the two groups of interest.
+
+The indicator value of the likely more disadvantaged group is divided by the indicator value of the other sub-population of interest.
+
+Education indicators available from FDS: 
+1. 4.1.2 SDG Indicator - Completion rate for primary education, lower secondary education and higher secondary education
+2. 4.2.2 SDG Indicator - Participation rate in organized learning (one year before the official primary entry age), by sex
+3. 4.3.1 SDG Indicator - Participation rate of youth and adults in formal and non-formal education and training in the previous 12 months, by sex
+
+Disadvantaged group
+1. Gender Parity indices - Females are considered a disadvantaged group
+1. Disability Parity indices - Disabled are considered a disadvantaged group
+
+**Sources**  
+1.[SDG 4.3.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-04-05-01.docx&wdOrigin=BROWSELINK)
+
+### Parity indices for the available education indicators {.tabset}
+#### 4.1.2 SDG Indicator Parity indices - Completion rate for primary education, lower secondary education and higher secondary education
+1. **Primary education**
+```{r, eval=FALSE}
+#Gender Parity Index (GPI) for primary school completion
+# Ensure survey design
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,  # Adjust if needed
+    weights = NULL,  # Adjust if needed
+    nest = TRUE
+  )
+
+# Calculate primary completion rates for males
+male_completion_primary <- FDS_PAK_2024_HHroster %>%
+  filter(HH_02 == "Male") %>%  # Filter only males
+  group_by(Intro_07) %>%  # Group by population group
+  summarise(
+    male_completion_rate = survey_mean(C040102_primary_open, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Calculate primary completion rates for females
+female_completion_primary <- FDS_PAK_2024_HHroster %>%
+  filter(HH_02 == "Female") %>%  # Filter only females
+  group_by(Intro_07) %>%  # Group by population group
+  summarise(
+    female_completion_rate = survey_mean(C040102_primary_open, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Merge male and female completion rates
+gender_completion_primary <- left_join(male_completion_primary, female_completion_primary, by = "Intro_07")
+
+# Compute Gender Parity Index (GPI)
+gender_completion_primary <- gender_completion_primary %>%
+  mutate(GPI = female_completion_rate / male_completion_rate)
+
+# Display results
+print(gender_completion_primary)
+
+# Visualizing Gender Parity Index with UNHCR Colors
+
+max_gpi <- max(gender_participation_431_25_45$GPI_participation_25_45, na.rm = TRUE)
+y_limit <- ifelse(max_gpi > 1, max_gpi * 1.2, 1.2)  # Ensure at least 1.2 for visibility
+y_breaks <- seq(0, max(y_limit, 1.2), by = 0.2)  # Adjust step size if needed
+
+
+ggplot(gender_completion_primary, aes(x = Intro_07, y = GPI, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_text(aes(label = round(GPI, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +
+  labs(
+    title = "Gender Parity Index by Population Group",
+    subtitle = "Ratio of primary completion rates between females and males.",
+    x = "Population Groups",
+    y = "Gender Parity Index (GPI)"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+```{r, eval=FALSE}
+#Disability Parity Index (DPI) for primary school completion
+# Ensure survey design
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,  # Adjust if needed
+    weights = NULL,  # Adjust if needed
+    nest = TRUE
+  )
+
+# Calculate primary completion rates for non-disabled
+non_disabled_completion_primary <- FDS_PAK_2024_HHroster %>%
+  filter(disability == "Non-Disabled") %>%  # Filter only non-disabled
+  group_by(Intro_07) %>%
+  summarise(
+    non_disabled_completion_rate = survey_mean(C040102_primary_open, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Calculate primary completion rates for disabled
+disabled_completion_primary <- FDS_PAK_2024_HHroster %>%
+  filter(disability == "Disabled") %>%
+  group_by(Intro_07) %>%
+  summarise(
+    disabled_completion_rate = survey_mean(C040102_primary_open, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Merge non-disabled and disabled completion rates
+disability_completion_primary <- left_join(non_disabled_completion_primary, disabled_completion_primary, by = "Intro_07")
+
+# Compute Disability Parity Index (DPI)
+disability_completion_primary <- disability_completion_primary %>%
+  mutate(DPI_primary = disabled_completion_rate / non_disabled_completion_rate)
+
+# Display results
+print(disability_completion_primary)
+
+# Visualizing Disability Parity Index with UNHCR Colors
+
+max_gpi <- max(disability_completion_primary$DPI_primary, na.rm = TRUE)
+y_limit <- ifelse(max_gpi > 1, max_gpi * 1.2, 1.2)  # Ensure at least 1.2 for visibility
+y_breaks <- seq(0, max(y_limit, 1.2), by = 0.2)  # Adjust step size if needed
+
+
+
+ggplot(disability_completion_primary, aes(x = Intro_07, y = DPI_primary, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_text(aes(label = round(DPI_primary, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +
+  labs(
+    title = "Disability Parity Index by Population Group",
+    subtitle = "Ratio of primary completion rates between disabled and non-disabled.",
+    x = "Population Groups",
+    y = "Disability Parity Index (DPI)"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+
+2. **Lower secondary education**
+```{r, eval=FALSE}
+#Gender Parity Index (GPI) for lower secondary school completion
+# Ensure survey design
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,  # Adjust if needed
+    weights = NULL,  # Adjust if needed
+    nest = TRUE
+  )
+
+# Calculate lower secondary completion rates for males
+male_completion_lowersec <- FDS_PAK_2024_HHroster %>%
+  filter(HH_02 == "Male") %>%  # Filter only males
+  group_by(Intro_07) %>%  # Group by population group
+  summarise(
+    male_completion_rate = survey_mean(C040102_lowersec_open, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Calculate lower secondary completion rates for females
+female_completion_lowersec <- FDS_PAK_2024_HHroster %>%
+  filter(HH_02 == "Female") %>%  # Filter only females
+  group_by(Intro_07) %>%  # Group by population group
+  summarise(
+    female_completion_rate = survey_mean(C040102_lowersec_open, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Merge male and female completion rates
+gender_completion_lowersec <- left_join(male_completion_lowersec, female_completion_lowersec, by = "Intro_07")
+
+# Compute Gender Parity Index (GPI)
+gender_completion_lowersec <- gender_completion_lowersec %>%
+  mutate(GPI_lowersec = female_completion_rate / male_completion_rate)
+
+# Display results
+print(gender_completion_lowersec)
+
+# Visualizing Gender Parity Index with UNHCR Colors
+max_gpi <- max(gender_completion_lowersec$GPI_lowersec, na.rm = TRUE)
+y_limit <- ifelse(max_gpi > 1, max_gpi * 1.2, 1.2)  # Ensure at least 1.2 for visibility
+y_breaks <- seq(0, max(y_limit, 1.2), by = 0.2)  # Adjust step size if needed
+
+ggplot(gender_completion_lowersec, aes(x = Intro_07, y = GPI_lowersec, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_text(aes(label = round(GPI_lowersec, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+   scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +
+  labs(
+    title = "Gender Parity Index by Population Group",
+    subtitle = "Ratio of lower secondary completion rates between females and males.",
+    x = "Population Groups",
+    y = "Gender Parity Index (GPI)"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+```{r, eval=FALSE}
+#Disability Parity Index (DPI) for lower secondary school completion
+
+# Ensure survey design
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,  # Adjust if needed
+    weights = NULL,  # Adjust if needed
+    nest = TRUE
+  )
+
+# Calculate lower secondary completion rates for non-disabled
+non_disabled_completion_lowersec <- FDS_PAK_2024_HHroster %>%
+  filter(disability == "Non-Disabled") %>%  # Filter only non-disabled
+  group_by(Intro_07) %>%
+  summarise(
+    non_disabled_completion_rate = survey_mean(C040102_lowersec_open, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Calculate lower secondary completion rates for disabled
+disabled_completion_lowersec <- FDS_PAK_2024_HHroster %>%
+  filter(disability == "Disabled") %>%
+  group_by(Intro_07) %>%
+  summarise(
+    disabled_completion_rate = survey_mean(C040102_lowersec_open, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Merge non-disabled and disabled completion rates
+disability_completion_lowersec <- left_join(non_disabled_completion_lowersec, disabled_completion_lowersec, by = "Intro_07")
+
+# Compute Disability Parity Index (DPI)
+disability_completion_lowersec <- disability_completion_lowersec %>%
+  mutate(DPI_lowersec = disabled_completion_rate / non_disabled_completion_rate)
+
+# Display results
+print(disability_completion_lowersec)
+
+# Visualizing Disability Parity Index with UNHCR Colors
+max_gpi <- max(disability_completion_lowersec$DPI_lowersec, na.rm = TRUE)
+y_limit <- ifelse(max_gpi > 1, max_gpi * 1.2, 1.2)
+y_breaks <- seq(0, max(y_limit, 1.2), by = 0.2)  # Adjust step size if needed
+
+
+ggplot(disability_completion_lowersec, aes(x = Intro_07, y = DPI_lowersec, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_text(aes(label = round(DPI_lowersec, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +
+  labs(
+    title = "Disability Parity Index by Population Group",
+    subtitle = "Ratio of lower secondary completion rates between disabled and non-disabled.",
+    x = "Population Groups",
+    y = "Disability Parity Index (DPI)"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+
+
+3. **Upper secondary education**
+```{r, eval=FALSE}
+#Gender Parity Index (GPI) for upper secondary school completion
+# Ensure survey design
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,  # Adjust if needed
+    weights = NULL,  # Adjust if needed
+    nest = TRUE
+  )
+
+# Calculate upper secondary completion rates for males
+male_completion_uppersec <- FDS_PAK_2024_HHroster %>%
+  filter(HH_02 == "Male") %>%  # Filter only males
+  group_by(Intro_07) %>%  # Group by population group
+  summarise(
+    male_completion_rate = survey_mean(C040102_uppersec_open, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Calculate upper secondary completion rates for females
+female_completion_uppersec <- FDS_PAK_2024_HHroster %>%
+  filter(HH_02 == "Female") %>%  # Filter only females
+  group_by(Intro_07) %>%  # Group by population group
+  summarise(
+    female_completion_rate = survey_mean(C040102_uppersec_open, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Merge male and female completion rates
+gender_completion_uppersec <- left_join(male_completion_uppersec, female_completion_uppersec, by = "Intro_07")
+
+# Compute Gender Parity Index (GPI)
+gender_completion_uppersec <- gender_completion_uppersec %>%
+  mutate(GPI_uppersec = female_completion_rate / male_completion_rate)
+
+# Display results
+print(gender_completion_uppersec)
+
+# Determine max value for the y-axis, ensuring it's at least 1
+max_gpi <- max(gender_completion_uppersec$GPI_uppersec, na.rm = TRUE)
+y_limit <- ifelse(max_gpi > 1, max_gpi * 1.2, 1.2)  # Ensure at least 1.2 for visibility
+y_breaks <- seq(0, max(y_limit, 1.2), by = 0.2)  # Adjust step size if needed
+
+
+ggplot(gender_completion_uppersec, aes(x = Intro_07, y = GPI_uppersec, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_text(aes(label = round(GPI_uppersec, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +  # Ensure parity line is visible
+  scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +  # Adjust limits dynamically
+  labs(
+    title = "Gender Parity Index by Population Group",
+    subtitle = "Ratio of upper secondary completion rates between females and males.",
+    x = "Population Groups",
+    y = "Gender Parity Index (GPI)"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+
+```
+```{r, eval=FALSE}
+#Disability Parity Index (DPI) for upper secondary school completion
+
+# Ensure survey design
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,  # Adjust if needed
+    weights = NULL,  # Adjust if needed
+    nest = TRUE
+  )
+
+# Calculate upper completion rates for non-disabled
+non_disabled_completion_uppersec <- FDS_PAK_2024_HHroster %>%
+  filter(disability == "Non-Disabled") %>%  # Filter only non-disabled
+  group_by(Intro_07) %>%
+  summarise(
+    non_disabled_completion_rate = survey_mean(C040102_lowersec_open, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Calculate upper completion rates for disabled
+disabled_completion_uppersec <- FDS_PAK_2024_HHroster %>%
+  filter(disability == "Disabled") %>%
+  group_by(Intro_07) %>%
+  summarise(
+    disabled_completion_rate = survey_mean(C040102_uppersec_open, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Merge non-disabled and disabled completion rates
+disability_completion_uppersec <- left_join(non_disabled_completion_uppersec, disabled_completion_uppersec, by = "Intro_07")
+
+# Compute Disability Parity Index (DPI)
+disability_completion_uppersec <- disability_completion_uppersec %>%
+  mutate(DPI_uppersec = disabled_completion_rate / non_disabled_completion_rate)
+
+# Display results
+print(disability_completion_uppersec)
+
+# Determine max value for the y-axis, ensuring it's at least 1
+max_dpi <- max(disability_completion_uppersec$DPI_uppersec, na.rm = TRUE)
+y_limit <- ifelse(max_dpi > 1, max_dpi * 1.2, 1.2)  # Ensure at least 1.2 for visibility
+y_breaks <- seq(0, max(y_limit, 1.2), by = 0.2)  # Adjust step size if needed
+
+ggplot(disability_completion_uppersec, aes(x = Intro_07, y = DPI_uppersec, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_text(aes(label = round(DPI_uppersec, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +  # Ensure parity line is visible
+  scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +  # Adjust limits dynamically
+  labs(
+    title = "Disability Parity Index by Population Group",
+    subtitle = "Ratio of upper secondary completion rates between disabled and non-disabled.",
+    x = "Population Groups",
+    y = "Disability Parity Index (DPI)"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+
+#### 4.2.2 SDG Indicator Parity indices - Participation rate in organized learning (one year before the official primary entry age)
+
+```{r, eval=FALSE}
+#Gender Parity Index (GPI) for Participation rate in organized learning (one year before the official primary entry age)
+# Ensure survey design
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,  # Adjust if needed
+    weights = NULL,  # Adjust if needed
+    nest = TRUE
+  )
+
+# Calculate preschool participation rates for males
+male_participation_preschool <- FDS_PAK_2024_HHroster %>%
+  filter(HH_02 == "Male") %>%  # Filter only males
+  group_by(Intro_07) %>%  # Group by population group
+  summarise(
+    male_participation_rate = survey_mean(C040202, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Calculate preschool participation rates for females
+female_participation_preschool <- FDS_PAK_2024_HHroster %>%
+  filter(HH_02 == "Female") %>%  # Filter only females
+  group_by(Intro_07) %>%  # Group by population group
+  summarise(
+    female_participation_rate = survey_mean(C040202, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Merge male and female participation rates
+gender_participation_preschool <- left_join(male_participation_preschool, female_participation_preschool, by = "Intro_07")
+
+# Compute Gender Parity Index (GPI)
+gender_participation_preschool <- gender_participation_preschool %>%
+  mutate(GPI_participation_preschool = female_participation_rate / male_participation_rate)
+
+# Display results
+print(gender_participation_preschool)
+
+# Visualizing Gender Parity Index with UNHCR Colors
+
+max_gpi <- max(gender_participation_preschool$GPI_participation_preschool, na.rm = TRUE)
+y_limit <- ifelse(max_gpi > 1, max_gpi * 1.2, 1.2)  # Ensure at least 1.2 for visibility
+y_breaks <- seq(0, max(y_limit, 1.2), by = 0.2)  # Adjust step size if needed
+
+ggplot(gender_participation_preschool, aes(x = Intro_07, y = GPI_participation_preschool, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_text(aes(label = round(GPI_participation_preschool, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +
+  labs(
+    title = "Gender Parity Index by Population Group",
+    subtitle = "Ratio of participation in organized learning (one year before the official primary entry age) between females and males.",
+    x = "Population Groups",
+    y = "Gender Parity Index (GPI)"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+
+#### 4.3.1 SDG Indicator Parity indices - Participation rate of youth and adults in formal and non-formal education and training in the previous 12 months
+
+1. **15 - 24 years age group**
+
+```{r, eval=FALSE}
+#Gender Parity Index (GPI) for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months
+# Ensure survey design
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,  # Adjust if needed
+    weights = NULL,  # Adjust if needed
+    nest = TRUE
+  )
+
+# Calculate participation rate  for males
+male_participation_431_15_24 <- FDS_PAK_2024_RA_adult %>%
+  filter(HH_02_RA == "Male") %>%  # Filter only males
+  group_by(Intro_07) %>%  # Group by population group
+  summarise(
+    male_participation_rate = survey_mean(C040301_15_24, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Calculate participation rate  for females
+female_participation_431_15_24 <- FDS_PAK_2024_RA_adult %>%
+  filter(HH_02_RA == "Female") %>%  # Filter only females
+  group_by(Intro_07) %>%  # Group by population group
+  summarise(
+    female_participation_rate = survey_mean(C040301_15_24, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Merge male and female participation rates
+gender_participation_431_15_24 <- left_join(male_participation_431_15_24, female_participation_431_15_24, by = "Intro_07")
+
+# Compute Gender Parity Index (GPI)
+gender_participation_431_15_24 <- gender_participation_431_15_24 %>%
+  mutate(GPI_participation_15_24 = female_participation_rate / male_participation_rate)
+
+# Display results
+print(gender_participation)
+
+# Visualizing Gender Parity Index with UNHCR Colors
+
+max_gpi <- max(gender_participation_431_15_24$GPI_participation_15_24, na.rm = TRUE)
+y_limit <- ifelse(max_gpi > 1, max_gpi * 1.2, 1.2)  # Ensure at least 1.2 for visibility
+y_breaks <- seq(0, max(y_limit, 1.2), by = 0.2)  # Adjust step size if needed
+
+ggplot(gender_participation_431_15_24, aes(x = Intro_07, y = GPI_participation_15_24, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_text(aes(label = round(GPI_participation_15_24, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +
+  labs(
+    title = "Gender Parity Index by Population Group",
+    subtitle = "Ratio of participation participation rate of youth and adults (15 - 24 years)  in formal and non-formal education and training in the previous 12 months between females and males.",
+    x = "Population Groups",
+    y = "Gender Parity Index (GPI)"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+2. **25 - 45 years age group**
+
+```{r, eval=FALSE}
+#Gender Parity Index (GPI) for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months
+# Ensure survey design
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,  # Adjust if needed
+    weights = NULL,  # Adjust if needed
+    nest = TRUE
+  )
+
+# Calculate participation rate  for males
+male_participation_431_25_45 <- FDS_PAK_2024_RA_adult %>%
+  filter(HH_02_RA == "Male") %>%  # Filter only males
+  group_by(Intro_07) %>%  # Group by population group
+  summarise(
+    male_participation_rate = survey_mean(C040301_25_45, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Calculate participation rate  for females
+female_participation_431_25_45 <- FDS_PAK_2024_RA_adult %>%
+  filter(HH_02_RA == "Female") %>%  # Filter only females
+  group_by(Intro_07) %>%  # Group by population group
+  summarise(
+    female_participation_rate = survey_mean(C040301_25_45, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Merge male and female participation rates
+gender_participation_431_25_45 <- left_join(male_participation_431_25_45, female_participation_431_25_45, by = "Intro_07")
+
+# Compute Gender Parity Index (GPI)
+gender_participation_431_25_45 <- gender_participation_431_25_45 %>%
+  mutate(GPI_participation_25_45 = female_participation_rate / male_participation_rate)
+
+# Display results
+print(gender_participation)
+
+# Visualizing Gender Parity Index with UNHCR Colors
+max_gpi <- max(gender_participation_431_25_45$GPI_participation_25_45, na.rm = TRUE)
+y_limit <- ifelse(max_gpi > 1, max_gpi * 1.2, 1.2)  # Ensure at least 1.2 for visibility
+y_breaks <- seq(0, max(y_limit, 1.2), by = 0.2)  # Adjust step size if needed
+
+ggplot(gender_participation_431_25_45, aes(x = Intro_07, y = GPI_participation_25_45, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_text(aes(label = round(GPI_participation_25_45, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +
+  labs(
+    title = "Gender Parity Index by Population Group",
+    subtitle = "Ratio of participation participation rate of youth and adults (25 - 45 years) in formal and non-formal education and training in the previous 12 months between females and males.",
+    x = "Population Groups",
+    y = "Gender Parity Index (GPI)"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  theme_unhcr() +         # Apply UNHCR theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
 ## 5.3.1 SDG Indicator
 
 **Proportion of women aged 20–24 years who were married or in a union before age 15 and before age 18**
@@ -3289,7 +3859,7 @@ main <- main %>%
                                 ),
                                 label = "Proportion of households with access to electricity from TIER 1 or above"))
 ```
-```{r}
+```{r, eval=FALSE}
 table(main$C070101)
 ```
 
@@ -3580,7 +4150,7 @@ table(RA_adult$EMP10_6) #Would you get paid sick leave in case of illness or inj
 table(RA_adult$EMP10_6a) #Would you get paid  [maternity/paternity] leave [if you deliver a child/if your spouse delivers a child]?
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 1: Determine who is employed based on various conditions 
 RA_adult <- RA_adult %>%
   mutate(employed = case_when(
@@ -3669,7 +4239,7 @@ RA_adult <- RA_adult %>%
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 6: Informal/formal economy
 #UNIT OF PRODUCTION: FORMAL/INFORMAL SECTOR 
 RA_adult <- RA_adult %>%
@@ -3680,7 +4250,7 @@ RA_adult <- RA_adult %>%
     TRUE ~ NA_real_ # Default case for missing values
   ))
 ```
-```{r}
+```{r, eval=FALSE}
 #NATURE OF JOB: FORMAL/INFORMAL EMPLOYMENT 
 RA_adult <- RA_adult %>%
   mutate(job_nature = case_when(
@@ -3811,7 +4381,7 @@ Percent (%)
 **Sources** 
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-05-01.docx&wdOrigin=BROWSELINK)
 
-```{r}
+```{r, eval=FALSE}
 table(RA_adult$EMP10_15a) #In your main job, are you paid for time spent on the job or for the completion of specific tasks?
 summary(RA_adult$EMP10_15) #How many weeks per month do you usually work in this main job?
 summary(RA_adult$EMP10_16) #How many days per week do you usually work in this main job?
@@ -3823,7 +4393,7 @@ table(RA_adult$EMP10_19b) #What is the easiest way for you to report how much ti
 summary(RA_adult$EMP10_19c) #Approximately, how much time did you spend to complete this task?
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 1: Calculate hourly earnings
 RA_adult <- RA_adult %>%
   mutate(hourly_pay = case_when(
@@ -3862,7 +4432,7 @@ RA_adult <- RA_adult %>%
 
 ```
 
-```{r}
+```{r, eval=FALSE}
 # Calculate the average of hourly_pay, ignoring NAs
 average_hourly_pay <- RA_adult %>%
   summarise(avg_hourly_pay = mean(hourly_pay, na.rm = TRUE)) %>%
@@ -3911,7 +4481,7 @@ ggplot(C080501, aes(x = Intro_07, y = avg_hourly_pay, fill = Intro_07)) +
 ```
 
 #ILGI: Below I removed the outliers and run the table/chart again as a test and the result seems more plausable. Once you review this indicator lets remove this test table and chart, however data for PAK and CAM should be checked and cleaned before running this indicator (if needed). 
-```{r}
+```{r, eval=FALSE}
 
 lower_percentile <- quantile(RA_adult$hourly_pay, 0.01, na.rm = TRUE)
 upper_percentile <- quantile(RA_adult$hourly_pay, 0.99, na.rm = TRUE)
@@ -3951,7 +4521,7 @@ ggplot(C080501_test, aes(x = Intro_07, y = avg_hourly_pay, fill = Intro_07)) +
 ```
 ### Figure for SDG 8.5.2 by Gender, Disability and Population Groups
 
-```{r}
+```{r, eval=FALSE}
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
     ids = NULL,           # Specify the column with cluster IDs
@@ -3986,7 +4556,7 @@ ggplot(C080501_AGD, aes(x = HH_02_RA, y = avg_hourly_pay, fill = disability_RA))
 ```
 ### Figure for SDG 8.5.2 by Gender, Disability and Population Groups - Treating outliers 
 
-```{r}
+```{r, eval=FALSE}
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
     ids = NULL,           # Specify the column with cluster IDs
@@ -4213,7 +4783,7 @@ ggplot(C080502_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
     axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
   )
 ```
-```{r}
+```{r, eval=FALSE}
 
 ```
 
@@ -4911,7 +5481,7 @@ table(RA_adult$C200204)
 
 ### Figure for SDG 10.3.1 by Population Group
 
-```{r}
+```{r, eval=FALSE}
 
 ##Table by population groups
 
@@ -5211,7 +5781,7 @@ RA_adult <- RA_adult %>%
     Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 0)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
 ```
 
-```{r}
+```{r, eval=FALSE}
 #Step 5: Define numerator and denominator
 #RA_adult <- RA_adult %>%
   #mutate(C160303_num = case_when(
