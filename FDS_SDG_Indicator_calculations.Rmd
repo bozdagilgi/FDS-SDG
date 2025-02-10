@@ -1316,9 +1316,6 @@ ggplot(C020201, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 
 Indicator Code: C020202
 
-In the context of FDS, which is 
-
-
 Child growth is an internationally accepted outcome reflecting child nutritional status. 
 
 Child wasting refers to a child who is too thin for his or her height and is the result of recent rapid weight loss or the failure to gain weight. A child who is moderately or severely wasted has an increased risk of death, but treatment is possible.
@@ -4365,9 +4362,9 @@ This indicator provides information on the mean hourly earnings from paid employ
 
 Earnings are a key aspect of quality of employment and living conditions. Information on hourly earnings disaggregated by various classifications (sex, age, occupation, disability status) provide some indication of the extent to which pay equality is respected or achieved.
 
-| Standard Questions                                                                           |
-|:--------------------------------------------------------------------------------------------:|
-| EMP10_15a, EMP10_15, EMP10_16, EMP10_17, EMP10_18, EMP10_19_amount, EMP10_19_currency        |
+| Standard Questions                                                                                                                  |
+|:-----------------------------------------------------------------------------------------------------------------------------------:|
+| EMP10_15a, EMP10_15, EMP10_16, EMP10_17, EMP10_18, EMP10_19, EMP10_19a_note, EMP10_19_amount, EMP10_19a_amount, EMP10_19b, EMP10_19c|
 
 **Unit of measure:**
 Percent (%)
@@ -4594,8 +4591,6 @@ ggplot(C080501_AGD, aes(x = HH_02_RA, y = avg_hourly_pay, fill = disability_RA))
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
-
-
 
 
 ## 8.5.2 SDG Indicator
