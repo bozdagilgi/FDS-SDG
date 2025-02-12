@@ -169,11 +169,7 @@ RA_adult  <- RA_adult %>%
     HH_02_RA = as_factor(HH_02_RA) %>%          # Convert to factor
       recode_factor(!!!gender_labels)        # Apply recoding
   )
-RA_caregiver  <- RA_caregiver %>%
-  mutate(
-    childnametouseSEX = as_factor(childnametouseSEX) %>%          # Convert to factor
-      recode_factor(!!!gender_labels)        # Apply recoding
-  )
+
 
 # Define labels for disability
 disability_labels <- c(
