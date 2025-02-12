@@ -975,7 +975,7 @@ For purposes of constructing the indicator (see next section for rationale), we 
 
 2. SDG 1.4.2 b
 
-**Unit of observation**: Individual (based on household size)
+**Unit of observation**: Individual (based on household size - adults)
 
 **Numerator**:  People (adults) who perceive their rights as secure
 
@@ -1047,7 +1047,7 @@ main <- main %>%
                                 ),
                                 label = "People (adults) who perceive their rights as secure"))
 ```
-ILGI: Is household size as weight incorporated into the total weight which will be created by Grayson? 
+ILGI: Is household size as weight incorporated into the total weight which will be created by Grayson? PETRA: No, add to denominator 
 
 ### Figure for SDG 1.4.2a by Population Groups
 
@@ -1244,8 +1244,8 @@ SDG_2_2_1 <- SDG_2_2_1 %>%
   mutate(
     sex_label = dplyr::recode(
       childnametouseSEX,
-      "M" = "Male",
-      "F" = "Female"
+      "1" = "Male",
+      "2" = "Female"
     )
   )
 
@@ -1348,6 +1348,7 @@ library(anthro)
 
 ```{r, eval=FALSE}
 #Step 2: Calculate z-scores
+    
 RA_caregiver <- RA_caregiver %>%
   bind_cols(
 with(
@@ -1430,8 +1431,8 @@ SDG_2_2_2b <- SDG_2_2_2b %>%
   mutate(
     sex_label = dplyr::recode(
       childnametouseSEX,
-      "M" = "Male",
-      "F" = "Female"
+      "1" = "Male",
+      "2" = "Female"
     )
   )
 ```
