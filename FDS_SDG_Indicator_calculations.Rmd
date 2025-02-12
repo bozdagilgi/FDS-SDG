@@ -6373,7 +6373,7 @@ C170801_AGD <- FDS_PAK_2024_RA_adult %>%
     mean_value = survey_mean(C170801, vartype = c("ci", "se"), na.rm = TRUE)
   )
 
-ggplot(SDG17_8_1_AGD, aes(x = HH_02_RA, y = mean_value, fill = HH_02_RA)) +
+ggplot(C170801_AGD, aes(x = HH_02_RA, y = mean_value, fill = HH_02_RA)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
   geom_text(aes(label = sprintf("%.2f", mean_value)),
             position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +
