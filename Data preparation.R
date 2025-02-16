@@ -342,3 +342,47 @@ main <- main %>%
   left_join(main_docs, by = "uuid")
 
 
+# Calculating old-age household members and looking at household that has at least one old_age household member
+# Count number of old age people (60+) in each household
+old_age_count <- HHroster %>%
+  group_by(uuid) %>%
+  summarise(old_age_count = sum(agetouse >= 60, na.rm = TRUE))
+
+# Add the count to the main dataset
+main <- main %>%
+  left_join(old_age_count, by = "uuid") %>%
+  mutate(old_age_count = replace_na(old_age_count, 0))
+
+main <- main %>%
+  mutate(has_old_age = if_else(old_age_count >= 1, 1, 0))
+
+
+#Identify household which have at least 1 woman who gave birth in the last 12 months 
+# Step 1: Identify children <= 1 year whose mother is reported to live in the household (HH_18 == 1)
+
+children_with_mothers <- HHroster %>%
+  filter(agetouse <= 1, HH_18 == 1, member == 1) %>%
+  mutate(mother_rosterposition = as.character(HH_19)) %>%
+  select(uuid, child_rosterposition = rosterposition, mother_rosterposition)
+
+# Step 2: Check if the mother is a household member in the same household
+valid_mothers <- HHroster %>%
+  filter(member == 1) %>%
+  mutate(rosterposition = as.character(rosterposition)) %>%
+  select(uuid, rosterposition)
+
+# Step 3: Join and check if mother is in household
+mothers_with_child <- children_with_mothers %>%
+  inner_join(valid_mothers, by = c("uuid", "mother_rosterposition" = "rosterposition")) %>%
+  group_by(uuid) %>%
+  summarise(num_mothers_with_child = n_distinct(mother_rosterposition), .groups = "drop")
+
+# Step 4: Merge into main dataset
+main <- main %>%
+  left_join(mothers_with_child, by = "uuid") %>%
+  mutate(
+    num_mothers_with_child = replace_na(num_mothers_with_child, 0),
+    has_mother_with_child = if_else(num_mothers_with_child >= 1, 1, 0)
+  )
+
+

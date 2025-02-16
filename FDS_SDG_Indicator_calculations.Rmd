@@ -267,8 +267,8 @@ main <- main %>%
   rowwise() %>%
   mutate(Social_Benefit = case_when(
     any(c_across(starts_with("ScProtec16")) == 1, na.rm = TRUE) ~ 1,  # If any column has 1
-    all(c_across(starts_with("ScProtec16")) == 2, na.rm = TRUE) ~ 2,  # If all columns are 2
-    TRUE ~ 2                                                   # Default to NA
+    all(c_across(starts_with("ScProtec16")) == 2, na.rm = TRUE) ~ 0,  # If all columns are 2
+    TRUE ~ 0                                                   # Default to NA
   )) %>%
   ungroup()
 ```
@@ -277,7 +277,56 @@ main <- main %>%
 table(main$Social_Benefit)
 ```
 
+### Figure for SDG 1.3.1a by Population Groups
 
+```{r, eval=FALSE}
+
+##Table by population groups
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+#ILGI: I didn't included household size as weight because we don't know how many household members receive a social protection benefit
+
+C010301a <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%
+  group_by(Intro_07) %>%
+  summarise(
+    var_name = "SDG 1.3.1a",
+    num_obs_uw = unweighted(n()),
+    denominator = survey_total(),
+    mean_value = survey_mean(Social_Benefit, vartype = c("ci", "se"), na.rm = TRUE)
+  )
+
+
+###Chart of SDG 1.4.2b by pop groups
+
+ggplot(C010301a, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 1.3.1a",
+    x = "Population Groups",
+    y = "Mean Value with Standard Errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+
+
+```
 b) Proportion of children covered by social protection benefits: ratio of children/households receiving child or family cash benefits to the total number of children/households with children.
 
 
@@ -287,11 +336,70 @@ b) Proportion of children covered by social protection benefits: ratio of childr
 
 c) Proportion of women giving birth covered by maternity benefits: ratio of women receiving cash maternity benefits to women giving birth in the same year (estimated based on age-specific fertility rates published in the UN’s World Population Prospects or on the number of live births corrected for the share of twin and triplet births).
 
+In FDS, we are able to look if at least one person in the household received parental or maternity benefit in the last 12 months. 
+
 ```{r, eval=FALSE}
-#add here only ScProtec16b - Parental/Maternity benefit
+table(main$ScProtec16b) #In the last 12 months, have you or anyone in your household received parental or maternity benefit? 
+table(main$num_mothers_with_child) #Number of mothers with child 1 year old or younger per household 
+table(main$has_mother_with_child)  #Households with at least 1 mother with child 1 year old or younger
 ```
 
+```{r}
+main <- main %>%
+  mutate(Parental_Benefit = case_when(
+    ScProtec16b == 1 & has_mother_with_child == 1 ~ 1,  # Received parental or maternity benefit 
+    ScProtec16b == 2 & has_mother_with_child == 1 ~ 0, 
+    TRUE ~ NA_real_))
+```
 
+### Figure for SDG 1.3.1c by Population Groups
+
+```{r, eval=FALSE}
+
+##Table by population groups
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C010301c <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%
+  group_by(Intro_07) %>%
+  summarise(
+    var_name = "SDG 1.3.1c",
+    num_obs_uw = unweighted(n()),
+    denominator = survey_total(),
+    mean_value = survey_mean(Parental_Benefit, vartype = c("ci", "se"), na.rm = TRUE)
+  )
+
+
+###Chart of SDG 1.4.2b by pop groups
+
+ggplot(C010301c, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 1.3.1c",
+    x = "Population Groups",
+    y = "Mean Value with Standard Errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+
+
+```
 d) Proportion of persons with disabilities receiving benefits: ratio of persons receiving disability cash benefits to persons with severe disabilities. The latter is calculated as the product of prevalence of disability ratios (published for each country group by the World Health Organization) and each country’s population.
 
 ```{r, eval=FALSE}
@@ -300,9 +408,21 @@ d) Proportion of persons with disabilities receiving benefits: ratio of persons 
 
 e) Proportion of unemployed receiving benefits: ratio of recipients of unemployment cash benefits to the number of unemployed persons.
 
+In FDS, we are able to look if at least one person in the household received unemployment cash benefits in the last 12 months.  
+
 ```{r, eval=FALSE}
-#check unemployed benefit from below and compare with unemployment definition
+table(main$ScProtec16d) #In the last 12 months, have you or anyone in your household received unemployment benefit?
 ```
+```{r}
+main <- main %>%
+  mutate(Unemployment_Benefit = case_when(
+    ScProtec16d == 1 ~ 1,  # Received unemployment benefit
+    TRUE ~ 0))
+```
+
+ILGI: Here we have a problem because we don't know the number of unemployed household members. We can only know if for the HH in question, the random adult is unemployed, but we don't know if other members are. Here is social protection, we only know that someone receives the unemployed benefit. But in cases where the random member is not unemployed but someone does received the unemployment benefit, we don't know who and if that person is actually unemployed. So we can only calculate the % of household where at least one person receives the unemployment benefit from all households, but that doesn't tell us much. 
+Alternatively, we can only look at households where the random adult is unemployed, however I am afraid the sample size will be very small. 
+
 
 f) Proportion of workers covered in case of employment injury: ratio of workers protected by injury insurance to total employment or the labour force.
 
@@ -313,8 +433,68 @@ f) Proportion of workers covered in case of employment injury: ratio of workers 
 
 g) Proportion of older persons receiving a pension: ratio of persons above statutory retirement age receiving an old-age pension to persons above statutory retirement age (including contributory and non-contributory).
 
+In FDS, we are able to look if at least one person in the household received old-age pension in the last 12 months. 
+
 ```{r, eval=FALSE}
-# calculate old people from the main dataset /
+table(main$ScProtec16g) #In the last 12 months, have you or anyone in your household received old-age pension?
+summary(main$old_age_count) #Number of old-age household members per household 
+table(main$has_old_age) #Household who have at least one old-age household member
+```
+```{r}
+main <- main %>%
+  mutate(old_age_pension = case_when(
+    has_old_age == 1 & ScProtec16g == 1 ~ 1,  # Received old-age pension
+    has_old_age == 1 & ScProtec16g == 2 ~ 0,
+    TRUE ~ NA_real_))
+```
+
+### Figure for SDG 1.3.1g by Population Groups
+
+```{r, eval=FALSE}
+
+##Table by population groups
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C010301g <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%
+  group_by(Intro_07) %>%
+  summarise(
+    var_name = "SDG 1.3.1g",
+    num_obs_uw = unweighted(n()),
+    denominator = survey_total(),
+    mean_value = survey_mean(old_age_pension, vartype = c("ci", "se"), na.rm = TRUE)
+  )
+
+
+###Chart of SDG 1.4.2b by pop groups
+
+ggplot(C010301g, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 1.3.1g",
+    x = "Population Groups",
+    y = "Mean Value with Standard Errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+
+
 ```
 
 h) Proportion of vulnerable persons receiving benefits: ratio of social assistance recipients to the total number of vulnerable persons. The latter are calculated by subtracting from total population all people of working age who are contributing to a social insurance scheme or receiving contributory benefits, and all persons above retirement age receiving contributory benefits.
@@ -1017,7 +1197,7 @@ mutate(C010402a = case_when(documents == 1~ 1,  #Assigns 1 if the household has 
     TRUE ~ 0))
 ```
 ```{r, eval=FALSE}
-table(main$legal_doc)
+table(main$C010402a)
 ```
 ```{r, eval=FALSE}
 main <- main %>%
@@ -1048,6 +1228,52 @@ main <- main %>%
                                 label = "People (adults) who perceive their rights as secure"))
 ```
 ILGI: Is household size as weight incorporated into the total weight which will be created by Grayson? PETRA: No, add to denominator 
+
+```{r}
+## Alternative calculation - % of all plots owned/used by the household that have a legal document 
+
+
+
+main <- main %>%
+  mutate(
+    # Count the total number of plots (excluding NAs)
+    total_plots = rowSums(!is.na(across(starts_with("Land10")))), 
+
+    # Count plots with legal documents (Land10 == 1), replacing NAs with 0 to avoid issues
+    plots_with_docs = rowSums(across(starts_with("Land10"), ~ replace_na(.x, 0) == 1)),
+
+    # Calculate percentage of plots with legal documents
+    perc_docs = ifelse(total_plots > 0, (plots_with_docs / total_plots) * 100, NA)
+  )
+
+# Calculate mean percentage across all households (ignoring NAs)
+mean_perc_docs <- mean(main$perc_docs, na.rm = TRUE)
+
+# View results
+head(main %>% select(uuid, perc_docs))
+
+# Print mean percentage
+print(mean_perc_docs)
+
+
+
+```
+```{r}
+
+
+# Calculate mean per population group
+mean_per_group <- main %>%
+  group_by(Intro_07) %>%
+  summarise(
+    mean_perc_docs = mean(perc_docs, na.rm = TRUE),
+    count = n()  # Number of households in each group
+  )
+
+# View results
+print(mean_per_group)
+
+```
+
 
 ### Figure for SDG 1.4.2a by Population Groups
 
@@ -2008,13 +2234,91 @@ mutate(C040102_uppersec_open = case_when(
   TRUE ~ NA_real_)) 
 ```
 
+### Figure for SDG 4.1.2 - Primary school by Population Groups
+
 ```{r, eval=FALSE}
-table(HHroster$C040102_primary_open)
-table(HHroster$C040102_lowersec_open)
-table(HHroster$C040102_uppersec_open)
+##Table by population groups
+
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C040102_primary <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%      # Show results disaggregated by pop groups
+  summarise(                                         # put all variables here
+    var_name = "SDG4_2_2",                          # name of the variable
+    num_obs_uw = unweighted(n()),                    # unweighted total count
+    denominator = survey_total(),                      # weighted total count
+    mean_value = survey_mean(C040102_primary, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+  )
+
+##Chart for the indicator above
+
+ggplot(C040102_primary, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 4.1.2",
+    subtitle = "Completion rate of primary school amongst those age 12 - 14 years.",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
 ```
 
-### Figure for SDG 4.1.2 - Primary school by Population Groups
+
+### Figure for SDG 4.1.2 -Primary school by Population Groups, Gender and disability
+
+```{r, eval=FALSE}
+#### Table and chart that shows results by age/sex/disability
+
+C040102_primary_AGD <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07) & !is.na(HH_02) & !is.na(disability)) %>%  # Ensure disability is not missing
+  group_by(Intro_07, HH_02, disability) %>%                          # Include disability in grouping
+  summarise(
+    var_name = "SDG 4.1.2 - primary",                
+    num_obs_uw = survey_total(!is.na(C040102_primary), vartype = NULL),  
+    denominator = survey_total(),                                
+    mean_value = survey_mean(C040102_primary, vartype = c("ci", "se"), na.rm = TRUE)  
+  )
+
+## **Figure**
+
+ggplot(C040102_primary_AGD, aes(x = HH_02, y = mean_value, fill = disability)) +  # Fill by disability
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  
+  facet_wrap(~ Intro_07) +  
+  labs(
+     title = "Results of SDG 4.1.2",
+    subtitle = "Completion rate of primary school amongst those age 12 - 14 years",
+    x = "Gender",
+    y = "Completed primary school",  
+    fill = "Disability Status"   # Update legend label to reflect disability
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  theme_unhcr() +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  
+  )
+
+```
+### Figure for SDG 4.1.2 - Primary school by Population Groups - Open age 
 ```{r, eval=FALSE}
 ##Table by population groups
 
@@ -2097,9 +2401,91 @@ ggplot(C040102_primary_open_AGD, aes(x = HH_02, y = mean_value, fill = disabilit
   )
 
 ```
-
-
 ### Figure for SDG 4.1.2 - Lower secondary school by Population Groups
+
+```{r, eval=FALSE}
+##Table by population groups
+
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C040102_lowersec <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%      # Show results disaggregated by pop groups
+  summarise(                                         # put all variables here
+    var_name = "SDG4_2_2",                          # name of the variable
+    num_obs_uw = unweighted(n()),                    # unweighted total count
+    denominator = survey_total(),                      # weighted total count
+    mean_value = survey_mean(C040102_lowersec, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+  )
+
+##Chart for the indicator above
+
+ggplot(C040102_lowersec, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 4.1.2",
+    subtitle = "Completion rate of lower secondary school amongst those age 15 - 17 years.",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+
+### Figure for SDG 4.1.2 Lower secondary school by Population Groups, Gender and disability
+
+```{r, eval=FALSE}
+#### Table and chart that shows results by age/sex/disability
+
+C040102_lowersec_AGD <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07) & !is.na(HH_02) & !is.na(disability)) %>%  # Ensure disability is not missing
+  group_by(Intro_07, HH_02, disability) %>%                          # Include disability in grouping
+  summarise(
+    var_name = "SDG 4.1.2 - lower secndary",                
+    num_obs_uw = survey_total(!is.na(C040102_lowersec), vartype = NULL),  
+    denominator = survey_total(),                                
+    mean_value = survey_mean(C040102_lowersec, vartype = c("ci", "se"), na.rm = TRUE)  
+  )
+
+## **Figure**
+
+ggplot(C040102_lowersec_AGD, aes(x = HH_02, y = mean_value, fill = disability)) +  # Fill by disability
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  
+  facet_wrap(~ Intro_07) +  
+  labs(
+     title = "Results of SDG 4.1.2",
+    subtitle = "Completion rate of lower secondary school amongst those age 15 - 17 years",
+    x = "Gender",
+    y = "Completed lower secondary school",  
+    fill = "Disability Status"   # Update legend label to reflect disability
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  theme_unhcr() +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  
+  )
+
+```
+### Figure for SDG 4.1.2 - Lower secondary school by Population Groups - open age 
 ```{r, eval=FALSE}
 ##Table by population groups
 
@@ -2144,7 +2530,7 @@ ggplot(C040102_lowersec_open, aes(x = Intro_07, y = mean_value, fill = Intro_07)
   )
 ```
 
-### Figure for SDG 4.1.2 - Lower secondary school by Population Groups, Gender and disability
+### Figure for SDG 4.1.2 - Lower secondary school by Population Groups, Gender and disability - open age
 
 ```{r, eval=FALSE}
 #### Table and chart that shows results by age/sex/disability
@@ -2184,8 +2570,91 @@ ggplot(C040102_lowersec_open_AGD, aes(x = HH_02, y = mean_value, fill = disabili
 ```{r, eval=FALSE}
 
 ```
-
 ### Figure for SDG 4.1.2 - Upper secondary school by Population Groups
+
+```{r, eval=FALSE}
+##Table by population groups
+
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C040102_uppersec <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07)) %>%     # Exclude if pop groups is NA
+  group_by(Intro_07) %>%      # Show results disaggregated by pop groups
+  summarise(                                         # put all variables here
+    var_name = "SDG4_2_2",                          # name of the variable
+    num_obs_uw = unweighted(n()),                    # unweighted total count
+    denominator = survey_total(),                      # weighted total count
+    mean_value = survey_mean(C040102_uppersec, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+  )
+
+##Chart for the indicator above
+
+ggplot(C040102_uppersec, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 4.1.2",
+    subtitle = "Completion rate of upper secondary school amongst those age 19 - 21 years.",
+    x = "Population Groups",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+```
+
+
+### Figure for SDG 4.1.2 - Upper secondary school by Population Groups, Gender and disability
+
+```{r, eval=FALSE}
+#### Table and chart that shows results by age/sex/disability
+
+C040102_uppersec_AGD <- FDS_PAK_2024_HHroster %>%
+  filter(!is.na(Intro_07) & !is.na(HH_02) & !is.na(disability)) %>%  # Ensure disability is not missing
+  group_by(Intro_07, HH_02, disability) %>%                          # Include disability in grouping
+  summarise(
+    var_name = "SDG 4.1.2 - upper secondary",                
+    num_obs_uw = survey_total(!is.na(C040102_uppersec), vartype = NULL),  
+    denominator = survey_total(),                                
+    mean_value = survey_mean(C040102_uppersec, vartype = c("ci", "se"), na.rm = TRUE)  
+  )
+
+## **Figure**
+
+ggplot(C040102_uppersec_AGD, aes(x = HH_02, y = mean_value, fill = disability)) +  # Fill by disability
+  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  geom_text(aes(label = sprintf("%.2f", mean_value)), 
+            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +  
+  facet_wrap(~ Intro_07) +  
+  labs(
+     title = "Results of SDG 4.1.2",
+    subtitle = "Completion rate of upper secondary school amongst those age 19 - 21 years",
+    x = "Gender",
+    y = "Completed upper secondary school",  
+    fill = "Disability Status"   # Update legend label to reflect disability
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  theme_unhcr() +  
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  
+  )
+
+```
+### Figure for SDG 4.1.2 - Upper secondary school by Population Groups - open age 
 ```{r, eval=FALSE}
 ##Table by population groups
 
@@ -2229,7 +2698,7 @@ ggplot(C040102_uppersec_open, aes(x = Intro_07, y = mean_value, fill = Intro_07)
     axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
   )
 ```
-### Figure for SDG 4.1.2 - Upper secondary school by Population Groups, Gender and disability
+### Figure for SDG 4.1.2 - Upper secondary school by Population Groups, Gender and disability - open age 
 
 ```{r, eval=FALSE}
 #### Table and chart that shows results by age/sex/disability
@@ -2255,7 +2724,7 @@ ggplot(C040102_uppersec_open_AGD, aes(x = HH_02, y = mean_value, fill = disabili
      title = "Results of SDG 4.1.2",
     subtitle = "Completion rate of upper secondary school amongst those age 19 - 34 years",
     x = "Gender",
-    y = "Completed lower secondary school",  
+    y = "Completed upper secondary school",  
     fill = "Disability Status"   # Update legend label to reflect disability
   ) +
   scale_fill_unhcr_d() +  # Use UNHCR color palette
@@ -2667,7 +3136,10 @@ Education indicators available from FDS:
 
 Disadvantaged group
 1. Gender Parity indices - Females are considered a disadvantaged group
-1. Disability Parity indices - Disabled are considered a disadvantaged group
+2. Disability Parity indices - Disabled are considered a disadvantaged group
+3. Population group - Refugees and Asylum seekers are considered a disadvantaged group
+
+**IMPORTANT**: Before running the below script, review the script and adjust age spans if needed! 
 
 **Sources**  
 1.[SDG 4.3.1 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-04-05-01.docx&wdOrigin=BROWSELINK)
@@ -2675,6 +3147,12 @@ Disadvantaged group
 ### Parity indices for the available education indicators {.tabset}
 #### 4.1.2 SDG Indicator Parity indices - Completion rate for primary education, lower secondary education and higher secondary education
 1. **Primary education**
+```{r}
+table(HHroster$C040102_primary)
+table(HHroster$C040102_lowersec)
+table(HHroster$C040102_uppersec)
+```
+
 ```{r, eval=FALSE}
 #Gender Parity Index (GPI) for primary school completion
 # Ensure survey design
@@ -2690,7 +3168,7 @@ male_completion_primary <- FDS_PAK_2024_HHroster %>%
   filter(HH_02 == "Male") %>%  # Filter only males
   group_by(Intro_07) %>%  # Group by population group
   summarise(
-    male_completion_rate = survey_mean(C040102_primary_open, na.rm = TRUE),
+    male_completion_rate = survey_mean(C040102_primary, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -2699,7 +3177,7 @@ female_completion_primary <- FDS_PAK_2024_HHroster %>%
   filter(HH_02 == "Female") %>%  # Filter only females
   group_by(Intro_07) %>%  # Group by population group
   summarise(
-    female_completion_rate = survey_mean(C040102_primary_open, na.rm = TRUE),
+    female_completion_rate = survey_mean(C040102_primary, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -2708,26 +3186,26 @@ gender_completion_primary <- left_join(male_completion_primary, female_completio
 
 # Compute Gender Parity Index (GPI)
 gender_completion_primary <- gender_completion_primary %>%
-  mutate(GPI = female_completion_rate / male_completion_rate)
+  mutate(GPI_completion_primary = female_completion_rate / male_completion_rate)
 
 # Display results
 print(gender_completion_primary)
 
 # Visualizing Gender Parity Index with UNHCR Colors
 
-max_gpi <- max(gender_participation_431_25_45$GPI_participation_25_45, na.rm = TRUE)
+max_gpi <- max(gender_completion_primary$GPI_completion_primary, na.rm = TRUE)
 y_limit <- ifelse(max_gpi > 1, max_gpi * 1.2, 1.2)  # Ensure at least 1.2 for visibility
 y_breaks <- seq(0, max(y_limit, 1.2), by = 0.2)  # Adjust step size if needed
 
 
-ggplot(gender_completion_primary, aes(x = Intro_07, y = GPI, fill = Intro_07)) +
+ggplot(gender_completion_primary, aes(x = Intro_07, y = GPI_completion_primary, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
-  geom_text(aes(label = round(GPI, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
+  geom_text(aes(label = round(GPI_completion_primary, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +
   labs(
     title = "Gender Parity Index by Population Group",
-    subtitle = "Ratio of primary completion rates between females and males.",
+    subtitle = "Ratio of primary completion rates between females and males (12-14 years).",
     x = "Population Groups",
     y = "Gender Parity Index (GPI)"
   ) +
@@ -2750,7 +3228,7 @@ non_disabled_completion_primary <- FDS_PAK_2024_HHroster %>%
   filter(disability == "Non-Disabled") %>%  # Filter only non-disabled
   group_by(Intro_07) %>%
   summarise(
-    non_disabled_completion_rate = survey_mean(C040102_primary_open, na.rm = TRUE),
+    non_disabled_completion_rate = survey_mean(C040102_primary, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -2759,7 +3237,7 @@ disabled_completion_primary <- FDS_PAK_2024_HHroster %>%
   filter(disability == "Disabled") %>%
   group_by(Intro_07) %>%
   summarise(
-    disabled_completion_rate = survey_mean(C040102_primary_open, na.rm = TRUE),
+    disabled_completion_rate = survey_mean(C040102_primary, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -2768,27 +3246,27 @@ disability_completion_primary <- left_join(non_disabled_completion_primary, disa
 
 # Compute Disability Parity Index (DPI)
 disability_completion_primary <- disability_completion_primary %>%
-  mutate(DPI_primary = disabled_completion_rate / non_disabled_completion_rate)
+  mutate(DPI_primary_disabled = disabled_completion_rate / non_disabled_completion_rate)
 
 # Display results
 print(disability_completion_primary)
 
 # Visualizing Disability Parity Index with UNHCR Colors
 
-max_gpi <- max(disability_completion_primary$DPI_primary, na.rm = TRUE)
+max_gpi <- max(disability_completion_primary$DPI_primary_disabled, na.rm = TRUE)
 y_limit <- ifelse(max_gpi > 1, max_gpi * 1.2, 1.2)  # Ensure at least 1.2 for visibility
 y_breaks <- seq(0, max(y_limit, 1.2), by = 0.2)  # Adjust step size if needed
 
 
 
-ggplot(disability_completion_primary, aes(x = Intro_07, y = DPI_primary, fill = Intro_07)) +
+ggplot(disability_completion_primary, aes(x = Intro_07, y = DPI_primary_disabled, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
-  geom_text(aes(label = round(DPI_primary, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
+  geom_text(aes(label = round(DPI_primary_disabled, 2)), vjust = -0.5, position = position_dodge(0.7)) +  
   geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
   scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +
   labs(
     title = "Disability Parity Index by Population Group",
-    subtitle = "Ratio of primary completion rates between disabled and non-disabled.",
+    subtitle = "Ratio of primary completion rates between disabled and non-disabled (12-14 years).",
     x = "Population Groups",
     y = "Disability Parity Index (DPI)"
   ) +
@@ -2796,7 +3274,50 @@ ggplot(disability_completion_primary, aes(x = Intro_07, y = DPI_primary, fill = 
   theme_unhcr() +         # Apply UNHCR theme
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
 ```
+```{r}
+# Population Group Parity Index (PPI) for Primary School Completion
 
+# Ensure survey design
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,
+    weights = NULL,
+    nest = TRUE
+  )
+# Completion rates for refugees
+refugee_completion_primary <- FDS_PAK_2024_HHroster %>%
+  filter(Intro_07 == "Refugees and Asylum Seekers") %>%
+  summarise(refugee_completion_rate = survey_mean(C040102_primary, na.rm = TRUE))
+
+# Completion rates for hosts
+host_completion_primary <- FDS_PAK_2024_HHroster %>%
+  filter(Intro_07 == "Host Community") %>%
+  summarise(host_completion_rate = survey_mean(C040102_primary, na.rm = TRUE))
+
+# Merge using `cross_join()` as there's only one row for each
+population_completion_primary <- refugee_completion_primary %>%
+  cross_join(host_completion_primary) %>%
+  mutate(PPI_completion_primary = refugee_completion_rate / host_completion_rate)
+
+# Display results
+print(population_completion_primary)
+
+
+# Plot PPI as Single Bar
+ggplot(population_completion_primary, aes(x = "Parity Index", y = PPI_completion_primary)) +
+  geom_bar(stat = "identity", fill = "#0072BC", width = 0.5) +
+  geom_text(aes(label = round(PPI_completion_primary, 2)), vjust = -0.5) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(0, max(1.2, population_completion_primary$PPI_completion_primary * 1.2)), expand = c(0, 0)) +
+  labs(
+    title = "Population Group Parity Index (PPI) for Primary Completion",
+    subtitle = "Refugees vs Hosts",
+    x = NULL,
+    y = "Parity Index"
+  ) +
+  theme_unhcr()
+
+```
 2. **Lower secondary education**
 ```{r, eval=FALSE}
 #Gender Parity Index (GPI) for lower secondary school completion
@@ -2813,7 +3334,7 @@ male_completion_lowersec <- FDS_PAK_2024_HHroster %>%
   filter(HH_02 == "Male") %>%  # Filter only males
   group_by(Intro_07) %>%  # Group by population group
   summarise(
-    male_completion_rate = survey_mean(C040102_lowersec_open, na.rm = TRUE),
+    male_completion_rate = survey_mean(C040102_lowersec, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -2822,7 +3343,7 @@ female_completion_lowersec <- FDS_PAK_2024_HHroster %>%
   filter(HH_02 == "Female") %>%  # Filter only females
   group_by(Intro_07) %>%  # Group by population group
   summarise(
-    female_completion_rate = survey_mean(C040102_lowersec_open, na.rm = TRUE),
+    female_completion_rate = survey_mean(C040102_lowersec, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -2848,7 +3369,7 @@ ggplot(gender_completion_lowersec, aes(x = Intro_07, y = GPI_lowersec, fill = In
    scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +
   labs(
     title = "Gender Parity Index by Population Group",
-    subtitle = "Ratio of lower secondary completion rates between females and males.",
+    subtitle = "Ratio of lower secondary completion rates between females and males (15 - 17 years).",
     x = "Population Groups",
     y = "Gender Parity Index (GPI)"
   ) +
@@ -2872,7 +3393,7 @@ non_disabled_completion_lowersec <- FDS_PAK_2024_HHroster %>%
   filter(disability == "Non-Disabled") %>%  # Filter only non-disabled
   group_by(Intro_07) %>%
   summarise(
-    non_disabled_completion_rate = survey_mean(C040102_lowersec_open, na.rm = TRUE),
+    non_disabled_completion_rate = survey_mean(C040102_lowersec, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -2881,7 +3402,7 @@ disabled_completion_lowersec <- FDS_PAK_2024_HHroster %>%
   filter(disability == "Disabled") %>%
   group_by(Intro_07) %>%
   summarise(
-    disabled_completion_rate = survey_mean(C040102_lowersec_open, na.rm = TRUE),
+    disabled_completion_rate = survey_mean(C040102_lowersec, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -2908,7 +3429,7 @@ ggplot(disability_completion_lowersec, aes(x = Intro_07, y = DPI_lowersec, fill 
   scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +
   labs(
     title = "Disability Parity Index by Population Group",
-    subtitle = "Ratio of lower secondary completion rates between disabled and non-disabled.",
+    subtitle = "Ratio of lower secondary completion rates between disabled and non-disabled (15 - 17 years).",
     x = "Population Groups",
     y = "Disability Parity Index (DPI)"
   ) +
@@ -2916,7 +3437,49 @@ ggplot(disability_completion_lowersec, aes(x = Intro_07, y = DPI_lowersec, fill 
   theme_unhcr() +         # Apply UNHCR theme
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
 ```
+```{r}
+#Population Parity Index (PPI) for lower secondary school completion
+# Ensure survey design
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,
+    weights = NULL,
+    nest = TRUE
+  )
+# Completion rates for refugees
+refugee_completion_lowersec <- FDS_PAK_2024_HHroster %>%
+  filter(Intro_07 == "Refugees and Asylum Seekers") %>%
+  summarise(refugee_completion_rate_ls = survey_mean(C040102_lowersec, na.rm = TRUE))
 
+# Completion rates for hosts
+host_completion_lowersec <- FDS_PAK_2024_HHroster %>%
+  filter(Intro_07 == "Host Community") %>%
+  summarise(host_completion_rate_ls = survey_mean(C040102_lowersec, na.rm = TRUE))
+
+# Merge using `cross_join()` as there's only one row for each
+population_completion_lowersec <- refugee_completion_lowersec %>%
+  cross_join(host_completion_lowersec) %>%
+  mutate(PPI_completion_lowersec = refugee_completion_rate_ls / host_completion_rate_ls)
+
+# Display results
+print(population_completion_lowersec)
+
+
+# Plot PPI as Single Bar
+ggplot(population_completion_lowersec, aes(x = "Parity Index", y = PPI_completion_lowersec)) +
+  geom_bar(stat = "identity", fill = "#0072BC", width = 0.5) +
+  geom_text(aes(label = round(PPI_completion_lowersec, 2)), vjust = -0.5) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(0, max(1.2, population_completion_lowersec$PPI_completion_lowersec * 1.2)), expand = c(0, 0)) +
+  labs(
+    title = "Population Group Parity Index (PPI) for Lower secondary Completion",
+    subtitle = "Refugees vs Hosts",
+    x = NULL,
+    y = "Parity Index"
+  ) +
+  theme_unhcr()
+
+```
 
 3. **Upper secondary education**
 ```{r, eval=FALSE}
@@ -2934,7 +3497,7 @@ male_completion_uppersec <- FDS_PAK_2024_HHroster %>%
   filter(HH_02 == "Male") %>%  # Filter only males
   group_by(Intro_07) %>%  # Group by population group
   summarise(
-    male_completion_rate = survey_mean(C040102_uppersec_open, na.rm = TRUE),
+    male_completion_rate = survey_mean(C040102_uppersec, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -2943,7 +3506,7 @@ female_completion_uppersec <- FDS_PAK_2024_HHroster %>%
   filter(HH_02 == "Female") %>%  # Filter only females
   group_by(Intro_07) %>%  # Group by population group
   summarise(
-    female_completion_rate = survey_mean(C040102_uppersec_open, na.rm = TRUE),
+    female_completion_rate = survey_mean(C040102_uppersec, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -2970,7 +3533,7 @@ ggplot(gender_completion_uppersec, aes(x = Intro_07, y = GPI_uppersec, fill = In
   scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +  # Adjust limits dynamically
   labs(
     title = "Gender Parity Index by Population Group",
-    subtitle = "Ratio of upper secondary completion rates between females and males.",
+    subtitle = "Ratio of upper secondary completion rates between females and males (19 - 21 years).",
     x = "Population Groups",
     y = "Gender Parity Index (GPI)"
   ) +
@@ -2995,7 +3558,7 @@ non_disabled_completion_uppersec <- FDS_PAK_2024_HHroster %>%
   filter(disability == "Non-Disabled") %>%  # Filter only non-disabled
   group_by(Intro_07) %>%
   summarise(
-    non_disabled_completion_rate = survey_mean(C040102_lowersec_open, na.rm = TRUE),
+    non_disabled_completion_rate = survey_mean(C040102_upperrsec, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -3004,7 +3567,7 @@ disabled_completion_uppersec <- FDS_PAK_2024_HHroster %>%
   filter(disability == "Disabled") %>%
   group_by(Intro_07) %>%
   summarise(
-    disabled_completion_rate = survey_mean(C040102_uppersec_open, na.rm = TRUE),
+    disabled_completion_rate = survey_mean(C040102_uppersec, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -3030,7 +3593,7 @@ ggplot(disability_completion_uppersec, aes(x = Intro_07, y = DPI_uppersec, fill 
   scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +  # Adjust limits dynamically
   labs(
     title = "Disability Parity Index by Population Group",
-    subtitle = "Ratio of upper secondary completion rates between disabled and non-disabled.",
+    subtitle = "Ratio of upper secondary completion rates between disabled and non-disabled (19 - 21 years).",
     x = "Population Groups",
     y = "Disability Parity Index (DPI)"
   ) +
@@ -3038,6 +3601,51 @@ ggplot(disability_completion_uppersec, aes(x = Intro_07, y = DPI_uppersec, fill 
   theme_unhcr() +         # Apply UNHCR theme
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
 ```
+```{r}
+#Population Parity Index (PPI) for upper secondary school completion
+# Ensure survey design
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,
+    weights = NULL,
+    nest = TRUE
+  )
+# Completion rates for refugees
+refugee_completion_uppersec <- FDS_PAK_2024_HHroster %>%
+  filter(Intro_07 == "Refugees and Asylum Seekers") %>%
+  summarise(refugee_completion_rate_us = survey_mean(C040102_uppersec, na.rm = TRUE))
+
+# Completion rates for hosts
+host_completion_uppersec <- FDS_PAK_2024_HHroster %>%
+  filter(Intro_07 == "Host Community") %>%
+  summarise(host_completion_rate_us = survey_mean(C040102_uppersec, na.rm = TRUE))
+
+# Merge using `cross_join()` as there's only one row for each
+population_completion_uppersec <- refugee_completion_uppersec %>%
+  cross_join(host_completion_uppersec) %>%
+  mutate(PPI_completion_uppersec = refugee_completion_rate_us / host_completion_rate_us)
+
+# Display results
+print(population_completion_uppersec)
+
+
+
+# Plot PPI as Single Bar
+ggplot(population_completion_uppersec, aes(x = "Parity Index", y = PPI_completion_uppersec)) +
+  geom_bar(stat = "identity", fill = "#0072BC", width = 0.5) +
+  geom_text(aes(label = round(PPI_completion_uppersec, 2)), vjust = -0.5) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(0, max(1.2, population_completion_uppersec$PPI_completion_uppersec * 1.2)), expand = c(0, 0)) +
+  labs(
+    title = "Population Group Parity Index (PPI) for Upper secondary Completion",
+    subtitle = "Refugees vs Hosts",
+    x = NULL,
+    y = "Parity Index"
+  ) +
+  theme_unhcr()
+
+```
+
 
 #### 4.2.2 SDG Indicator Parity indices - Participation rate in organized learning (one year before the official primary entry age)
 
@@ -3092,13 +3700,54 @@ ggplot(gender_participation_preschool, aes(x = Intro_07, y = GPI_participation_p
   scale_y_continuous(limits = c(0, y_limit), breaks = y_breaks, expand = c(0, 0)) +
   labs(
     title = "Gender Parity Index by Population Group",
-    subtitle = "Ratio of participation in organized learning (one year before the official primary entry age) between females and males.",
+    subtitle = "Ratio of participation in organized learning (one year before the official primary entry age (4 years of age)) between females and males.",
     x = "Population Groups",
     y = "Gender Parity Index (GPI)"
   ) +
   scale_fill_unhcr_d() +  # Use UNHCR color palette
   theme_unhcr() +         # Apply UNHCR theme
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+```
+```{r}
+#Population Parity Index (PPI) for Participation rate in organized learning (one year before the official primary entry age)
+# Ensure survey design
+FDS_PAK_2024_HHroster <- HHroster %>%
+  as_survey_design(
+    ids = NULL,
+    weights = NULL,
+    nest = TRUE
+  )
+# Completion rates for refugees
+refugee_participation_preschool <- FDS_PAK_2024_HHroster %>%
+  filter(Intro_07 == "Refugees and Asylum Seekers") %>%
+  summarise(refugee_participation_rate = survey_mean(C040202, na.rm = TRUE))
+
+# Completion rates for hosts
+host_participation_preschool <- FDS_PAK_2024_HHroster %>%
+  filter(Intro_07 == "Host Community") %>%
+  summarise(host_participation_rate = survey_mean(C040202, na.rm = TRUE))
+
+# Merge using `cross_join()` as there's only one row for each
+population_participation_preschool <- refugee_participation_preschool %>%
+  cross_join(host_participation_preschool) %>%
+  mutate(PPI_participation_preschool = refugee_participation_rate / host_participation_rate)
+
+# Display results
+print(population_participation_preschool)
+
+# Plot PPI as Single Bar
+ggplot(population_participation_preschool, aes(x = "Parity Index", y = PPI_participation_preschool)) +
+  geom_bar(stat = "identity", fill = "#0072BC", width = 0.5) +
+  geom_text(aes(label = round(PPI_participation_preschool, 2)), vjust = -0.5) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(0, max(1.2, population_participation_preschool$PPI_participation_preschool * 1.2)), expand = c(0, 0)) +
+  labs(
+    title = "Participation rate in organized learning (one year before the official primary entry age)",
+    subtitle = "Refugees vs Hosts",
+    x = NULL,
+    y = "Parity Index"
+  ) +
+  theme_unhcr()
 ```
 
 #### 4.3.1 SDG Indicator Parity indices - Participation rate of youth and adults in formal and non-formal education and training in the previous 12 months
@@ -3163,6 +3812,48 @@ ggplot(gender_participation_431_15_24, aes(x = Intro_07, y = GPI_participation_1
   scale_fill_unhcr_d() +  # Use UNHCR color palette
   theme_unhcr() +         # Apply UNHCR theme
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
+
+```
+
+
+```{r}
+#Population Parity Index (PPI) for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months - 15 - 24 years
+# Ensure survey design
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,  # Adjust if needed
+    weights = NULL,  # Adjust if needed
+    nest = TRUE
+  )
+# Completion rates for refugees
+refugee_participation_et_15_24 <- FDS_PAK_2024_RA_adult %>%
+  filter(Intro_07 == "Refugees and Asylum Seekers") %>%
+  summarise(refugee_participation_rate_et_15_24 = survey_mean(C040301_15_24, na.rm = TRUE))
+
+# Completion rates for hosts
+host_participation_et_15_24 <- FDS_PAK_2024_RA_adult %>%
+  filter(Intro_07 == "Host Community") %>%
+  summarise(host_participation_rate_et_15_24 = survey_mean(C040301_15_24, na.rm = TRUE))
+
+# Merge using `cross_join()` as there's only one row for each
+population_participation_et_15_24 <- refugee_participation_et_15_24 %>%
+  cross_join(host_participation_et_15_24) %>%
+  mutate(PPI_participation_et_15_24 = refugee_participation_rate_et_15_24 / host_participation_rate_et_15_24)
+
+
+# Plot PPI as Single Bar
+ggplot(population_participation_et_15_24, aes(x = "Parity Index", y = PPI_participation_et_15_24)) +
+  geom_bar(stat = "identity", fill = "#0072BC", width = 0.5) +
+  geom_text(aes(label = round(PPI_participation_et_15_24, 2)), vjust = -0.5) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(0, max(1.2, population_participation_et_15_24$PPI_participation_et_15_24 * 1.2)), expand = c(0, 0)) +
+  labs(
+    title = "Parity Index for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months - 15 - 24 years",
+    subtitle = "Refugees vs Hosts",
+    x = NULL,
+    y = "Parity Index"
+  ) +
+  theme_unhcr()
 ```
 2. **25 - 45 years age group**
 
@@ -3224,6 +3915,47 @@ ggplot(gender_participation_431_25_45, aes(x = Intro_07, y = GPI_participation_2
   theme_unhcr() +         # Apply UNHCR theme
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for readability
 ```
+
+```{r}
+#Population Parity Index (PPI) for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months - 25 - 45 years
+# Ensure survey design
+FDS_PAK_2024_RA_adult <- RA_adult %>%
+  as_survey_design(
+    ids = NULL,  # Adjust if needed
+    weights = NULL,  # Adjust if needed
+    nest = TRUE
+  )
+# Completion rates for refugees
+refugee_participation_et_25_45 <- FDS_PAK_2024_RA_adult %>%
+  filter(Intro_07 == "Refugees and Asylum Seekers") %>%
+  summarise(refugee_participation_rate_et_25_45 = survey_mean(C040301_25_45, na.rm = TRUE))
+
+# Completion rates for hosts
+host_participation_et_25_45 <- FDS_PAK_2024_RA_adult %>%
+  filter(Intro_07 == "Host Community") %>%
+  summarise(host_participation_rate_et_25_45 = survey_mean(C040301_25_45, na.rm = TRUE))
+
+# Merge using `cross_join()` as there's only one row for each
+population_participation_et_25_45 <- refugee_participation_et_25_45 %>%
+  cross_join(host_participation_et_25_45) %>%
+  mutate(PPI_participation_et_25_45 = refugee_participation_rate_et_25_45 / host_participation_rate_et_25_45)
+
+
+# Plot PPI as Single Bar
+ggplot(population_participation_et_25_45, aes(x = "Parity Index", y = PPI_participation_et_25_45)) +
+  geom_bar(stat = "identity", fill = "#0072BC", width = 0.5) +
+  geom_text(aes(label = round(PPI_participation_et_25_45, 2)), vjust = -0.5) +
+  geom_hline(yintercept = 1, linetype = "dashed", color = "red") +
+  scale_y_continuous(limits = c(0, max(1.2, population_participation_et_25_45$PPI_participation_et_25_45 * 1.2)), expand = c(0, 0)) +
+  labs(
+    title = "Parity Index for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months - 25 - 45 years",
+    subtitle = "Refugees vs Hosts",
+    x = NULL,
+    y = "Parity Index"
+  ) +
+  theme_unhcr()
+```
+
 ## 5.3.1 SDG Indicator
 
 **Proportion of women aged 20–24 years who were married or in a union before age 15 and before age 18**
