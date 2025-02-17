@@ -213,7 +213,6 @@ table(RA_caregiver$COO_RC) #in dataset "RA_caregiver".
 
 #Indicators 
 
-
 ## 1.3.1 SDG Indicator
 
 **Proportion of population covered by social protection floors/systems, by sex, distinguishing children, unemployed persons, older persons, persons with disabilities, pregnant women, newborns, work-injury victims and the poor and the vulnerable**
@@ -292,7 +291,8 @@ FDS_PAK_2024_main <- main %>%
 
 ###Table 
 
-#ILGI: I didn't included household size as weight because we don't know how many household members receive a social protection benefit
+#ILGI: I didn't included household size as weight because we don't know how many household members receive a social protection benefit, we only know that one of them receives it. 
+#My thinking behind it: If for example we have 10 household members, their likelihood of receiving the social benefit would be higher, however if we don't know how many of them receive it, it is not possible to determine if they receive "enough" social benefits. How do you weight a household with one members that receives the benefit, vs a household with 10 members where someone receives it but you don't know how many... 
 
 C010301a <- FDS_PAK_2024_main %>%
   filter(!is.na(Intro_07)) %>%
@@ -336,7 +336,7 @@ b) Proportion of children covered by social protection benefits: ratio of childr
 
 c) Proportion of women giving birth covered by maternity benefits: ratio of women receiving cash maternity benefits to women giving birth in the same year (estimated based on age-specific fertility rates published in the UN’s World Population Prospects or on the number of live births corrected for the share of twin and triplet births).
 
-In FDS, we are able to look if at least one person in the household received parental or maternity benefit in the last 12 months. 
+In FDS, we are able to look if at least one person in the household received parental or maternity benefit in the last 12 months, from household who have at least one woman who gave birth in the last 12 months. 
 
 ```{r, eval=FALSE}
 table(main$ScProtec16b) #In the last 12 months, have you or anyone in your household received parental or maternity benefit? 
@@ -348,7 +348,7 @@ table(main$has_mother_with_child)  #Households with at least 1 mother with child
 main <- main %>%
   mutate(Parental_Benefit = case_when(
     ScProtec16b == 1 & has_mother_with_child == 1 ~ 1,  # Received parental or maternity benefit 
-    ScProtec16b == 2 & has_mother_with_child == 1 ~ 0, 
+    ScProtec16b %in% c(2, 98, 99) & has_mother_with_child == 1 ~ 0, 
     TRUE ~ NA_real_))
 ```
 
@@ -402,10 +402,67 @@ ggplot(C010301c, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 ```
 d) Proportion of persons with disabilities receiving benefits: ratio of persons receiving disability cash benefits to persons with severe disabilities. The latter is calculated as the product of prevalence of disability ratios (published for each country group by the World Health Organization) and each country’s population.
 
+In FDS, we are able to calculate the % of households who have at least one disabled household member and receive the disability benefit. 
 ```{r, eval=FALSE}
-#check disability benefit compared with disability definition in the questionnaire 
+table(main$ScProtec16c) #In the last 12 months, have you or anyone in your household received disability benefit?
+table(main$has_disability) #Household with at least 1 disabled household member
+```
+```{r}
+main <- main %>%
+  mutate(Disability_Benefit = case_when(
+    ScProtec16c == 1 & has_disability == 1 ~ 1,  # Received parental or maternity benefit 
+    ScProtec16c %in% c(2, 98, 99) & has_disability == 1 ~ 0, 
+    TRUE ~ NA_real_))
 ```
 
+### Figure for SDG 1.3.1d by Population Groups
+
+```{r, eval=FALSE}
+
+##Table by population groups
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+###Table 
+
+C010301d <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%
+  group_by(Intro_07) %>%
+  summarise(
+    var_name = "SDG 1.3.1d",
+    num_obs_uw = unweighted(n()),
+    denominator = survey_total(),
+    mean_value = survey_mean(Disability_Benefit, vartype = c("ci", "se"), na.rm = TRUE)
+  )
+
+
+###Chart of SDG 1.4.2b by pop groups
+
+ggplot(C010301d, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 1.3.1d",
+    x = "Population Groups",
+    y = "Mean Value with Standard Errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+
+
+```
 e) Proportion of unemployed receiving benefits: ratio of recipients of unemployment cash benefits to the number of unemployed persons.
 
 In FDS, we are able to look if at least one person in the household received unemployment cash benefits in the last 12 months.  
@@ -420,7 +477,7 @@ main <- main %>%
     TRUE ~ 0))
 ```
 
-ILGI: Here we have a problem because we don't know the number of unemployed household members. We can only know if for the HH in question, the random adult is unemployed, but we don't know if other members are. Here is social protection, we only know that someone receives the unemployed benefit. But in cases where the random member is not unemployed but someone does received the unemployment benefit, we don't know who and if that person is actually unemployed. So we can only calculate the % of household where at least one person receives the unemployment benefit from all households, but that doesn't tell us much. 
+ILGI: Here we have a problem because we don't know the number of unemployed household members. We can only know if for the HH in question, the random adult is unemployed, but we don't know if other members are. In social protection, we only know that someone receives the unemployed benefit. But in cases where the random member is not unemployed but someone does received the unemployment benefit, we don't know who and if that person is actually unemployed. So we can only calculate the % of household where at least one person receives the unemployment benefit from all households, but that doesn't tell us much. 
 Alternatively, we can only look at households where the random adult is unemployed, however I am afraid the sample size will be very small. 
 
 
@@ -524,7 +581,7 @@ In FDS, we are only able to calculate a proxy, as we are not able to calculate t
 
 | Services           | Variables                                                             |
 |--------------------|:---------------------------------------------------------------------:|
-| Health             |BA4, BA6_1, MV7, MV8, MN05_2, MN05_3, HH_13,SAN01, SAN02, SAN03, SAN05 |                                                    
+| Health             |BA4, BA6_1, MV7, MV8, MN05_2, MN05_3, HH_13,SAN01, SAN02, SAN03, SAN05 |                                   
 | Drinking water     |BD01, BD01a, BD20_2, BD20_3 BD22                                       |
 | Hygiene            |HW2_OB, HW3_OB, HW4_OB, HW8_OB                                         |
 | Clean Energy       |HC01, HC02, HC04                                                       |
@@ -1002,16 +1059,16 @@ cat("The weighted average % of people per household who slept under an ITN the p
 
 ```{r, eval=FALSE}
 #ILGI: This is the start of the calculation at an individual level - % of people who slept under an ITN the previous night.
-result <- main %>%
-  summarise(
-    total_ITN = sum(final_sleep_ITN, na.rm = TRUE),  # Total people who used ITN
-    total_population = sum(totalmembermosq, na.rm = TRUE),  # Total population in malaria-endemic areas
-    percentage_ITN = (total_ITN / total_population) * 100  # Calculate percentage
-  )
+#result <- main %>%
+ # summarise(
+  #  total_ITN = sum(final_sleep_ITN, na.rm = TRUE),  # Total people who used ITN
+   # total_population = sum(totalmembermosq, na.rm = TRUE),  # Total population in malaria-endemic areas
+    #percentage_ITN = (total_ITN / total_population) * 100  # Calculate percentage
+  #)
 
 # Print the final result
-print(result)
-cat("The percentage of population in malaria-endemic areas who slept under an ITN the previous night is:", result$percentage_ITN, "%\n")
+#print(result)
+#cat("The percentage of population in malaria-endemic areas who slept under an ITN the previous night is:", result$percentage_ITN, "%\n")
 
 ```
 
@@ -1123,6 +1180,9 @@ Indicator 1.4.2 covers (a) all types of land use (such as residential, commercia
 
 
 **Legally recognized documentation:** Legal documentation of rights refers to the recording and publication of information on the nature and location of land, rights and right holders in a form that is recognized by government, and is therefore official. For purposes of computing SDG Indicator 1.4.2, the country specific metadata will define what documentation on land rights will be counted as legally recognized.
+UN Habitat and World Bank guidances state that this indicator is people-centred and focuses on tracking what proportion of the population
+can demonstrate tenure rights to at least one plot of land relying on the type of legal documents that the government recognizes.
+
 
 
 **Perceived security of tenure:** Perception of tenure security refers to an individual’s perception of the likelihood of involuntary loss of land, such as disagreement of the ownership rights over land or ability to use it, regardless of the formal status and can be more optimistic or pessimistic. Although those without land rights’ documentation may frequently be perceived to be under threat, and those with documentation perceived as protected, there may be situations where documented land rights alone are insufficient to guarantee tenure security. Conversely, even without legally recognized documentation, individuals may feel themselves to be protected against eviction or dispossession. Therefore, capturing and analysing these diverse ranges of situations will enable a more comprehensive understanding of land tenure security, based on a country specific context.
@@ -1139,9 +1199,6 @@ For purposes of constructing the indicator (see next section for rationale), we 
 |:---------------------:|
 | Land10, Land14, Land15|
 
-**Unit of observation**: Individual
-
-**Dataset**: RA_caregiver
 
 1. SDG 1.4.2 a
 
@@ -1166,8 +1223,9 @@ For purposes of constructing the indicator (see next section for rationale), we 
 **Sources**  
 1.[SDG 1.4.2 Metadata Guidance](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-01-04-02.docx&wdOrigin=BROWSELINK)
 
-ILGI: Guidance does not mention how to compute the indicator when various plots are involved. Therefore, I have looked at if at least for one plot, the household has legal documents, can bequeath the plot, and is unlikely to loose it. Additionally, this is an individual level indicator and we do have individual data on documentation, however we do not have individual info for security of tenure and bequeath (we do but only from HOH not all members). Moreover, for documents, if counts that someone has a document even if he/she has it as a member of a household. Therefore I looked at the data from a perspective of a household, not individual household members. 
+2. [UN HABITAT - Indicator 1.4.2](https://unhabitat.org/sites/default/files/2020/07/indicator_1.4.2_training_module_secure_tenure_rights_to_land.pdf?utm_source=chatgpt.com)
 
+3. [World Bank - Measuring Individuals’ Rights to Land](https://documents1.worldbank.org/curated/en/145891539095619258/pdf/Measuring-Individuals-Rights-to-Land-An-Integrated-Approach-to-Data-Collection-for-SDG-Indicators-1-4-2-and-5-a-1.pdf?utm_source=chatgpt.com)
 
 ```{r, eval=FALSE}
 #table(main$Land10) #Does your household have a document for [current plot] from any government Agency, which formally recognizes the use rights/ownership rights?
@@ -1227,52 +1285,6 @@ main <- main %>%
                                 ),
                                 label = "People (adults) who perceive their rights as secure"))
 ```
-ILGI: Is household size as weight incorporated into the total weight which will be created by Grayson? PETRA: No, add to denominator 
-
-```{r}
-## Alternative calculation - % of all plots owned/used by the household that have a legal document 
-
-
-
-main <- main %>%
-  mutate(
-    # Count the total number of plots (excluding NAs)
-    total_plots = rowSums(!is.na(across(starts_with("Land10")))), 
-
-    # Count plots with legal documents (Land10 == 1), replacing NAs with 0 to avoid issues
-    plots_with_docs = rowSums(across(starts_with("Land10"), ~ replace_na(.x, 0) == 1)),
-
-    # Calculate percentage of plots with legal documents
-    perc_docs = ifelse(total_plots > 0, (plots_with_docs / total_plots) * 100, NA)
-  )
-
-# Calculate mean percentage across all households (ignoring NAs)
-mean_perc_docs <- mean(main$perc_docs, na.rm = TRUE)
-
-# View results
-head(main %>% select(uuid, perc_docs))
-
-# Print mean percentage
-print(mean_perc_docs)
-
-
-
-```
-```{r}
-
-
-# Calculate mean per population group
-mean_per_group <- main %>%
-  group_by(Intro_07) %>%
-  summarise(
-    mean_perc_docs = mean(perc_docs, na.rm = TRUE),
-    count = n()  # Number of households in each group
-  )
-
-# View results
-print(mean_per_group)
-
-```
 
 
 ### Figure for SDG 1.4.2a by Population Groups
@@ -1297,11 +1309,11 @@ C010402a <- FDS_PAK_2024_main %>%
     var_name = "SDG 1.4.1a",                          # name of the variable
     num_obs_uw = unweighted(n()),                    # unweighted total count
     denominator = survey_total(),                      # weighted total count
-    mean_value = survey_mean(C010402a, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+    mean_value = survey_mean(C010402a, weights = adult_pop, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
   )
 
 
-###Chart of SDH 1.4.2 a by pop groups
+###Chart of SDG 1.4.2 a by pop groups
 
 ggplot(C010402a, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
@@ -1323,6 +1335,7 @@ ggplot(C010402a, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 
 
 ```
+
 ### Figure for SDG 1.4.2b by Population Groups
 
 ```{r, eval=FALSE}
@@ -1345,7 +1358,7 @@ C010402b <- FDS_PAK_2024_main %>%
     var_name = "SDG 1.4.1b",                          # name of the variable
     num_obs_uw = unweighted(n()),                    # unweighted total count
     denominator = survey_total(),                      # weighted total count
-    mean_value = survey_mean(C010402b, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+    mean_value = survey_mean(C010402b, weights = adult_pop, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
   )
 
 
@@ -1371,6 +1384,82 @@ ggplot(C010402b, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 
 
 ```
+
+- Alternative calculation (not needed for SDG 1.4.2 but can be useful - % of all plots owned/used by the household that have a legal document, weighted by the number of plots in the household)
+
+```{r}
+## Alternative calculation - % of all plots owned/used by the household that have a legal document 
+
+#Total plots per household
+#main <- main %>%
+ # mutate(num_plots = rowSums(across(starts_with("Land10_"), ~ . %in% c(1, 2, 98, 99))))
+
+#Total plots with formal ownership or use documents
+
+#main <- main %>%
+ # mutate(num_plots_with_documents = apply(select(., starts_with("Land10_")), 1, function(x) {
+  #  if (all(is.na(x))) {
+   #   return(NA)
+    #} else {
+     # sum(x == 1, na.rm = TRUE)
+    #}
+  #}))
+
+
+#% of all plots with formal documents
+#main <- main %>%
+ # mutate(pct_plots_with_documents = ifelse(num_plots > 0, num_plots_with_documents / num_plots * 100, NA))
+
+#the mean household % of plots with documents, weighted by the number of plots per household within each group.
+
+#main %>%
+ # group_by(Intro_07) %>%
+  #summarise(
+   # mean_pct_plots_with_documents = weighted.mean(
+    #  x = ifelse(num_plots > 0, num_plots_with_documents / num_plots, NA), 
+     # w = num_plots, 
+      #na.rm = TRUE
+    #)
+  #)
+
+```
+
+#Other approaches to discuss with ILGI 
+```{r}
+#Number of plots with documents weighted by adult population in each household
+#main %>%
+ # group_by(Intro_07) %>%
+  #summarise(
+   # weighted_docs = sum(num_plots_with_documents * adult_pop, na.rm = TRUE),
+    #weighted_plots = sum(num_plots * adult_pop, na.rm = TRUE),
+    #pct_plots_with_documents_weighted = (weighted_docs / weighted_plots) * 100
+  #)
+```
+```{r}
+#% of adults (based on number of adult household members in household) with legal documents for at least one plot (based on the household having the legal document for at least one plot)
+
+#main <- main %>%
+ # mutate(hh_with_documents = ifelse(num_plots_with_documents > 0, 1, 0))
+
+#main %>%
+ # summarise(
+  #  adults_with_documents = sum(adult_pop * hh_with_documents, na.rm = TRUE),
+   # total_adults = sum(adult_pop, na.rm = TRUE),
+    #pct_adults_with_documents = (adults_with_documents / total_adults) * 100
+  #)
+
+
+
+#main %>%
+ # group_by(Intro_07) %>%
+  #summarise(
+   # adults_with_documents = sum(adult_pop * hh_with_documents, na.rm = TRUE),
+    #total_adults = sum(adult_pop, na.rm = TRUE),
+    #pct_adults_with_documents = (adults_with_documents / total_adults) * 100
+#  )
+```
+
+
 ## 2.2.1 SDG Indicator
 
 **Prevalence of stunting (height for age <-2 standard deviation from the median of the World Health Organization (WHO) Child Growth Standards) among children under 5 years of age**
@@ -1533,8 +1622,6 @@ ggplot(C020201, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
     axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
   )
 ```
-
-
 
 ## 2.2.2 SDG Indicator 
 
@@ -1793,9 +1880,6 @@ C030102 <- FDS_PAK_2024_RA_woman %>%
 
 
 ##Chart for the indicator above
-
-
-
 ggplot(C030102, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
   geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
@@ -1838,7 +1922,7 @@ In FDS, we are able to evaluate two health service areas, area I. and II. throug
 
 | Tracers            | Variables                                                            |
 |--------------------|:--------------------------------------------------------:            |
-| Pregnancy care     |BA4, BA6_1                                                            |                                                    
+| Pregnancy care     |BA4, BA6_1                                                            |                                           
 | child immunization |MV7, MV8                                                              |
 | Malaria            |MN05_2, MN05_3, HH_13                                                 |
 | WASH               |SAN01, SAN02, SAN03, SAN05                                            |
@@ -2030,16 +2114,16 @@ cat("The weighted average % of people per household who slept under an ITN the p
 
 ```{r, eval=FALSE}
 #ILGI: This is the start of the calculation at an individual level - % of people who slept under an ITN the previous night.
-result <- main %>%
-  summarise(
-    total_ITN = sum(final_sleep_ITN, na.rm = TRUE),  # Total people who used ITN
-    total_population = sum(totalmembermosq, na.rm = TRUE),  # Total population in malaria-endemic areas
-    percentage_ITN = (total_ITN / total_population) * 100  # Calculate percentage
-  )
+#result <- main %>%
+ # summarise(
+   # total_ITN = sum(final_sleep_ITN, na.rm = TRUE),  # Total people who used ITN
+   # total_population = sum(totalmembermosq, na.rm = TRUE),  # Total population in malaria-endemic areas
+   # percentage_ITN = (total_ITN / total_population) * 100  # Calculate percentage
+ # )
 
 # Print the final result
-print(result)
-cat("The percentage of population in malaria-endemic areas who slept under an ITN the previous night is:", result$percentage_ITN, "%\n")
+#print(result)
+#cat("The percentage of population in malaria-endemic areas who slept under an ITN the previous night is:", result$percentage_ITN, "%\n")
 
 ```
 
@@ -2121,15 +2205,88 @@ cat("The percentage of population using at least basic sanitation services is:",
 ```{r, eval=FALSE}
 #Step 1: Calculate geometric mean of each of the two health care service areas
 #Area 1: Reproductive, maternal, newborn and child health (RMNCH)
-RMNCH <- (child_immun_per + antenatal_care_per)/2
+C030801_RMNCH <- (child_immun_per + antenatal_care_per)/2
 
 #Area 2: Infectious diseases (ID)
-ID <- (malaria_per + final_sanitation_per)/2
+C030801_ID <- (malaria_per + final_sanitation_per)/2
 ```
 ```{r, eval=FALSE}
 #Step 2: Calculate the geometric mean of the two values to calculate the final UHC Service Coverage Index of the two health care service areas 
-UHC <- (RMNCH + ID)/2
-print(UHC)
+C030801_UHC <- (C030801_RMNCH + C030801_ID)/2
+print(C030801_UHC)
+```
+
+### Final table and chart for SDG 3.8.1 by population group
+```{r, eval=FALSE}
+#Note: Since we are able to calculate only 4 out ot 14 tracer indicators, covering two health care areas, the below graphs shows the composite UHC as well as geometric mean of each health care area separately. 
+
+#Calculate means per population group 
+# Pregnancy care
+antenatal_care_per_group <- RA_woman %>%
+  group_by(Intro_07) %>%
+  summarise(antenatal_care_per = mean(pregnancy_care, na.rm = TRUE) * 100)
+
+# Child immunization
+child_immun_per_group <- RA_caregiver %>%
+  group_by(Intro_07) %>%
+  summarise(child_immun_per = mean(child_immunization, na.rm = TRUE) * 100)
+
+# Malaria prevention (weighted household-level percentage per group)
+malaria_per_group <- main %>%
+  group_by(Intro_07) %>%
+  summarise(
+    numerator = sum(sleep_ITN_HH * totalmembermosq, na.rm = TRUE),
+    denominator = sum(totalmembermosq, na.rm = TRUE),
+    malaria_per = (numerator / denominator) * 100
+  ) %>%
+  select(Intro_07, malaria_per)
+
+# WASH
+wash_per_group <- main %>%
+  group_by(Intro_07) %>%
+  summarise(final_sanitation_per = sum(wash * HHmembersize, na.rm = TRUE) / sum(HHmembersize, na.rm = TRUE) * 100)
+
+# Combine all group-level indicators
+combined_group <- antenatal_care_per_group %>%
+  inner_join(child_immun_per_group, by = "Intro_07") %>%
+  inner_join(malaria_per_group, by = "Intro_07") %>%
+  inner_join(wash_per_group, by = "Intro_07")
+
+# Calculate the UHC index per group using your approach
+uhc_group_result <- combined_group %>%
+  mutate(
+    C030801_RMNCH = (antenatal_care_per + child_immun_per) / 2,
+    C030801_ID = (malaria_per + final_sanitation_per) / 2,
+    C030801_UHC = (C030801_RMNCH + C030801_ID) / 2
+  ) %>%
+  select(Intro_07, C030801_RMNCH, C030801_ID, C030801_UHC)
+
+# Convert to long format for plotting
+
+uhc_group_long <- uhc_group_result %>%
+  pivot_longer(cols = c(C030801_RMNCH, C030801_ID, C030801_UHC), names_to = "Service_Area", values_to = "Value")
+
+# Print table
+print(uhc_group_result)
+
+# Plot
+
+ggplot(uhc_group_long, aes(x = Intro_07, y = Value / 100, fill = Service_Area)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_text(aes(label = round(Value, 1)), vjust = -0.5, position = position_dodge(0.7)) +
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "SDG 3.8.1 Proxy - UHC Service Coverage Index, and subcategories by Population Group",
+    subtitle = "Reproductive, maternal, newborn and child health (RMNCH), Infectious diseases (ID) ",
+    x = "Population Group",
+    y = "Mean Value with standard errors"
+  ) +
+  scale_fill_unhcr_d() +
+  theme_unhcr() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
 ```
 
 ## 4.1.2 SDG Indicator
@@ -2401,6 +2558,7 @@ ggplot(C040102_primary_open_AGD, aes(x = HH_02, y = mean_value, fill = disabilit
   )
 
 ```
+
 ### Figure for SDG 4.1.2 - Lower secondary school by Population Groups
 
 ```{r, eval=FALSE}
@@ -2447,7 +2605,6 @@ ggplot(C040102_lowersec, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   )
 ```
 
-
 ### Figure for SDG 4.1.2 Lower secondary school by Population Groups, Gender and disability
 
 ```{r, eval=FALSE}
@@ -2485,6 +2642,7 @@ ggplot(C040102_lowersec_AGD, aes(x = HH_02, y = mean_value, fill = disability)) 
   )
 
 ```
+
 ### Figure for SDG 4.1.2 - Lower secondary school by Population Groups - open age 
 ```{r, eval=FALSE}
 ##Table by population groups
@@ -2570,6 +2728,7 @@ ggplot(C040102_lowersec_open_AGD, aes(x = HH_02, y = mean_value, fill = disabili
 ```{r, eval=FALSE}
 
 ```
+
 ### Figure for SDG 4.1.2 - Upper secondary school by Population Groups
 
 ```{r, eval=FALSE}
@@ -2654,7 +2813,10 @@ ggplot(C040102_uppersec_AGD, aes(x = HH_02, y = mean_value, fill = disability)) 
   )
 
 ```
+
+
 ### Figure for SDG 4.1.2 - Upper secondary school by Population Groups - open age 
+
 ```{r, eval=FALSE}
 ##Table by population groups
 
@@ -2698,6 +2860,7 @@ ggplot(C040102_uppersec_open, aes(x = Intro_07, y = mean_value, fill = Intro_07)
     axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
   )
 ```
+
 ### Figure for SDG 4.1.2 - Upper secondary school by Population Groups, Gender and disability - open age 
 
 ```{r, eval=FALSE}
@@ -2783,7 +2946,9 @@ mutate(C040202 = labelled(C040202, #Add labels
 ```{r, eval=FALSE}
 table(HHroster$C040202)
 ```
+
 ### Figure for SDG 4.2.2 by Population Groups
+
 ```{r, eval=FALSE}
 ##Table by population groups
 
@@ -2906,8 +3071,6 @@ table(RA_adult$age_selected)  #Age of the respondent
 
 ```
 ILGI: We can only make the calculation for those who are currently in school and younger than 45, and if they are currently doing an apprenticeship, and if they have done any training in the last 12m. However, we can not include those who are not in school but have been in school in the last 12 months (in a scenario where they just finished school for example), nor those that are not doing an apprenticeship now but have done it in the last 12m. 
-ILGI: Questions on current enrollment in formal education are asked in the roster to everyone, vs questions on apprenticeship and training are asked only to the random adult. Here I took the current educ enrollment status of the Random Adult and pulled it to the RA_adult dataset, and then calculated the indicator on the basis of the responded from the RA_adult. 
-
 
 ```{r, eval=FALSE}
 #Step 1: Calculate indicator for age group 15-24 year
@@ -2947,7 +3110,6 @@ table(RA_adult$C040301_25_45)
 
 ### Figure for SDG 4.3.1 - AGE GROUP 15 - 24 by Population Groups
 
-
 ```{r, eval=FALSE}
 ###Table standard 
 
@@ -2972,8 +3134,6 @@ C040301_15_24 <- FDS_PAK_2024_RA_adult %>%
 
 
 ##Chart for the indicator above
-
-
 
 ggplot(C040301_15_24, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
@@ -3034,7 +3194,6 @@ ggplot(C040301_15_24_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA
 
 ### Figure for SDG 4.3.1 - AGE GROUP 25 - 45 by Population Groups
 
-
 ```{r, eval=FALSE}
 ###Table standard 
 
@@ -3059,8 +3218,6 @@ C040301_25_45 <- FDS_PAK_2024_RA_adult %>%
 
 
 ##Chart for the indicator above
-
-
 
 ggplot(C040301_25_45, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
@@ -3855,6 +4012,7 @@ ggplot(population_participation_et_15_24, aes(x = "Parity Index", y = PPI_partic
   ) +
   theme_unhcr()
 ```
+
 2. **25 - 45 years age group**
 
 ```{r, eval=FALSE}
@@ -4024,7 +4182,6 @@ proportion_18 <- (numerator_18 / denominator_18) * 100
 cat("Proportion of women aged 20-24 married before age 18:", round(proportion_18, 2), "%\n")
 ```
 
-
 ### Figure for SDG 5.3.1a by Population Groups
 
 ```{r, eval=FALSE}
@@ -4054,9 +4211,7 @@ C050301a <- FDS_PAK_2024_HHroster %>%
     mean_value = round(married_before_15_total / women20_24_total, 4)  # Calculate the mean value
   )
 
-
 ##Figure 
-
 
 ggplot(C050301a, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +  # Corrected the misplaced `width`
@@ -4105,8 +4260,6 @@ C050301b <- FDS_PAK_2024_HHroster %>%
 
 
 ##Figure 
-
-
 ggplot(C050301b, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +  # Corrected the misplaced `width`
   geom_text(aes(label = round(mean_value, 2)), 
@@ -4131,6 +4284,48 @@ ggplot(C050301b, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 **(a) Proportion of total agricultural population with ownership or secure rights over agricultural land, by sex; and (b) share of women among owners or rights-bearers of agricultural land, by type of tenure**
 
 Indicator Code: C050a01
+
+The indicator consists of two sub-indicators:
+
+1. Sub-indicator 5.a.1 (a) s a prevalence measure. It measures the prevalence of people in the agricultural population with ownership or secure rights over agricultural land, disaggregated by sex.
+
+**Numerator**: No. of people in agricultural population with ownership or secure rights over agricultural land
+
+**Denominator**: Total agricultural population
+
+**Dataset**: main
+
+2. Sub-indicator 5.a.1 (b) focuses on gender parity, measuring the extent to which women are disadvantaged in ownership or secure rights over agricultural land.
+
+**Numerator**: Number of women in the agricultural population with ownership or secure rights over agricultural land
+
+**Denominator**: Total in the agricultural population with ownership or secure rights over agricultural land
+
+**Dataset**: main
+
+Broad types of tenure identified by the IAEG-SDG are freehold, customary and leasehold.
+
+**Concepts and terms:**
+
+*Agricultural land* - Land is considered ‘agricultural land’ according to its use. The classes and definitions of land use are based on the classification of land use for the agricultural census recommended by the World Programme for the Census of Agriculture 20202.The land use class of agricultural land is with respect to a specific reference period; thus, the reference period should be specified when collecting data on land use. As further discussed below, the reference period should cover a 12-month period. In agricultural censuses and surveys, this is generally the preceding 12 months.
+
+*Agricultural household* - Ownership or secure rights over agricultural land are specifically relevant to individuals whose livelihood relies on agriculture. Agricultural household is classified by the following: 
+
+- Criterion 1: A member or members of the household operated land for agricultural purposes or raised livestock over the past 12 months regardless of the final purpose of production
+
+and
+
+- Criterion 2: At least one member of the household operated land for agricultural purposes or raised livestock as an own-account worker
+
+The definition considers that since agricultural land includes both crop land (LU1-LU4) and meadows and pastures (LU5), ownership or secure rights over agricultural land are relevant for households operating land and/or raising or tending livestock. Engagement in forestry, logging, fishing and aquaculture activities is not included because the focus of the indicator is on agricultural land.
+
+
+Households who own or have secure rights over agricultural land but did not farm the land nor used the land in raising/tending livestock during the reference period are excluded, because the indicator focuses on households whose livelihood is linked to practicing agriculture.
+
+*Agricultural population* - The reference population for indicator 5.a.1 is the population of adult individuals living in agricultural households (as defined above). For purposes of international comparability, the recommended definition of “adult” is a person who is 18 years old or older. However, countries could use their own definitions of adult but allow for the calculation of statistics based on the 18-years old definition. Once a household is classified as an ‘agricultural household’, all the adult household members are considered as part of the reference population. 
+
+*Land ownership* is a legally recognised right to acquire, to use and to transfer land. “Secure rights” in the context of indicator 5.a.1 is defined as secure tenure rights, i.e., rights to use, manage and control land, fisheries and forests, in the sense of the Voluntary Guidelines on the Responsible Governance of Tenure of Land, Fisheries and Forests in the Context of National Food Security1￼. Operationally, for the purposes of measurement of this indicator, secure tenure rights comprise both land ownership and two key alienation rights: the right to sell and the right to bequeath agricultural land.
+
 
 ## 5.b.1 SDG Indicator
 
@@ -4182,7 +4377,6 @@ table(RA_adult$C050b01)
 
 ### Figure for SDG 5.b.1 by Population Groups
 
-
 ```{r, eval=FALSE}
 ###Table standard 
 
@@ -4207,8 +4401,6 @@ C050b01 <- FDS_PAK_2024_RA_adult %>%
 
 
 ##Chart for the indicator above
-
-
 
 ggplot(C050b01, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
@@ -4263,6 +4455,7 @@ ggplot(C050b01_AGD, aes(x = HH_02_RA, y = mean_value, fill = HH_02_RA)) +  # Rem
   )
 
 ```
+
 ## 6.1.1 SDG Indicator
 
 **Proportion of population using safely managed drinking water services**
@@ -4483,7 +4676,6 @@ table(main$C060102)
 
 ### Figure for SDG 6.1.2 by Population Groups
 
-
 ```{r, eval=FALSE}
 
 
@@ -4594,7 +4786,6 @@ table(main$C070101)
 ```
 
 ## Figure for SDG 7.1.1 by Population Groups
-
 
 ```{r, eval=FALSE}
 
@@ -4989,7 +5180,6 @@ RA_adult <- RA_adult %>%
     
 ```
 
-
 ### Figure for SDG 8.3.1 by Population Groups
 
 ```{r, eval=FALSE}
@@ -5021,8 +5211,6 @@ C080302 <- FDS_PAK_2024_RA_adult %>%
 
 
 ##Figure 
-
-
 ggplot(C080302, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +  # Corrected the misplaced `width`
   geom_text(aes(label = round(mean_value, 2)), 
@@ -5061,11 +5249,7 @@ C080302_AGD <- FDS_PAK_2024_RA_adult %>%
     mean_value = round(job_nature_total / employed_total, 4)  # Calculate the mean value
   )
 
-
-
-
 ###Chart for the above table
-
 
 ggplot(C080302_AGD, aes(x = HH_02_RA, y = mean_value, fill = HH_02_RA)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
@@ -5085,6 +5269,7 @@ ggplot(C080302_AGD, aes(x = HH_02_RA, y = mean_value, fill = HH_02_RA)) +
     axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
   )
 ```
+
 ## 8.5.1 SDG Indicator
 
 **Average hourly earnings of employees, by sex, age, occupation and persons with disabilities**
@@ -5178,7 +5363,6 @@ cat("The average hourly pay is:", format(round(average_hourly_pay, 2), nsmall = 
 ```{r, eval=FALSE}
 ###Table standard 
 
-
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
     ids = NULL,           # Specify the column with cluster IDs
@@ -5210,45 +5394,45 @@ ggplot(C080501, aes(x = Intro_07, y = avg_hourly_pay, fill = Intro_07)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-#ILGI: Below I removed the outliers and run the table/chart again as a test and the result seems more plausable. Once you review this indicator lets remove this test table and chart, however data for PAK and CAM should be checked and cleaned before running this indicator (if needed). 
 ```{r, eval=FALSE}
+#THE BELOW IS JUST A TEST, SHOULD BE REMOVED BEFORE WE PUBLISH THE SCRIPTS 
+#lower_percentile <- quantile(RA_adult$hourly_pay, 0.01, na.rm = TRUE)
+#upper_percentile <- quantile(RA_adult$hourly_pay, 0.99, na.rm = TRUE)
 
-lower_percentile <- quantile(RA_adult$hourly_pay, 0.01, na.rm = TRUE)
-upper_percentile <- quantile(RA_adult$hourly_pay, 0.99, na.rm = TRUE)
-
-RA_adult <- RA_adult %>%
-  mutate(percentile_outlier = ifelse(hourly_pay < lower_percentile | hourly_pay > upper_percentile, TRUE, FALSE))
+#RA_adult <- RA_adult %>%
+ # mutate(percentile_outlier = ifelse(hourly_pay < lower_percentile | hourly_pay > upper_percentile, TRUE, FALSE))
 
 # Exclude outliers and calculate weighted averages
-C080501_test <- FDS_PAK_2024_RA_adult %>%
-  filter(!is.na(hourly_pay)) %>%  # Exclude missing hourly pay values
-  mutate(
-    lower_percentile = survey_quantile(hourly_pay, 0.01, na.rm = TRUE),
-    upper_percentile = survey_quantile(hourly_pay, 0.99, na.rm = TRUE)
-  ) %>%
-  filter(hourly_pay >= lower_percentile, hourly_pay <= upper_percentile) %>%  # Exclude outliers
-  group_by(Intro_07) %>%          # Group by your population group variable
-  summarise(
-    avg_hourly_pay = survey_mean(hourly_pay, na.rm = TRUE),  # Calculate weighted mean
-    .groups = "drop"
+#C080501_test <- FDS_PAK_2024_RA_adult %>%
+ # filter(!is.na(hourly_pay)) %>%  # Exclude missing hourly pay values
+  #mutate(
+   # lower_percentile = survey_quantile(hourly_pay, 0.01, na.rm = TRUE),
+    #upper_percentile = survey_quantile(hourly_pay, 0.99, na.rm = TRUE)
+  #) %>%
+  #filter(hourly_pay >= lower_percentile, hourly_pay <= upper_percentile) %>%  # Exclude outliers
+  #group_by(Intro_07) %>%          # Group by your population group variable
+  #summarise(
+   # avg_hourly_pay = survey_mean(hourly_pay, na.rm = TRUE),  # Calculate weighted mean
+    #.groups = "drop"
   )
 
 # Create the bar chart
-ggplot(C080501_test, aes(x = Intro_07, y = avg_hourly_pay, fill = Intro_07)) +
-  geom_bar(stat = "identity", width = 0.7, position = "dodge") +
-  geom_text(aes(label = sprintf("%.2f", avg_hourly_pay)),
-            position = position_dodge(width = 0.7), vjust = -0.5, size = 3) +
-  labs(
-    title = "Average Hourly Earnings by Population Group (Weighted, Excluding Outliers)",
-    x = "Population Group",
-    y = "Average Hourly Earnings"
-  ) +
-  scale_y_continuous(expand = c(0, 0), limits = c(0, max(C080501_test$avg_hourly_pay) * 1.2)) +
-  scale_fill_unhcr_d() +   # Use UNHCR color palette if available
-  theme_unhcr() +          # Apply UNHCR theme if available
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#ggplot(C080501_test, aes(x = Intro_07, y = avg_hourly_pay, fill = Intro_07)) +
+ # geom_bar(stat = "identity", width = 0.7, position = "dodge") +
+  #geom_text(aes(label = sprintf("%.2f", avg_hourly_pay)),
+   #         position = position_dodge(width = 0.7), vjust = -0.5, size = 3) +
+  #labs(
+   # title = "Average Hourly Earnings by Population Group (Weighted, Excluding Outliers)",
+    #x = "Population Group",
+    #y = "Average Hourly Earnings"
+  #) +
+  #scale_y_continuous(expand = c(0, 0), limits = c(0, max(C080501_test$avg_hourly_pay) * 1.2)) +
+  #scale_fill_unhcr_d() +   # Use UNHCR color palette if available
+  #theme_unhcr() +          # Apply UNHCR theme if available
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
+
 ### Figure for SDG 8.5.2 by Gender, Disability and Population Groups
 
 ```{r, eval=FALSE}
@@ -5284,44 +5468,46 @@ ggplot(C080501_AGD, aes(x = HH_02_RA, y = avg_hourly_pay, fill = disability_RA))
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
-### Figure for SDG 8.5.2 by Gender, Disability and Population Groups - Treating outliers 
+
+### Figure for SDG 8.5.2 by Gender, Disability and Population Groups - Treating outliers - ILGI/PETRA - REMOVE BEFORE PUBLISHING
 
 ```{r, eval=FALSE}
-FDS_PAK_2024_RA_adult <- RA_adult %>%
-  as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
-    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
-  )
+## TO BE REMOVED BEFORE WE PUBLISH! 
+#FDS_PAK_2024_RA_adult <- RA_adult %>%
+ # as_survey_design(
+  #  ids = NULL,           # Specify the column with cluster IDs
+   # weights = NULL, # Specify the column with survey weights
+    #nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  #)
 
-C080501_AGD <- FDS_PAK_2024_RA_adult %>%
-  filter(!is.na(hourly_pay) & !is.na(disability_RA) & !is.na(HH_02_RA)) %>%  # Exclude missing hourly pay values
-  mutate(
-    lower_percentile = survey_quantile(hourly_pay, 0.01, na.rm = TRUE),
-    upper_percentile = survey_quantile(hourly_pay, 0.99, na.rm = TRUE)
-  ) %>%
-  filter(hourly_pay >= lower_percentile, hourly_pay <= upper_percentile) %>%  # Exclude outliers
-  group_by(Intro_07, disability_RA,HH_02_RA ) %>%          # Group by your population group variable
-  summarise(
-    avg_hourly_pay = survey_mean(hourly_pay, na.rm = TRUE),  # Calculate weighted mean
-    .groups = "drop"
-  )
+#C080501_AGD <- FDS_PAK_2024_RA_adult %>%
+ # filter(!is.na(hourly_pay) & !is.na(disability_RA) & !is.na(HH_02_RA)) %>%  # Exclude missing hourly pay values
+  #mutate(
+   # lower_percentile = survey_quantile(hourly_pay, 0.01, na.rm = TRUE),
+    #upper_percentile = survey_quantile(hourly_pay, 0.99, na.rm = TRUE)
+#  ) %>%
+ # filter(hourly_pay >= lower_percentile, hourly_pay <= upper_percentile) %>%  # Exclude outliers
+  #group_by(Intro_07, disability_RA,HH_02_RA ) %>%          # Group by your population group variable
+  #summarise(
+    #avg_hourly_pay = survey_mean(hourly_pay, na.rm = TRUE),  # Calculate weighted mean
+    #.groups = "drop"
+  #)
 
-ggplot(C080501_AGD, aes(x = HH_02_RA, y = avg_hourly_pay, fill = disability_RA)) +
-  geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
-  geom_text(aes(label = sprintf("%.2f", avg_hourly_pay)), 
-            position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +
-  facet_wrap(~ Intro_07) +
-  labs(
-    title = "Average Hourly Earnings by Gender, Disability, and Population Groups",
-    x = "Gender",
-    y = "Average Hourly Earnings",
-    fill = "Disability Status"
-  ) +
-  scale_fill_unhcr_d() +
-  scale_y_continuous(limits = c(0, max(C080501_AGD$avg_hourly_pay) * 1.2), expand = c(0, 0)) +
-  theme_unhcr() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#ggplot(C080501_AGD, aes(x = HH_02_RA, y = avg_hourly_pay, fill = disability_RA)) +
+ # geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
+  #geom_text(aes(label = sprintf("%.2f", avg_hourly_pay)), 
+   #         position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +
+  #facet_wrap(~ Intro_07) +
+  #labs(
+   # title = "Average Hourly Earnings by Gender, Disability, and Population Groups",
+    #x = "Gender",
+    #y = "Average Hourly Earnings",
+    #fill = "Disability Status"
+  #) +
+  # scale_fill_unhcr_d() +
+  # scale_y_continuous(limits = c(0, max(C080501_AGD$avg_hourly_pay) * 1.2), expand = c(0, 0)) +
+  # theme_unhcr() +
+  # theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
 
@@ -5539,6 +5725,8 @@ Percent (%)
 
 *Non-formal education*, like formal education is defined in ISCED as education that is institutionalized, intentional and planned by an education provider but is considered an addition, alternative and/or a complement to formal education. Informal learning is defined in ISCED as forms of learning that are intentional or deliberate, but not institutionalized.For the purposes of this indicator, persons will be considered in education if they are in formal or non-formal education, as described above, but excluding informal learning.
 
+*Note that in FDS, we are only able to determine if an individual is currently participating in apprenticeship, but not in other forms of training. 
+
 *Employment* is defined as all persons of working age who, during a short reference period (one week), were engaged in any activity to produce goods or provide services for pay or profit.Employment is defined as all persons of working age who, during a short reference period (one week), were engaged in any activity to produce goods or provide services for pay or profit.
 For the purpose of this indicator, persons are considered to be in training if they are in a non-academic learning activity through which they acquire specific skills intended for vocational or technical jobs.
 
@@ -5549,6 +5737,7 @@ For the purpose of this indicator, persons are considered to be in training if t
 **Sources** 
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-08-06-01.docx&wdOrigin=BROWSELINK)
 2. [Labour Force Statistics](https://ilostat.ilo.org/methods/concepts-and-definitions/description-labour-force-statistics/)
+
 ```{r, eval=FALSE}
 table(RA_adult$EMP01) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you work for someone else for pay, for one or more hours?
 table(RA_adul$EMP02) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you run or do any kind of business, farming or other activity to make money?
@@ -5682,8 +5871,8 @@ ggplot(C080601, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   )
 
 ```
-### Figure for SDG 8.6.1 by Gender, Disability and Population Groups
 
+### Figure for SDG 8.6.1 by Gender, Disability and Population Groups
 
 ```{r, eval=FALSE}
 
@@ -6256,7 +6445,6 @@ ggplot(C200204, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 
 ```
 
-
 ### Figure for SDG10.3.1 by Population Groups, Gender and Disability
 
 ```{r, eval=FALSE}
@@ -6658,6 +6846,7 @@ RA_adult <- RA_adult %>%
   #  axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
   #)
 ```
+
 ## 16.9.1 SDG Indicator
 
 **16.9.1 Proportion of children under 5 years of age whose births have been registered with a civil authority, by age**
@@ -6992,8 +7181,6 @@ ggplot(C200204_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA)) +
 
 ```
 
-
-
 ## 17.8.1 SDG Indicator
 
 **17.8.1 Proportion of individuals using the internet**
@@ -7090,7 +7277,6 @@ ggplot(C170801, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 
 ```
 
-
 ### Figure for SDG 17.8.1 by Population Groups and Gender
 
 ```{r, eval=FALSE}
@@ -7121,8 +7307,4 @@ ggplot(C170801_AGD, aes(x = HH_02_RA, y = mean_value, fill = HH_02_RA)) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1)
   )
-
-
 ```
-
-

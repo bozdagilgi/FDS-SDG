@@ -346,7 +346,7 @@ main <- main %>%
 # Count number of old age people (60+) in each household
 old_age_count <- HHroster %>%
   group_by(uuid) %>%
-  summarise(old_age_count = sum(agetouse >= 60, na.rm = TRUE))
+  summarise(old_age_count = sum(agetouse >= 60, na.rm = TRUE)) #Adjust age per country! 
 
 # Add the count to the main dataset
 main <- main %>%
