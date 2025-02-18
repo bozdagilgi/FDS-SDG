@@ -385,4 +385,32 @@ main <- main %>%
     has_mother_with_child = if_else(num_mothers_with_child >= 1, 1, 0)
   )
 
+#Create a variable for adult population per household 
+
+adult_pop <- HHroster %>%
+  group_by(uuid) %>%
+  summarise(adult_pop = sum(agetouse >= 18, na.rm = TRUE)) 
+
+# Add the count to the main dataset
+main <- main %>%
+  left_join(adult_pop, by = "uuid") %>%
+  mutate(adult_pop = replace_na(adult_pop, 0))
+
+
+#Create a variable for disabled household members per household 
+# Count number of people with disabilities per household
+disability_count <- HHroster %>%
+  group_by(uuid) %>%
+  summarise(disability_count = sum(disability == 1, na.rm = TRUE)) 
+
+# Merge with main dataset
+main <- main %>%
+  left_join(disability_count, by = "uuid") %>%
+  mutate(disability_count = replace_na(disability_count, 0))
+
+# Create indicator for households with at least one person with disability
+main <- main %>%
+  mutate(has_disability = if_else(disability_count >= 1, 1, 0))
+
+
 

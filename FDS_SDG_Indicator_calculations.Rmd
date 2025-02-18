@@ -13,7 +13,7 @@ knitr::opts_chunk$set(eval=FALSE)
 ```
 
 
-Date: Last revision was in January 2025
+Date: Last revision was in February 2025
 
 *For any issues please contact Ilgi Bozdag at bozdag@unhcr.org or Petra Kaps at kaps@unhcr.org*
 
@@ -344,7 +344,7 @@ table(main$num_mothers_with_child) #Number of mothers with child 1 year old or y
 table(main$has_mother_with_child)  #Households with at least 1 mother with child 1 year old or younger
 ```
 
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
   mutate(Parental_Benefit = case_when(
     ScProtec16b == 1 & has_mother_with_child == 1 ~ 1,  # Received parental or maternity benefit 
@@ -398,7 +398,6 @@ ggplot(C010301c, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
     axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
   )
 
-
 ```
 d) Proportion of persons with disabilities receiving benefits: ratio of persons receiving disability cash benefits to persons with severe disabilities. The latter is calculated as the product of prevalence of disability ratios (published for each country group by the World Health Organization) and each country’s population.
 
@@ -407,7 +406,7 @@ In FDS, we are able to calculate the % of households who have at least one disab
 table(main$ScProtec16c) #In the last 12 months, have you or anyone in your household received disability benefit?
 table(main$has_disability) #Household with at least 1 disabled household member
 ```
-```{r}
+```{r, eval=FALSE}
 main <- main %>%
   mutate(Disability_Benefit = case_when(
     ScProtec16c == 1 & has_disability == 1 ~ 1,  # Received parental or maternity benefit 
@@ -2520,7 +2519,6 @@ ggplot(C040102_primary_open, aes(x = Intro_07, y = mean_value, fill = Intro_07))
   )
 ```
 
-
 ### Figure for SDG 4.1.2 -Primary school by Population Groups, Gender and disability
 
 ```{r, eval=FALSE}
@@ -4470,6 +4468,8 @@ Access to Basic Drinking Water Services refers to the use of drinking water from
 | Standard Questions                |
 |:---------------------------------:|
 | BD01, BD01a, BD20_2, BD20_3, BD22 |
+
+**Unit of observation**: 
 
 **Numerator**: Individuals using drinking water from an improved source, provided collection time is not more than 30 minutes for a round trip, including queuing. 
 
