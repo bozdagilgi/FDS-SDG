@@ -378,7 +378,7 @@ C010301c <- FDS_PAK_2024_main %>%
   )
 
 
-###Chart of SDG 1.4.2b by pop groups
+###Chart of SDG 1.3.1c by pop groups
 
 ggplot(C010301c, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
@@ -440,7 +440,7 @@ C010301d <- FDS_PAK_2024_main %>%
   )
 
 
-###Chart of SDG 1.4.2b by pop groups
+###Chart of SDG 1.3.1d by pop groups
 
 ggplot(C010301d, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
@@ -530,7 +530,7 @@ C010301g <- FDS_PAK_2024_main %>%
   )
 
 
-###Chart of SDG 1.4.2b by pop groups
+###Chart of SDG 1.3.1g by pop groups
 
 ggplot(C010301g, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
   geom_bar(stat = "identity", position = "dodge", width = 0.7) +
