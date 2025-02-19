@@ -2221,7 +2221,7 @@ print(C030801_UHC)
 
 #Calculate means per population group 
 # Pregnancy care
-antenatal_care_per_group <- RA_woman %>%
+antenatal_care_per_group <- RA_woman %>% #PETRA - turn to survey objects 
   group_by(Intro_07) %>%
   summarise(antenatal_care_per = mean(pregnancy_care, na.rm = TRUE) * 100)
 
@@ -4575,7 +4575,7 @@ C060101 <- FDS_PAK_2024_main %>%
     var_name = "SDG6.1.1",                          # name of the variable
     num_obs_uw = unweighted(n()),                    # unweighted total count
     denominator = survey_total(),                      # weighted total count
-    mean_value = survey_mean(C060101, vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
+    mean_value = survey_mean(C060101,  vartype = c("ci", "se"), na.rm = TRUE) # indicator value ( weighted) with CI and SE
   )
 
 
@@ -6121,7 +6121,7 @@ mutate(child_labor_household_chores  = case_when(
     child_labor_age >= 12 & child_labor_age <= 14 & child_household_chores == 1 & CL09 >= 21 ~ 1,
     
     # Condition for children aged 15-17: engaged in household chores
-    child_labor_age >= 15 & child_labor_age <= 17 & child_household_chores == 1 & CL09 >= 0 ~ 1,
+    child_labor_age >= 15 & child_labor_age <= 17 & child_household_chores == 1 & CL09 >= 0 ~ 0,
     
     # Otherwise, classify as not engaged in household chores at or above age-specific hourly thresholds.
     TRUE ~ 0
