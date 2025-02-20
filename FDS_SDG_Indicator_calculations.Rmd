@@ -566,7 +566,6 @@ i) Proportion of poor population receiving social assistance cash benefit: ratio
 ```
 
 
-
 ## 1.4.1 SDG Indicator
 
 **Proportion of population living in households with access to basic services**
@@ -2221,16 +2220,39 @@ print(C030801_UHC)
 
 #Calculate means per population group 
 # Pregnancy care
-antenatal_care_per_group <- RA_woman %>% #PETRA - turn to survey objects 
+
+FDS_PAK_2024_RA_woman <- RA_woman %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+antenatal_care_per_group <- FDS_PAK_2024_RA_woman %>% 
   group_by(Intro_07) %>%
-  summarise(antenatal_care_per = mean(pregnancy_care, na.rm = TRUE) * 100)
+  summarise(antenatal_care_per = survey_mean(pregnancy_care, na.rm = TRUE) * 100)
 
 # Child immunization
-child_immun_per_group <- RA_caregiver %>%
+
+FDS_PAK_2024_RA_caregiver <- RA_caregiver %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+child_immun_per_group <- FDS_PAK_2024_RA_caregiver %>%
   group_by(Intro_07) %>%
-  summarise(child_immun_per = mean(child_immunization, na.rm = TRUE) * 100)
+  summarise(child_immun_per = survey_mean(child_immunization, na.rm = TRUE) * 100)
 
 # Malaria prevention (weighted household-level percentage per group)
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    ids = NULL,           # Specify the column with cluster IDs
+    weights = NULL, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
 malaria_per_group <- main %>%
   group_by(Intro_07) %>%
   summarise(
@@ -2241,7 +2263,7 @@ malaria_per_group <- main %>%
   select(Intro_07, malaria_per)
 
 # WASH
-wash_per_group <- main %>%
+wash_per_group <- FDS_PAK_2024_main %>%
   group_by(Intro_07) %>%
   summarise(final_sanitation_per = sum(wash * HHmembersize, na.rm = TRUE) / sum(HHmembersize, na.rm = TRUE) * 100)
 
