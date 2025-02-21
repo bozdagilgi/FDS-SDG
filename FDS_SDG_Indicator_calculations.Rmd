@@ -6707,8 +6707,8 @@ RA_adult <- RA_adult %>%
 #RA_adult<- RA_adult %>%
  # mutate(selfexclusion = case_when(
  #   Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("A", "B", "C", "D", "I","L", "M") ~ 1, #Assign 1 for those who self-excluded
- #   Justice01 == 1 & Justice05 == 1 ~ 2,
-  #  Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("E", "F", "G", "H", "J", "K", "OT", "RF") ~ 0 )) #Assign 2 for those who did not self-exclude
+ #   Justice01 == 1 & Justice05 == 1 ~ 0,
+  #  Justice01 == 1 & Justice05 == 2 & Justice16 %in% c("E", "F", "G", "H", "J", "K", "OT", "RF") ~ 0 )) #Assign 0 for those who did not self-exclude
 ```
 
 ```{r, eval=FALSE}
@@ -6716,7 +6716,7 @@ RA_adult <- RA_adult %>%
 RA_adult <- RA_adult %>%
   mutate(resolution = case_when(
     Justice01 == 1 & (Justice07b == 1 | Justice07c == 1 | Justice07d == 1  | Justice07e == 1 | Justice07f == 1 | Justice07g == 1 | Justice07h == 1) ~ 1, # Assigns 1 for yes - accessed a formal or informal dispute resolution mechanism
-    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 0)) # Assigns 2 for no - no involvement of a formal or informal dispute resolution mechanism
+    Justice01 == 1 & Justice07b %in% c(2,99) & Justice07c %in% c(2,99) & Justice07d %in% c(2,99) & Justice07e %in% c(2,99) & Justice07f %in% c(2,99) & Justice07g %in% c(2,99) &        Justice07h %in% c(2,99) ~ 0)) # Assigns 0 for no - no involvement of a formal or informal dispute resolution mechanism
 ```
 
 ```{r, eval=FALSE}
@@ -6727,7 +6727,7 @@ RA_adult <- RA_adult %>%
     #TRUE ~ 0))
 #RA_adult <- RA_adult %>%
   #mutate(C160303_den = case_when(
-    #dispute == 1 & selfexclusion !=1 ~ 1, #
+    #dispute == 1 & selfexclusion =0 ~ 1, #
    # TRUE ~ 0)) #Those who experiences a dispute in the past two years and did not voluntarily self-exclude.
 
 ```
