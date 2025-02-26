@@ -472,14 +472,83 @@ table(main$ScProtec16d) #In the last 12 months, have you or anyone in your house
 ```{r}
 main <- main %>%
   mutate(Unemployment_Benefit = case_when(
-    ScProtec16d == 1 ~ 1,  # Received unemployment benefit
+    ScProtec16d == 1  ~ 1,  # Received unemployment benefit
     TRUE ~ 0))
 ```
 
-ILGI: Here we have a problem because we don't know the number of unemployed household members. We can only know if for the HH in question, the random adult is unemployed, but we don't know if other members are. In social protection, we only know that someone receives the unemployed benefit. But in cases where the random member is not unemployed but someone does received the unemployment benefit, we don't know who and if that person is actually unemployed. So we can only calculate the % of household where at least one person receives the unemployment benefit from all households, but that doesn't tell us much. 
-Alternatively, we can only look at households where the random adult is unemployed, however I am afraid the sample size will be very small. 
+
+```{r, eval=FALSE}
+#Unemployment status: 
+#Step 1: Determine who is employed based on various conditions 
+RA_adult <- RA_adult %>%
+  mutate(employed = case_when(
+    EMP01 == 1  ~ 1,  # Paid employment - employees
+    EMP02 == 1 & EMP06b == 3~ 1,  # Self-employment
+    EMP03 == 1 & EMP06b == 3~ 1,  # Unpaid contributing family workers
+    EMP04 == 1  ~ 1,  # Absent but still employed
+    EMP05 == 1 & EMP06a == 3~ 1,  # Absent but self-employed
+    EMP02 == 1 & EMP06b %in% c(1, 2) & EMP06c %in% c(1, 2) ~ 1,  # Farming/rearing/fishing for sale
+    EMP05 == 1 & EMP06a %in% c(1, 2) & EMP06c %in% c(1, 2) ~ 1,  # Absent but farming for sale
+    TRUE ~ 0  # Not employed
+  ))
+```
+
+```{r, eval=FALSE}
+#Step 2: Define unemployed: those not employed but actively looking for work and available to carry out activities
+RA_adult <- RA_adult %>%
+  mutate(unemployed = case_when(
+    (employed == 0 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) ~ 1,  # Actively looking for work
+    TRUE ~ 0  # Not unemployed if not actively looking or employed
+  ))
+```
+
+```{r, eval=FALSE}
+#Step 3: Define labour force: anyone employed or unemployed
+RA_adult <- RA_adult %>%
+  mutate(labour_force = case_when(
+    (employed == 1 | unemployed == 1) ~ 1,  # Employed or actively seeking work
+    TRUE ~ 0  # Not in labour force
+  ))
+```
+
+```{r, eval=FALSE}
+#Step 4: Outcome - Unemployment rate
+RA_adult <- RA_adult %>%
+  mutate(unemployment_status = case_when(
+    employed == 1 & labour_force == 1 ~ 0,  # If employed, outcome is 2 (not unemployed)
+    unemployed == 1 & labour_force == 1 ~ 1,  # If unemployed, outcome is 1
+    TRUE ~ NA_real_  # Catch-all for cases not in the labor force or with missing data
+  ))
+```
+
+```{r}
+RA_adult <- RA_adult %>%
+   mutate(Unemployment_Benefit_1 = case_when(
+     Unemployment_Benefit == 1 & unemployment_status == 1 ~ 1, 
+     Unemployment_Benefit == 0 & unemployment_status == 1 ~ 0,
+     TRUE ~ NA_real_))   
+```
+```{r}
+table(RA_adult$Unemployment_Benefit_1) #ILGI: Here, out of 253 households where the random adult is unemployed, only 1 households receives the unemployment benefit. 
+```
+
+```{r}
+#Add the unemployment benefit status to the main dataset, per household 
+main <- main %>%
+  left_join(RA_adult %>% select(uuid, unemployment_status), by = "uuid")
+```
+```{r}
+total_unemployed_households <- sum(main$unemployment_status == 1, na.rm = TRUE)
+total_benefit_households <- sum(main$Unemployment_Benefit == 1, na.rm = TRUE)
+percent_households_with_benefit <- (total_benefit_households / total_unemployed_households) * 100
+
+percent_households_with_benefit #ILGI: So here out of all households who have at least 1 unemployed person, 19% of the households receive the unemployment benefit. 
 
 
+
+```
+ILGI: We discussed imputation, however I don't see a good approach and a good reason enough why we would do that. Even if we do imputations, we still don't know it the unemployed people in the household are the ones also receiving the unemployment benefit. Therefore in all cases this indicator will be a proxy for FDS. 
+ 
 f) Proportion of workers covered in case of employment injury: ratio of workers protected by injury insurance to total employment or the labour force.
 
 
@@ -6673,7 +6742,7 @@ Percent (%)
 As per the SDG metadata guidance, it is important to exclude from the denominator those who experience disputes and do not turn to dispute resolution mechanisms because they do not need them (voluntarily self-excluded). This refers to cases where the dispute is simple or when respondents solve the issue with the other party through direct negotiation. 
 
 **Limitations:** 
-Variabale "Justice16" is not present in all countries where FDS is carried out. This variable is needed to exclude from the denominator those who voluntary self-exclude. For countries, where this variable is not present, "Case 2" below contains the calculation script.In these cases, the final indicator calculation does not correspond completely to the SDG 16.3.3 indicator. 
+Variable "Justice16" is not present in all countries where FDS is carried out. This variable is needed to exclude from the denominator those who voluntary self-exclude. For countries, where this variable is not present. Prior to runing the script, check if the variable is present in your dataset. 
 
 **Sources** 
 1. [SDG indicator metadata](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Funstats.un.org%2Fsdgs%2Fmetadata%2Ffiles%2FMetadata-16-03-03.docx&wdOrigin=BROWSELINK)
