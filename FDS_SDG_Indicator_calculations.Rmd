@@ -1,5 +1,5 @@
 ---
-title: "FDS Questionnaire v1 SDG Indicator calculations"
+title: "PAK FDS 2024 SDG Indicator Calculations"
 author: "Global Survey Team"
 output: unhcrdown::html_page
 unhcrdown::html_page:
@@ -143,11 +143,11 @@ pacman::p_load(
 ```{r, eval=FALSE}
 ##Upload cleaned and weighted datasets 
 
-HHroster <- read_dta("HHroster.dta")
-main <- read_dta("main.dta")
-RA_adult <- read_dta("RA_adult.dta")
-RA_woman <- read_dta("RA_woman.dta")
-RA_caregiver <- read_dta ("RA_caregiver.dta")
+HHroster <- read_rds("HHroster.rds")
+main <- read_rds("main.rds")
+RA_adult <- read_rds("RA_adult.rds")
+RA_woman <- read_rds("RA_woman.rds")
+RA_caregiver <- read_rds ("RA_caregiver.rds")
 ```
 
 ## Standardized Disaggregation Variables
@@ -284,15 +284,13 @@ table(main$Social_Benefit)
 
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
-    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+    strata=samp_strat,
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters )
   )
 
 ###Table 
 
-#ILGI: I didn't included household size as weight because we don't know how many household members receive a social protection benefit, we only know that one of them receives it. 
-#My thinking behind it: If for example we have 10 household members, their likelihood of receiving the social benefit would be higher, however if we don't know how many of them receive it, it is not possible to determine if they receive "enough" social benefits. How do you weight a household with one members that receives the benefit, vs a household with 10 members where someone receives it but you don't know how many... 
 
 C010301a <- FDS_PAK_2024_main %>%
   filter(!is.na(Intro_07)) %>%
@@ -331,17 +329,18 @@ b) Proportion of children covered by social protection benefits: ratio of childr
 
 
 ```{r, eval=FALSE}
-#not possible from the FDS
+#not possible to calculate from the FDS
 ```
 
 c) Proportion of women giving birth covered by maternity benefits: ratio of women receiving cash maternity benefits to women giving birth in the same year (estimated based on age-specific fertility rates published in the UN’s World Population Prospects or on the number of live births corrected for the share of twin and triplet births).
 
-In FDS, we are able to look if at least one person in the household received parental or maternity benefit in the last 12 months, from household who have at least one woman who gave birth in the last 12 months. 
+In FDS, we are able to look if at least one person in the household received parental or maternity benefit in the last 12 months, from household who have at least one woman who gave birth in the last 24 months. 
 
 ```{r, eval=FALSE}
 table(main$ScProtec16b) #In the last 12 months, have you or anyone in your household received parental or maternity benefit? 
 table(main$num_mothers_with_child) #Number of mothers with child 1 year old or younger per household 
-table(main$has_mother_with_child)  #Households with at least 1 mother with child 1 year old or younger
+table(main$has_mother_with_child)#Households with at least 1 mother with child 1 year old or younger
+
 ```
 
 ```{r, eval=FALSE}
@@ -357,12 +356,11 @@ main <- main %>%
 ```{r, eval=FALSE}
 
 ##Table by population groups
-
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
-    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+    strata=samp_strat,
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters )
   )
 
 ###Table 
@@ -386,7 +384,7 @@ ggplot(C010301c, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
                 width = 0.2, position = position_dodge(0.7)) +
   geom_text(aes(label = round(mean_value, 2)), 
             vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
-  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 0.3), expand = c(0, 0)) +
   labs(
     title = "Results of SDG 1.3.1c",
     x = "Population Groups",
@@ -422,9 +420,9 @@ main <- main %>%
 
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
-    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+    strata=samp_strat,
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters )
   )
 
 ###Table 
@@ -466,20 +464,107 @@ e) Proportion of unemployed receiving benefits: ratio of recipients of unemploym
 
 In FDS, we are able to look if at least one person in the household received unemployment cash benefits in the last 12 months.  
 
+Please note that this indicator ideally should come from administrative data. 
+
 ```{r, eval=FALSE}
 table(main$ScProtec16d) #In the last 12 months, have you or anyone in your household received unemployment benefit?
+
+
+#Step 1: Determine who is employed based on various conditions 
+RA_adult <- RA_adult %>%
+  mutate(employed = case_when(
+    EMP01 == 1  ~ 1,  # Paid employment - employees
+    EMP02 == 1 & EMP06b == 3~ 1,  # Self-employment
+    EMP03 == 1 & EMP06b == 3~ 1,  # Unpaid contributing family workers
+    EMP04 == 1  ~ 1,  # Absent but still employed
+    EMP05 == 1 & EMP06a == 3~ 1,  # Absent but self-employed
+    EMP02 == 1 & EMP06b %in% c(1, 2) & EMP06c %in% c(1, 2) ~ 1,  # Farming/rearing/fishing for sale
+    EMP05 == 1 & EMP06a %in% c(1, 2) & EMP06c %in% c(1, 2) ~ 1,  # Absent but farming for sale
+    TRUE ~ 0  # Not employed
+  ))
 ```
+
+```{r, eval=FALSE}
+#Step 2: Define unemployed: those not employed but actively looking for work and available to carry out activities
+RA_adult <- RA_adult %>%
+  mutate(unemployed = case_when(
+    (employed == 0 & (EMP25a == 1 | EMP25aa == 1) & EMP29 == 1) ~ 1,  # Actively looking for work
+    TRUE ~ 0  # Not unemployed if not actively looking or employed
+  ))
+
+table(RA_adult$unemployed)
+```
+
 ```{r}
+
 main <- main %>%
   mutate(Unemployment_Benefit = case_when(
     ScProtec16d == 1 ~ 1,  # Received unemployment benefit
-    TRUE ~ 0))
+    TRUE ~ 0
+  ))
+
+# Step 2: Merge `main` with `RA_adult` on `uuid`
+main <- main %>%
+  left_join(RA_adult %>% select(uuid, unemployed), by = "uuid")
+
+main <- main %>%
+  mutate(Unemployment_Benefit = case_when(
+    Unemployment_Benefit == 1  & unemployed == 1 ~ 1,  # Already receiving benefits
+    unemployed == 1 & Unemployment_Benefit != 1 ~ 0,  # If unemployed in RA_adult, mark as receiving benefit
+    TRUE ~ NA  # Other on NA
+  ))
+
+table(main$Unemployment_Benefit)
 ```
 
-ILGI: Here we have a problem because we don't know the number of unemployed household members. We can only know if for the HH in question, the random adult is unemployed, but we don't know if other members are. In social protection, we only know that someone receives the unemployed benefit. But in cases where the random member is not unemployed but someone does received the unemployment benefit, we don't know who and if that person is actually unemployed. So we can only calculate the % of household where at least one person receives the unemployment benefit from all households, but that doesn't tell us much. 
-Alternatively, we can only look at households where the random adult is unemployed, however I am afraid the sample size will be very small. 
+### Figure for SDG 1.3.1e by Population Groups
+
+```{r, eval=FALSE}
+
+##Table by population groups
+
+FDS_PAK_2024_main <- main %>%
+  as_survey_design(
+    strata=samp_strat,
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters )
+  )
+
+###Table 
+
+C010301e <- FDS_PAK_2024_main %>%
+  filter(!is.na(Intro_07)) %>%
+  group_by(Intro_07) %>%
+  summarise(
+    var_name = "SDG 1.3.1e",
+    num_obs_uw = unweighted(n()),
+    denominator = survey_total(),
+    mean_value = survey_mean(Unemployment_Benefit, vartype = c("ci", "se"), na.rm = TRUE)
+  )
 
 
+###Chart of SDG 1.3.1d by pop groups
+
+ggplot(C010301e, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge", width = 0.7) +
+  geom_errorbar(aes(ymin = mean_value - mean_value_se, ymax = mean_value + mean_value_se),
+                width = 0.2, position = position_dodge(0.7)) +
+  geom_text(aes(label = round(mean_value, 2)), 
+            vjust = -0.5, position = position_dodge(0.7)) +  # Add labels for mean_value
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  labs(
+    title = "Results of SDG 1.3.1e",
+    x = "Population Groups",
+    y = "Mean Value with Standard Errors"
+  ) +
+  scale_fill_unhcr_d() +  # Use UNHCR color palette (requires unhcrthemes package)
+  theme_unhcr() +         # Apply UNHCR theme (requires unhcrthemes package)
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for better readability
+  )
+
+
+```
 f) Proportion of workers covered in case of employment injury: ratio of workers protected by injury insurance to total employment or the labour force.
 
 
@@ -493,7 +578,7 @@ In FDS, we are able to look if at least one person in the household received old
 
 ```{r, eval=FALSE}
 table(main$ScProtec16g) #In the last 12 months, have you or anyone in your household received old-age pension?
-summary(main$old_age_count) #Number of old-age household members per household 
+summary(main$elderly_pop) #Number of old-age household members per household 
 table(main$has_old_age) #Household who have at least one old-age household member
 ```
 ```{r}
@@ -512,8 +597,8 @@ main <- main %>%
 
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -747,7 +832,7 @@ Proportion of population with primary reliance on clean fuels and technology is 
 
 **Numerator**:   Number of individuals using clean fuel and technology as their primary source of cooking
 
-**Denominator**: Total number of individuals
+**Denominator**: Total population (individuals) reporting that any cooking, heating or lighting, expressed as percentage
 
 **Dataset**: main
 
@@ -778,10 +863,12 @@ main <- main %>%
       ) ~ 1,  # First condition for clean cooking
       (HC01 == 1 & (HC02 %in% c(6,7,9,10,11,96)) | (HC02 == 8 & !(HC04== 2)
       )) ~ 0,  # Condition for unclean cooking or incomplete clean technology
-      HC01 == 2 ~ 0,  # HC01 is "2"
+      HC01 == 2 ~ NA_real_,  # HC01 is "2"
       TRUE ~ NA_real_  # Handle missing or other cases
     )
   ) 
+
+table(main$clean_cook)
 ```
 ```{r, eval=FALSE}
 table(main$clean_cook)
@@ -801,13 +888,12 @@ main <- main %>%
     clean_heating = case_when(
       HHT01 == 1 & HHT04 %in% c(1, 2, 3, 4, 5, 8) ~ 1, # Clean heating
       HHT01 == 1 & HHT04 %in% c(6, 7, 96) ~ 0,         # Unclean heating
-      HHT01 == 2 ~ 0,                                  # No heating used
+      HHT01 == 2 ~ NA_real_,                                  # No heating used ( not a primary need so put in 0)
       TRUE ~ NA_real_                                  # Missing or other cases
     )
   )
 
-```
-```{r, eval=FALSE}
+
 table(main$clean_heating)
 ```
 
@@ -820,7 +906,7 @@ main <- main %>%
     clean_lightning = case_when(
       HL01 == 1 & HL03 %in% c(1, 2, 3, 4, 5, 6) ~ 1, # Clean lighting
       HL01 == 1 & HL03 %in% c(7,9,9,10,11,96) ~ 0,   # Unclean lighting
-      HL01 == 2 ~ 0,                                  # No lighting
+      HL01 == 2 ~ NA_real_,                                  # No lighting
       TRUE ~ NA_real_                                  # Missing or other cases
     )
   )
@@ -847,6 +933,8 @@ main <- main %>%
                                   "Unclean fuel" = 0   # Label for No
                                 ),
                                 label = "Proportion of population with primary reliance on clean fuels and technology"))
+
+table(main$clean_fuel)
 ```
 
 #### Health care services
@@ -906,17 +994,24 @@ RA_woman <- RA_woman %>%
 ```
 ```{r, eval=FALSE}
 #Step 2: Calculate the percentage of women aged 15−49 years with a live birth in the last 2 years who received antenatal care four or more times
-antenatal_care_per <- RA_woman %>%
+
+
+FDS_PAK_2024_RA_woman <- RA_woman %>%
+  as_survey_design(
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_w, # Specify the column with survey weights
+    nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
+  )
+
+antenatal_care_per <- FDS_PAK_2024_RA_woman %>%
+  group_by(Intro_07) %>%
   filter(!is.na(pregnancy_care)) %>%  # Exclude rows with NA in pregnancy_care
   summarise(
     total_women = n(),  # Total number of women in the denominator
     received_anc4_count = sum(pregnancy_care, na.rm = TRUE),  # Count of women in the numerator
     percentage = (received_anc4_count / total_women) * 100  # Percentage calculation
-  ) %>%
-  pull(percentage)
+  ) 
 
-# Print the result
-cat("The percentage of women aged 15−49 years with a live birth in the last 2 years who received antenatal care four or more times is:", antenatal_care_per, "%\n")
 ```
 
 ##### Child immunization
@@ -932,7 +1027,7 @@ Percentage of infants receiving three doses of diphtheria-tetanus-pertussis cont
 **Dataset**: RA_caregiver
 
 ```{r, eval=FALSE}
-table(RA_caregier$MV7)  #Has the child received Pentavalent vaccine (DPT + Hep B + Hib) that is, three shots in the arm by the age of 14 weeks - to prevent from getting Diphtheriae, Pertussis, Tetanus, Hepatitis B and Haemophilus Influenza type B - HIB)
+table(RA_caregiver$MV7)  #Has the child received Pentavalent vaccine (DPT + Hep B + Hib) that is, three shots in the arm by the age of 14 weeks - to prevent from getting Diphtheriae, Pertussis, Tetanus, Hepatitis B and Haemophilus Influenza type B - HIB)
 table(RA_caregiver$MV8) #How many times did the child receive the Pentavalent vaccine?
 summary(RA_caregiver$child_age_immunization) #Age of the child 
 ```
@@ -953,13 +1048,11 @@ RA_caregiver <- RA_caregiver %>%
 #Step 2: Calculate the percentage of infants receiving three doses of diphtheria-tetanus-pertussis containing vaccine
 
 child_immun_per <- RA_caregiver %>%
+  group_by(Intro_07) %>%
   filter(!is.na(child_immunization)) %>%  # Exclude rows with NA in child_immunization
   summarise(
     child_immun_per = (sum(child_immunization, na.rm = TRUE) / n()) * 100  # Calculate the percentage
-  ) %>%
-  pull(child_immun_per)
-
-cat("The percentage of children receiving three doses of the DTP-containing vaccine is:", child_immun_per, "%\n")
+  ) 
 
 ```
 ##### Malaria prevention
@@ -1013,7 +1106,7 @@ main <- main %>%
 ```
 
 ```{r, eval=FALSE}
-#ILGI: This is the start of the calculation at a household level - % of people in each household that slept under an ITN the night before. 
+# This is the total % of people in each household that slept under an ITN the night before. 
 #Step 3: Calculate the % of people that slept under mosquito nets in each household 
 main <- main %>%
   mutate(
@@ -1023,40 +1116,51 @@ main <- main %>%
  
 
 ```
+
+
 ```{r, eval=FALSE}
 # Calculate the average percentage, ignoring NAs
-average_sleep_ITN <- main %>%
+average_sleep_ITN <- FDS_PAK_2024_main %>%
+  group_by(Intro_07) %>%
   summarise(
     avg_sleep_ITN_HH = mean(sleep_ITN_HH, na.rm = TRUE)
   )
 
-avg_value <- (average_sleep_ITN$avg_sleep_ITN_HH)*100
+# Extract values separately
+final_ITN_refugees <- average_sleep_ITN$avg_sleep_ITN_HH[average_sleep_ITN$Intro_07 == "Refugees and Asylum Seekers"]
+final_ITN_host <- average_sleep_ITN$avg_sleep_ITN_HH[average_sleep_ITN$Intro_07 == "Host Community"]
 
-# Print the result
-print(average_sleep_ITN)
-cat("The average % of people per household who slept under ITN the previous night is:", avg_value, "%\n")
+# Print the final percentages
+cat("The average % of people per household who slept under ITN the previous night is::\n")
+cat("Refugees and Asylum Seekers:", final_ITN_refugees, "%\n")
+cat("Host Community:", final_ITN_host, "%\n")
 
 ```
 ```{r, eval=FALSE}
 # Step: Calculate the weighted average percentage of ITN usage
-weighted_average_ITN <- main %>%
+weighted_average_ITN <- FDS_PAK_2024_main %>%
+  group_by(Intro_07) %>%
   summarise(
     numerator = sum(sleep_ITN_HH * totalmembermosq, na.rm = TRUE),  # Weighted sum
     denominator = sum(totalmembermosq, na.rm = TRUE),  # Total population
     weighted_avg_sleep_ITN = (numerator / denominator) * 100  # Weighted average
   )
 
-# Extract the weighted average
-malaria_per <- weighted_average_ITN$weighted_avg_sleep_ITN
 
-# Print the result
-print(weighted_average_ITN)
-cat("The weighted average % of people per household who slept under an ITN the previous night is:", malaria_per,"%\n")
+# Extract values separately
+final_weightedITN_refugees <- weighted_average_ITN$weighted_avg_sleep_ITN[weighted_average_ITN$Intro_07 == "Refugees and Asylum Seekers"]
+final_weightedITN_host <- weighted_average_ITN$weighted_avg_sleep_ITN[weighted_average_ITN$Intro_07 == "Host Community"]
+
+# Print the final percentages
+cat("The weighted average % of people per household who slept under ITN the previous night is::\n")
+cat("Refugees and Asylum Seekers:", final_weightedITN_refugees, "%\n")
+cat("Host Community:", final_weightedITN_host, "%\n")
+
 
 ```
 
 ```{r, eval=FALSE}
-#ILGI: This is the start of the calculation at an individual level - % of people who slept under an ITN the previous night.
+#This is the start of the calculation at an individual level - % of people who slept under an ITN the previous night.
 #result <- main %>%
  # summarise(
   #  total_ITN = sum(final_sleep_ITN, na.rm = TRUE),  # Total people who used ITN
@@ -1128,19 +1232,22 @@ table(main$wash)
 ```
 ```{r, eval=FALSE}
 # Step 5: Calculate weighted percentage
-sanitation_percentage <- main %>%
+sanitation_percentage <- FDS_PAK_2024_main %>%
+  group_by(Intro_07) %>%
   summarise(
     numerator = sum(wash * HHmembersize, na.rm = TRUE),  # Total individuals with access to basic sanitation
     denominator = sum(HHmembersize, na.rm = TRUE),  # Total population
     percentage_sanitation = (numerator / denominator) * 100  # Weighted percentage
   )
 
-# Extract the final percentage
-final_sanitation_per <- sanitation_percentage$percentage_sanitation
+# Extract values separately
+final_sanitation_refugees <- sanitation_percentage$percentage_sanitation[sanitation_percentage$Intro_07 == "Refugees and Asylum Seekers"]
+final_sanitation_host <- sanitation_percentage$percentage_sanitation[sanitation_percentage$Intro_07 == "Host Community"]
 
-# Print the results
-print(sanitation_percentage)
-cat("The percentage of population using at least basic sanitation services is:", final_sanitation_per, "%\n")
+# Print the final percentages
+cat("The percentage of population using at least basic sanitation services:\n")
+cat("Refugees and Asylum Seekers:", final_sanitation_refugees, "%\n")
+cat("Host Community:", final_sanitation_host, "%\n")
 ```
 
 ##### Final calculation of the tracer - Access to Basic Health Care Services
@@ -1162,6 +1269,95 @@ print(UHC)
 ### Final calculation of the SDG 1.4.1
 
 This indicator is a combination of various components of basic services which on their own are mostly existing as standalone indicators of the SDGs. As a result, the team of experts advised and agreed that these should be presented as a dashboard. Their metadata provide the specific methodologies for computing each of the constituent measures used to report on this indicator.
+
+
+```{r, eval=FALSE}
+
+table(main$Improved_dw_final) # Access to clean drinking water services
+table(main$handwashing_facility) # Access to basic hygiene services
+table(main$clean_cook) # Access to clean energy for cooking
+table(main$clean_heating) # Access to clean energy for heating
+table(main$clean_lightning) # Access to clean energy for lightning
+table(main$clean_fuel) #Proportion of population with primary reliance on clean fuels and technology
+antenatal_care_per#The percentage of women aged 15−49 years with a live birth in the last 2 years who received antenatal care four or more times
+child_immun_per #Percentage of infants receiving three doses of diphtheria-tetanus-pertussis containing vaccine
+average_sleep_ITN # Malaria prevention - The weighted average % of people per household who slept under an ITN the previous night 
+sanitation_percentage # Percentage of population using at least basic sanitation services, that is, improved sanitation facilities that are not shared with other households
+
+colnames(data_SGD411_fromain)
+colnames(child_immun_per)
+colnames(antenatal_care_per)
+colnames(average_sleep_ITN)
+colnames(sanitation_percentage)
+
+
+
+```
+
+```{r}
+##Add table for all indicators above
+
+
+# Sanitation and hygiene-related indicators (from main dataset)
+combined_sdg411 <- FDS_PAK_2024_main %>%
+  group_by(Intro_07) %>%
+  summarise(
+    `Clean Drinking Water` = mean(Improved_dw_final, na.rm = TRUE) * 100,
+    `Basic Hygiene` = mean(handwashing_facility, na.rm = TRUE) * 100,
+    `Clean Cooking Energy` = mean(clean_cook, na.rm = TRUE) * 100,
+    `Clean Heating Energy` = mean(clean_heating, na.rm = TRUE) * 100,
+    `Clean Lighting` = mean(clean_lightning, na.rm = TRUE) * 100,
+    `Clean Fuels` = mean(clean_fuel, na.rm = TRUE) * 100
+  )
+
+# Merging all dataframes
+combined_all <- combined_sdg411 %>%
+  left_join(child_immun_per, by = "Intro_07") %>%
+  left_join(antenatal_care_per, by = "Intro_07") %>%
+  left_join(average_sleep_ITN, by = "Intro_07") %>%
+  left_join(sanitation_percentage, by = "Intro_07")
+
+# Deleting unnecessary variables and renaming columns
+combined_all <- combined_all %>%
+  select(-denominator, -numerator, -total_women, -received_anc4_count) %>%
+  rename(
+    `Child Immunization` = child_immun_per,
+    `Antenatal Care (4+ Visits)` = percentage,
+    `Slept Under ITN` = avg_sleep_ITN_HH,
+    `Basic Sanitation` = percentage_sanitation
+  )
+
+# Convert to long format for ggplot
+data_combined <- combined_all %>%
+  pivot_longer(cols = -Intro_07, names_to = "Indicator", values_to = "Percentage")
+
+```
+
+
+```{r}
+
+data_combined %>%
+  ggplot(aes(x = Indicator, y = Percentage, fill = Intro_07)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(
+    aes(label = round(Percentage, 1)),
+    position = position_dodge(width = 0.9),
+    vjust = -0.5,
+    size = 3
+  ) +
+  scale_fill_unhcr_d() +
+  scale_y_continuous(limits = c(0, 110), expand = c(0, 0)) +
+  labs(
+    title = "Access to Facilities by Population Group",
+    x = "Facility",
+    y = "Percentage Access (%)",
+    fill = "Population Groups"
+  ) +
+  theme_unhcr() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+
+
+```
 
 ## 1.4.2 SDG Indicator
 
@@ -1293,8 +1489,8 @@ main <- main %>%
 
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -1342,8 +1538,8 @@ ggplot(C010402a, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -1422,7 +1618,7 @@ ggplot(C010402b, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 
 ```
 
-#Other approaches to discuss with ILGI 
+#Other approaches to discuss to calculate the indicator from FDS
 ```{r}
 #Number of plots with documents weighted by adult population in each household
 #main %>%
@@ -1460,7 +1656,7 @@ ggplot(C010402b, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 
 ## 2.2.1 SDG Indicator
 
-**Prevalence of stunting (height for age <-2 standard deviation from the median of the World Health Organization (WHO) Child Growth Standards) among children under 5 years of age**
+**Prevalence of stunting (height for age <-2 standard deviation from the median of the World Health Organization (WHO) Child Growth Standards) among children under 5 years of age**
 
 Indicator Code: C020201
 
@@ -1518,10 +1714,21 @@ RA_caregiver <- RA_caregiver %>%
       TRUE ~ NA_real_  ))
 ```
 ```{r, eval=FALSE}
-stunting_prevalence <- RA_caregiver %>%
+stunting_prevalence <- FDS_PAK_2024_RA_caregiver %>%
+  group_by(Intro_07) %>%
   summarize(prevalence = mean(C020201, na.rm = TRUE) * 100)
 
-cat("Prevalence of stunting: ", stunting_prevalence$prevalence, "%\n")
+  
+# Extract values separately
+stunting_refugees <- stunting_prevalence$prevalence[stunting_prevalence$Intro_07 == "Refugees and Asylum Seekers"]
+stunting_host <- stunting_prevalence$prevalence[stunting_prevalence$Intro_07 == "Host Community"]
+
+# Print the final percentages
+cat("Prevalence of Stunting is::\n")
+cat("Refugees and Asylum Seekers:", stunting_refugees, "%\n")
+cat("Host Community:", stunting_host, "%\n")
+
+
 ```
 
 ```{r, eval=FALSE}
@@ -1531,8 +1738,8 @@ cat("Prevalence of stunting: ", stunting_prevalence$prevalence, "%\n")
 ##Add weights when/if available
 FDS_PAK_2024_RA_caregiver <- RA_caregiver %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = , # Specify the column with survey weights
+    strata = samp_strat ,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_u5, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 ```
@@ -1546,7 +1753,7 @@ FDS_PAK_2024_RA_caregiver <- RA_caregiver %>%
 ####Standard tables 
 
 
-SDG_2_2_1 <- RA_caregiver %>%
+SDG_2_2_1 <- FDS_PAK_2024_RA_caregiver %>%
   select(Intro_07, childnametouseSEX, C020201) %>%
   group_by(Intro_07, childnametouseSEX) %>%
   summarise(prevalence = mean(C020201, na.rm = TRUE) * 100) %>%
@@ -1623,7 +1830,7 @@ ggplot(C020201, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 
 ## 2.2.2 SDG Indicator 
 
-**Prevalence of malnutrition (weight for height >+2 or <-2 standard deviation from the median of the WHO Child Growth Standards) among children under 5 years of age, by type (wasting and overweight)**
+**Prevalence of malnutrition (weight for height >+2 or <-2 standard deviation from the median of the WHO Child Growth Standards) among children under 5 years of age, by type (wasting and overweight)**
 
 Indicator Code: C020202
 
@@ -1715,8 +1922,8 @@ cat("Prevalence of overweight: ", overweight_prevalence$prevalence, "%\n")
 ##Add weights when/if available
 FDS_PAK_2024_RA_caregiver <- RA_caregiver %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = , # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_u5, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 ```
@@ -1730,7 +1937,7 @@ FDS_PAK_2024_RA_caregiver <- RA_caregiver %>%
 ####Standard tables 
 
 
-SDG_2_2_2b <- RA_caregiver %>%
+SDG_2_2_2b <- FDS_PAK_2024_RA_caregiver %>%
   select(Intro_07, childnametouseSEX, C020202b) %>%
   group_by(Intro_07, childnametouseSEX) %>%
   summarise(prevalence = mean(C020202b, na.rm = TRUE) * 100) %>%
@@ -1862,8 +2069,8 @@ mutate(C030102 = labelled(C030102,
 ##Add weights when/if available
 FDS_PAK_2024_RA_woman <- RA_woman %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = , # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights =wgh_samp_pop_restr_w, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 C030102 <- FDS_PAK_2024_RA_woman %>%
@@ -1884,7 +2091,7 @@ ggplot(C030102, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
                 width = 0.2, position = position_dodge(0.7)) +
   geom_text(aes(label = round(mean_value, 2)), 
             vjust = -0.5, position = position_dodge(0.7)) +  
-  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
   labs(
     title = "Results of SDG 3.1.2",
     x = "Population Groups",
@@ -1912,7 +2119,7 @@ Concepts:
 The index of health service coverage is computed as the geometric means of 14 tracer indicators and expressed as a UHC Service Coverage Index. 4 health service areas, and 14 tracer indicators are the following:
 
 I. Reproductive, maternal, newborn and child health (family planning,pregnancy care,child immunization, child treatment)
-II. Infectious disease (tuberculosis, HIV/AIDS, Malaria, WASH)
+II. Infectious disease (tuberculosis, HIV/Astrata, Malaria, WASH)
 III. Noncommunicable diseases (Hypertension, diabetes, tobacco)
 IV. Service capacity and access (hospital access, health workers, health security)
 
@@ -1961,7 +2168,8 @@ RA_woman <- RA_woman %>%
 ```
 ```{r, eval=FALSE}
 #Step 2: Calculate the percentage of women aged 15−49 years with a live birth in the last 2 years who received antenatal care four or more times
-antenatal_care_per <- RA_woman %>%
+antenatal_care_per <- FDS_PAK_2024_RA_woman %>%
+  group_by(Intro_07) %>%
   filter(!is.na(pregnancy_care)) %>%  # Exclude rows with NA in pregnancy_care
   summarise(
     total_women = n(),  # Total number of women in the denominator
@@ -1987,7 +2195,7 @@ Percentage of infants receiving three doses of diphtheria-tetanus-pertussis cont
 **Dataset**: RA_caregiver
 
 ```{r, eval=FALSE}
-table(RA_caregier$MV7)  #Has the child received Pentavalent vaccine (DPT + Hep B + Hib) that is, three shots in the arm by the age of 14 weeks - to prevent from getting Diphtheriae, Pertussis, Tetanus, Hepatitis B and Haemophilus Influenza type B - HIB)
+table(RA_caregiver$MV7)  #Has the child received Pentavalent vaccine (DPT + Hep B + Hib) that is, three shots in the arm by the age of 14 weeks - to prevent from getting Diphtheriae, Pertussis, Tetanus, Hepatitis B and Haemophilus Influenza type B - HIB)
 table(RA_caregiver$MV8) #How many times did the child receive the Pentavalent vaccine?
 summary(RA_caregiver$child_age_immunization) #Age of the child 
 ```
@@ -2007,7 +2215,8 @@ RA_caregiver <- RA_caregiver %>%
 ```{r, eval=FALSE}
 #Step 2: Calculate the percentage of infants receiving three doses of diphtheria-tetanus-pertussis containing vaccine
 
-child_immun_per <- RA_caregiver %>%
+child_immun_per <- FDS_PAK_2024_RA_caregiver %>%
+  group_by(Intro_07) %>%
   filter(!is.na(child_immunization)) %>%  # Exclude rows with NA in child_immunization
   summarise(
     child_immun_per = (sum(child_immunization, na.rm = TRUE) / n()) * 100  # Calculate the percentage
@@ -2068,7 +2277,7 @@ main <- main %>%
 ```
 
 ```{r, eval=FALSE}
-#ILGI: This is the start of the calculation at a household level - % of people in each household that slept under an ITN the night before. 
+#This is the start of the calculation at a household level - % of people in each household that slept under an ITN the night before. 
 #Step 3: Calculate the % of people that slept under mosquito nets in each household 
 main <- main %>%
   mutate(
@@ -2080,7 +2289,8 @@ main <- main %>%
 ```
 ```{r, eval=FALSE}
 # Calculate the average percentage, ignoring NAs
-average_sleep_ITN <- main %>%
+average_sleep_ITN <- FDS_PAK_2024_main %>%
+  group_by(Intro_07) %>%
   summarise(
     avg_sleep_ITN_HH = mean(sleep_ITN_HH, na.rm = TRUE)
   )
@@ -2094,7 +2304,8 @@ cat("The average % of people per household who slept under ITN the previous nigh
 ```
 ```{r, eval=FALSE}
 # Step: Calculate the weighted average percentage of ITN usage
-weighted_average_ITN <- main %>%
+weighted_average_ITN <- FDS_PAK_2024_main %>%
+  group_by(Intro_07) %>%
   summarise(
     numerator = sum(sleep_ITN_HH * totalmembermosq, na.rm = TRUE),  # Weighted sum
     denominator = sum(totalmembermosq, na.rm = TRUE),  # Total population
@@ -2111,7 +2322,7 @@ cat("The weighted average % of people per household who slept under an ITN the p
 ```
 
 ```{r, eval=FALSE}
-#ILGI: This is the start of the calculation at an individual level - % of people who slept under an ITN the previous night.
+#This is the start of the calculation at an individual level - % of people who slept under an ITN the previous night.
 #result <- main %>%
  # summarise(
    # total_ITN = sum(final_sleep_ITN, na.rm = TRUE),  # Total people who used ITN
@@ -2183,7 +2394,8 @@ table(main$wash)
 ```
 ```{r, eval=FALSE}
 # Step 5: Calculate weighted percentage
-sanitation_percentage <- main %>%
+sanitation_percentage <- FDS_PAK_2024_main %>%
+  group_by(Intro_07) %>%
   summarise(
     numerator = sum(wash * HHmembersize, na.rm = TRUE),  # Total individuals with access to basic sanitation
     denominator = sum(HHmembersize, na.rm = TRUE),  # Total population
@@ -2223,7 +2435,7 @@ print(C030801_UHC)
 
 FDS_PAK_2024_RA_woman <- RA_woman %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
+    strata = NULL,           # Specify the column with cluster strata
     weights = NULL, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
@@ -2236,7 +2448,7 @@ antenatal_care_per_group <- FDS_PAK_2024_RA_woman %>%
 
 FDS_PAK_2024_RA_caregiver <- RA_caregiver %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
+    strata = NULL,           # Specify the column with cluster strata
     weights = NULL, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
@@ -2248,7 +2460,7 @@ child_immun_per_group <- FDS_PAK_2024_RA_caregiver %>%
 # Malaria prevention (weighted household-level percentage per group)
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
+    strata = NULL,           # Specify the column with cluster strata
     weights = NULL, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
@@ -2419,8 +2631,8 @@ mutate(C040102_uppersec_open = case_when(
 
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -2502,8 +2714,8 @@ ggplot(C040102_primary_AGD, aes(x = HH_02, y = mean_value, fill = disability)) +
 
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -2586,8 +2798,8 @@ ggplot(C040102_primary_open_AGD, aes(x = HH_02, y = mean_value, fill = disabilit
 
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -2669,8 +2881,8 @@ ggplot(C040102_lowersec_AGD, aes(x = HH_02, y = mean_value, fill = disability)) 
 
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -2745,9 +2957,6 @@ ggplot(C040102_lowersec_open_AGD, aes(x = HH_02, y = mean_value, fill = disabili
   )
 
 ```
-```{r, eval=FALSE}
-
-```
 
 ### Figure for SDG 4.1.2 - Upper secondary school by Population Groups
 
@@ -2756,8 +2965,8 @@ ggplot(C040102_lowersec_open_AGD, aes(x = HH_02, y = mean_value, fill = disabili
 
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -2842,8 +3051,8 @@ ggplot(C040102_uppersec_AGD, aes(x = HH_02, y = mean_value, fill = disability)) 
 
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -2974,8 +3183,8 @@ table(HHroster$C040202)
 
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -3052,7 +3261,7 @@ ggplot(C040202_AGD, aes(x = HH_02, y = mean_value, fill = HH_02)) +
 
 ## 4.3.1 SDG Indicator 
 
-**Participation rate of youth and adults in formal and non-formal education and training in the previous 12 months, by sex**
+**Participation rate of youth and adults in formal and non-formal education and training in the previous 12 months, by sex**
 
 Indicator Code: C040301
 
@@ -3136,8 +3345,8 @@ table(RA_adult$C040301_25_45)
 
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -3220,8 +3429,8 @@ ggplot(C040301_15_24_AGD, aes(x = HH_02_RA, y = mean_value, fill = disability_RA
 
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -3309,7 +3518,7 @@ The indicator value of the likely more disadvantaged group is divided by the ind
 Education indicators available from FDS: 
 1. 4.1.2 SDG Indicator - Completion rate for primary education, lower secondary education and higher secondary education
 2. 4.2.2 SDG Indicator - Participation rate in organized learning (one year before the official primary entry age), by sex
-3. 4.3.1 SDG Indicator - Participation rate of youth and adults in formal and non-formal education and training in the previous 12 months, by sex
+3. 4.3.1 SDG Indicator - Participation rate of youth and adults in formal and non-formal education and training in the previous 12 months, by sex
 
 Disadvantaged group
 1. Gender Parity indices - Females are considered a disadvantaged group
@@ -3335,8 +3544,8 @@ table(HHroster$C040102_uppersec)
 # Ensure survey design
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,  # Adjust if needed
-    weights = NULL,  # Adjust if needed
+    strata = samp_strat,  # Adjust if needed
+    weights = wgh_samp_pop_restr,  # Adjust if needed
     nest = TRUE
   )
 
@@ -3395,8 +3604,8 @@ ggplot(gender_completion_primary, aes(x = Intro_07, y = GPI_completion_primary, 
 # Ensure survey design
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,  # Adjust if needed
-    weights = NULL,  # Adjust if needed
+    strata = samp_strat,  # Adjust if needed
+    weights = wgh_samp_pop_restr,  # Adjust if needed
     nest = TRUE
   )
 
@@ -3457,8 +3666,8 @@ ggplot(disability_completion_primary, aes(x = Intro_07, y = DPI_primary_disabled
 # Ensure survey design
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,
-    weights = NULL,
+    strata = samp_strat,
+    weights = wgh_samp_pop_restr,
     nest = TRUE
   )
 # Completion rates for refugees
@@ -3501,8 +3710,8 @@ ggplot(population_completion_primary, aes(x = "Parity Index", y = PPI_completion
 # Ensure survey design
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,  # Adjust if needed
-    weights = NULL,  # Adjust if needed
+    strata = samp_strat,  # Adjust if needed
+    weights = wgh_samp_pop_restr,  # Adjust if needed
     nest = TRUE
   )
 
@@ -3560,8 +3769,8 @@ ggplot(gender_completion_lowersec, aes(x = Intro_07, y = GPI_lowersec, fill = In
 # Ensure survey design
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,  # Adjust if needed
-    weights = NULL,  # Adjust if needed
+    strata = samp_strat,  # Adjust if needed
+    weights = wgh_samp_pop_restr,  # Adjust if needed
     nest = TRUE
   )
 
@@ -3619,8 +3828,8 @@ ggplot(disability_completion_lowersec, aes(x = Intro_07, y = DPI_lowersec, fill 
 # Ensure survey design
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,
-    weights = NULL,
+    strata = samp_strat,
+    weights = wgh_samp_pop_restr,
     nest = TRUE
   )
 # Completion rates for refugees
@@ -3664,8 +3873,8 @@ ggplot(population_completion_lowersec, aes(x = "Parity Index", y = PPI_completio
 # Ensure survey design
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,  # Adjust if needed
-    weights = NULL,  # Adjust if needed
+    strata = samp_strat,  # Adjust if needed
+    weights = wgh_samp_pop_restr,  # Adjust if needed
     nest = TRUE
   )
 
@@ -3725,8 +3934,8 @@ ggplot(gender_completion_uppersec, aes(x = Intro_07, y = GPI_uppersec, fill = In
 # Ensure survey design
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,  # Adjust if needed
-    weights = NULL,  # Adjust if needed
+    strata = samp_strat,  # Adjust if needed
+    weights = wgh_samp_pop_restr,  # Adjust if needed
     nest = TRUE
   )
 
@@ -3735,7 +3944,7 @@ non_disabled_completion_uppersec <- FDS_PAK_2024_HHroster %>%
   filter(disability == "Non-Disabled") %>%  # Filter only non-disabled
   group_by(Intro_07) %>%
   summarise(
-    non_disabled_completion_rate = survey_mean(C040102_upperrsec, na.rm = TRUE),
+    non_disabled_completion_rate = survey_mean(C040102_uppersec, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -3783,8 +3992,8 @@ ggplot(disability_completion_uppersec, aes(x = Intro_07, y = DPI_uppersec, fill 
 # Ensure survey design
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,
-    weights = NULL,
+    strata = samp_strat,
+    weights = wgh_samp_pop_restr,
     nest = TRUE
   )
 # Completion rates for refugees
@@ -3831,8 +4040,8 @@ ggplot(population_completion_uppersec, aes(x = "Parity Index", y = PPI_completio
 # Ensure survey design
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,  # Adjust if needed
-    weights = NULL,  # Adjust if needed
+    strata = samp_strat,  # Adjust if needed
+    weights = wgh_samp_pop_restr,  # Adjust if needed
     nest = TRUE
   )
 
@@ -3890,8 +4099,8 @@ ggplot(gender_participation_preschool, aes(x = Intro_07, y = GPI_participation_p
 # Ensure survey design
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,
-    weights = NULL,
+    strata = samp_strat,
+    weights = wgh_samp_pop_restr,
     nest = TRUE
   )
 # Completion rates for refugees
@@ -3932,12 +4141,12 @@ ggplot(population_participation_preschool, aes(x = "Parity Index", y = PPI_parti
 1. **15 - 24 years age group**
 
 ```{r, eval=FALSE}
-#Gender Parity Index (GPI) for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months
+#Gender Parity Index (GPI) for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months
 # Ensure survey design
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,  # Adjust if needed
-    weights = NULL,  # Adjust if needed
+    strata = samp_strat,  # Adjust if needed
+    weights = wgh_samp_pop_restr_resp,  # Adjust if needed
     nest = TRUE
   )
 
@@ -3966,8 +4175,7 @@ gender_participation_431_15_24 <- left_join(male_participation_431_15_24, female
 gender_participation_431_15_24 <- gender_participation_431_15_24 %>%
   mutate(GPI_participation_15_24 = female_participation_rate / male_participation_rate)
 
-# Display results
-print(gender_participation)
+
 
 # Visualizing Gender Parity Index with UNHCR Colors
 
@@ -3994,12 +4202,12 @@ ggplot(gender_participation_431_15_24, aes(x = Intro_07, y = GPI_participation_1
 
 
 ```{r}
-#Population Parity Index (PPI) for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months - 15 - 24 years
+#Population Parity Index (PPI) for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months - 15 - 24 years
 # Ensure survey design
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,  # Adjust if needed
-    weights = NULL,  # Adjust if needed
+    strata = samp_strat,  # Adjust if needed
+    weights = wgh_samp_pop_restr_resp,  # Adjust if needed
     nest = TRUE
   )
 # Completion rates for refugees
@@ -4036,12 +4244,12 @@ ggplot(population_participation_et_15_24, aes(x = "Parity Index", y = PPI_partic
 2. **25 - 45 years age group**
 
 ```{r, eval=FALSE}
-#Gender Parity Index (GPI) for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months
+#Gender Parity Index (GPI) for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months
 # Ensure survey design
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,  # Adjust if needed
-    weights = NULL,  # Adjust if needed
+    strata = samp_strat,  # Adjust if needed
+    weights = wgh_samp_pop_restr_resp,  # Adjust if needed
     nest = TRUE
   )
 
@@ -4070,8 +4278,6 @@ gender_participation_431_25_45 <- left_join(male_participation_431_25_45, female
 gender_participation_431_25_45 <- gender_participation_431_25_45 %>%
   mutate(GPI_participation_25_45 = female_participation_rate / male_participation_rate)
 
-# Display results
-print(gender_participation)
 
 # Visualizing Gender Parity Index with UNHCR Colors
 max_gpi <- max(gender_participation_431_25_45$GPI_participation_25_45, na.rm = TRUE)
@@ -4095,12 +4301,12 @@ ggplot(gender_participation_431_25_45, aes(x = Intro_07, y = GPI_participation_2
 ```
 
 ```{r}
-#Population Parity Index (PPI) for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months - 25 - 45 years
+#Population Parity Index (PPI) for participation rate of youth and adults in formal and non-formal education and training in the previous 12 months - 25 - 45 years
 # Ensure survey design
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,  # Adjust if needed
-    weights = NULL,  # Adjust if needed
+    strata = samp_strat,  # Adjust if needed
+    weights = wgh_samp_pop_restr_resp,  # Adjust if needed
     nest = TRUE
   )
 # Completion rates for refugees
@@ -4136,7 +4342,7 @@ ggplot(population_participation_et_25_45, aes(x = "Parity Index", y = PPI_partic
 
 ## 5.3.1 SDG Indicator
 
-**Proportion of women aged 20–24 years who were married or in a union before age 15 and before age 18**
+**Proportion of women aged 20–24 years who were married or in a union before age 15 and before age 18**
 
 Indicator Code: C050301
 
@@ -4210,8 +4416,8 @@ cat("Proportion of women aged 20-24 married before age 18:", round(proportion_18
 
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -4257,8 +4463,8 @@ ggplot(C050301a, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
 
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -4344,7 +4550,7 @@ Households who own or have secure rights over agricultural land but did not farm
 
 *Agricultural population* - The reference population for indicator 5.a.1 is the population of adult individuals living in agricultural households (as defined above). For purposes of international comparability, the recommended definition of “adult” is a person who is 18 years old or older. However, countries could use their own definitions of adult but allow for the calculation of statistics based on the 18-years old definition. Once a household is classified as an ‘agricultural household’, all the adult household members are considered as part of the reference population. 
 
-*Land ownership* is a legally recognised right to acquire, to use and to transfer land. “Secure rights” in the context of indicator 5.a.1 is defined as secure tenure rights, i.e., rights to use, manage and control land, fisheries and forests, in the sense of the Voluntary Guidelines on the Responsible Governance of Tenure of Land, Fisheries and Forests in the Context of National Food Security1￼. Operationally, for the purposes of measurement of this indicator, secure tenure rights comprise both land ownership and two key alienation rights: the right to sell and the right to bequeath agricultural land.
+*Land ownership* is a legally recognised right to acquire, to use and to transfer land. “Secure rights” in the context of indicator 5.a.1 is defined as secure tenure rights, i.e., rights to use, manage and control land, fisheries and forests, in the sense of the Voluntary Guidelines on the Responsible Governance of Tenure of Land, Fisheries and Forests in the Context of National Food Security. Operationally, for the purposes of measurement of this indicator, secure tenure rights comprise both land ownership and two key alienation rights: the right to sell and the right to bequeath agricultural land.
 
 
 ## 5.b.1 SDG Indicator
@@ -4378,7 +4584,7 @@ table(RA_adult$IA01_1) #Does the mobile phone you own have an active SIM card?  
 ```
 
 ```{r, eval=FALSE}
-#ILGI: A response option in both above questions is Not needed. Those that do not need a mobile phone or an active sim card. I have put them in 0 for now, as even if they don't need it they still don't have it. Do you agree? 
+
 ## Step 2: Add a column specifying if the household uses improved or unimproved source of drinking water 
 RA_adult <- RA_adult %>%
 mutate(C050b01 = case_when(
@@ -4403,8 +4609,8 @@ table(RA_adult$C050b01)
 
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -4428,7 +4634,7 @@ ggplot(C050b01, aes(x = Intro_07, y = mean_value, fill = Intro_07)) +
                 width = 0.2, position = position_dodge(0.7)) +
   geom_text(aes(label = round(mean_value, 2)), 
             vjust = -0.5, position = position_dodge(0.7)) +  
-  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 1.1), expand = c(0, 0)) +
   labs(
     title = "Results of SDG 5.b.1",
     x = "Population Groups",
@@ -4583,8 +4789,8 @@ table(main$C060101)
 
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -4705,8 +4911,8 @@ table(main$C060102)
 
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -4816,8 +5022,8 @@ table(main$C070101)
 
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -4905,7 +5111,7 @@ main <- main %>%
       ) ~ 1,  # First condition for clean cooking
       (HC01 == 1 & (HC02 %in% c(6,7,9,10,11,96)) | (HC02 == 8 & !(HC04== 2)
       )) ~ 0,  # Condition for unclean cooking or incomplete clean technology
-      HC01 == 2 ~ 0,  # HC01 is "2"
+      HC01 == 2 ~ NA_real_,  # HC01 is "2"
       TRUE ~ NA_real_  # Handle missing or other cases
     )
   ) 
@@ -4928,13 +5134,12 @@ main <- main %>%
     clean_heating = case_when(
       HHT01 == 1 & HHT04 %in% c(1, 2, 3, 4, 5, 8) ~ 1, # Clean heating
       HHT01 == 1 & HHT04 %in% c(6, 7, 96) ~ 0,         # Unclean heating
-      HHT01 == 2 ~ 0,                                  # No heating used
+      HHT01 == 2 ~ NA_real_,                                  # No heating used
       TRUE ~ NA_real_                                  # Missing or other cases
     )
   )
 
-```
-```{r, eval=FALSE}
+
 table(main$clean_heating)
 ```
 
@@ -4947,7 +5152,7 @@ main <- main %>%
     clean_lightning = case_when(
       HL01 == 1 & HL03 %in% c(1, 2, 3, 4, 5, 6) ~ 1, # Clean lighting
       HL01 == 1 & HL03 %in% c(7,9,9,10,11,96) ~ 0,   # Unclean lighting
-      HL01 == 2 ~ 0,                                  # No lighting
+      HL01 == 2 ~ NA_real_,                                  # No lighting
       TRUE ~ NA_real_                                  # Missing or other cases
     )
   )
@@ -4984,8 +5189,8 @@ main <- main %>%
 
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -5210,8 +5415,8 @@ RA_adult <- RA_adult %>%
 
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -5387,8 +5592,8 @@ cat("The average hourly pay is:", format(round(average_hourly_pay, 2), nsmall = 
 
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -5460,8 +5665,8 @@ ggplot(C080501, aes(x = Intro_07, y = avg_hourly_pay, fill = Intro_07)) +
 ```{r, eval=FALSE}
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -5488,48 +5693,6 @@ ggplot(C080501_AGD, aes(x = HH_02_RA, y = avg_hourly_pay, fill = disability_RA))
   scale_y_continuous(limits = c(0, max(C080501_AGD$avg_hourly_pay) * 1.2), expand = c(0, 0)) +
   theme_unhcr() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-```
-
-### Figure for SDG 8.5.2 by Gender, Disability and Population Groups - Treating outliers - ILGI/PETRA - REMOVE BEFORE PUBLISHING
-
-```{r, eval=FALSE}
-## TO BE REMOVED BEFORE WE PUBLISH! 
-#FDS_PAK_2024_RA_adult <- RA_adult %>%
- # as_survey_design(
-  #  ids = NULL,           # Specify the column with cluster IDs
-   # weights = NULL, # Specify the column with survey weights
-    #nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
-  #)
-
-#C080501_AGD <- FDS_PAK_2024_RA_adult %>%
- # filter(!is.na(hourly_pay) & !is.na(disability_RA) & !is.na(HH_02_RA)) %>%  # Exclude missing hourly pay values
-  #mutate(
-   # lower_percentile = survey_quantile(hourly_pay, 0.01, na.rm = TRUE),
-    #upper_percentile = survey_quantile(hourly_pay, 0.99, na.rm = TRUE)
-#  ) %>%
- # filter(hourly_pay >= lower_percentile, hourly_pay <= upper_percentile) %>%  # Exclude outliers
-  #group_by(Intro_07, disability_RA,HH_02_RA ) %>%          # Group by your population group variable
-  #summarise(
-    #avg_hourly_pay = survey_mean(hourly_pay, na.rm = TRUE),  # Calculate weighted mean
-    #.groups = "drop"
-  #)
-
-#ggplot(C080501_AGD, aes(x = HH_02_RA, y = avg_hourly_pay, fill = disability_RA)) +
- # geom_bar(stat = "identity", position = position_dodge(width = 0.7), width = 0.7) +
-  #geom_text(aes(label = sprintf("%.2f", avg_hourly_pay)), 
-   #         position = position_dodge(width = 0.7), vjust = -0.4, size = 3) +
-  #facet_wrap(~ Intro_07) +
-  #labs(
-   # title = "Average Hourly Earnings by Gender, Disability, and Population Groups",
-    #x = "Gender",
-    #y = "Average Hourly Earnings",
-    #fill = "Disability Status"
-  #) +
-  # scale_fill_unhcr_d() +
-  # scale_y_continuous(limits = c(0, max(C080501_AGD$avg_hourly_pay) * 1.2), expand = c(0, 0)) +
-  # theme_unhcr() +
-  # theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
 
@@ -5645,8 +5808,8 @@ RA_adult <- RA_adult %>%
 
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -5762,22 +5925,22 @@ For the purpose of this indicator, persons are considered to be in training if t
 
 ```{r, eval=FALSE}
 table(RA_adult$EMP01) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you work for someone else for pay, for one or more hours?
-table(RA_adul$EMP02) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you run or do any kind of business, farming or other activity to make money?
-table(RA_adul$EMP03) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you help in a family business or farm?
-table(RA_adul$EMP04) #Even though you did not work, during the past 7 days, did you have a paid job from which you were temporarily absent?
-table(RA_adul$EMP05) #Even though you did not work, during the past 7 days, did you have a business or a helper job in a family business/farm from which you were temporarily absent?
-table(RA_adul$EMP06a) #During the past 7 days, did you do any work in farming or rearing farm animals, fishing or fish farming, or none of these?
-table(RA_adul$EMP06b) #Was this work that you mentioned in farming or rearing farming animals, fishing or fish farming, or none of these?
-table(RA_adul$EMP06c) #Thinking about this work, are the products intended only for sale, mainly for sale, only for family use, or mainly for family use?
-table(RA_adul$EMP06d) #How many hours did you spend doing this work during the past 7 days?
-table(RA_adul$EMP25a) #During the past 30 days, did you do anything to find a paid job?
-table(RA_adul$EMP25aa)#During the past 30 days, did you do anything to start a business?
-table(RA_adul$EMP29)  #Could you start working within the next 14 days if you were offered a job?
-table(RA_adul$EducR08)#Have you ever completed an apprenticeship?
-table(RA_adul$educ_now) # Are you currently going to school?  If it is school holiday between two school years, tell us about the last school year.Do not include kindergarten or preschool.
+table(RA_adult$EMP02) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you run or do any kind of business, farming or other activity to make money?
+table(RA_adult$EMP03) #During the past 7 days, from [the same week day as the day of the interview] last week up to yesterday, did you help in a family business or farm?
+table(RA_adult$EMP04) #Even though you did not work, during the past 7 days, did you have a paid job from which you were temporarily absent?
+table(RA_adult$EMP05) #Even though you did not work, during the past 7 days, did you have a business or a helper job in a family business/farm from which you were temporarily absent?
+table(RA_adult$EMP06a) #During the past 7 days, did you do any work in farming or rearing farm animals, fishing or fish farming, or none of these?
+table(RA_adult$EMP06b) #Was this work that you mentioned in farming or rearing farming animals, fishing or fish farming, or none of these?
+table(RA_adult$EMP06c) #Thinking about this work, are the products intended only for sale, mainly for sale, only for family use, or mainly for family use?
+table(RA_adult$EMP06d) #How many hours did you spend doing this work during the past 7 days?
+table(RA_adult$EMP25a) #During the past 30 days, did you do anything to find a paid job?
+table(RA_adult$EMP25aa)#During the past 30 days, did you do anything to start a business?
+table(RA_adult$EMP29)  #Could you start working within the next 14 days if you were offered a job?
+table(RA_adult$EducR08)#Have you ever completed an apprenticeship?
+table(RA_adult$educ_now) # Are you currently going to school?  If it is school holiday between two school years, tell us about the last school year.Do not include kindergarten or preschool.
 ```
-ILGI: *Note: Apart from the above variables, this indicator should also include other forms of training (not only apprenticeship). With questions posted in FDS, we are unable to determine if an individual is currently participating in training other than apprenticeship. 
-Check the entire calculation with Ilgi. 
+*Note: Apart from the above variables, this indicator should also include other forms of training (not only apprenticeship). With questions posted in FDS, we are unable to determine if an individual is currently participating in training other than apprenticeship. 
+
 
 ```{r, eval=FALSE}
 #Step 1: Create a variable identifying unemployed youth
@@ -5851,8 +6014,8 @@ RA_adult <- RA_adult %>%
 
 FDS_PAK_2024_RA_adult <- RA_adult  %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -6032,8 +6195,8 @@ table(main$C080701a)
 
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -6177,8 +6340,8 @@ table(main$C080701b)
 
 FDS_PAK_2024_main <- main %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -6266,8 +6429,7 @@ RA_adult <- RA_adult %>%
                                 ),
                                 label = "Proportion of people above with an account at a bank or other financial institution or with a mobile-money-service provider"
   ))
-```
-```{r, eval=FALSE}
+
 table(RA_adult$C081002)
 ```
 
@@ -6278,8 +6440,8 @@ table(RA_adult$C081002)
 
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -6426,8 +6588,8 @@ table(RA_adult$C200204)
 
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -6568,8 +6730,8 @@ table(RA_adult$C160105)
 
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -6741,7 +6903,7 @@ RA_adult <- RA_adult %>%
 
 #FDS_PAK_2024_RA_adult <- RA_adult %>%
  # as_survey_design(
-    #ids = NULL,           # Specify the column with cluster IDs
+    #strata = NULL,           # Specify the column with cluster strata
     #weights = NULL, # Specify the column with survey weights
     #nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
@@ -6972,8 +7134,8 @@ table(HHroster$C160901)
 
 FDS_PAK_2024_HHroster <- HHroster %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -7125,8 +7287,8 @@ The methodology used for this module in the FDS differs in some aspects from the
 
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
@@ -7244,8 +7406,7 @@ RA_adult <- RA_adult %>%
                                  'No' = 0
                                ),
                                label = "Proportion of individuals using the internet" ))
-```
-```{r, eval=FALSE}
+
 table(RA_adult$C170801)
 ```
 
@@ -7258,8 +7419,8 @@ table(RA_adult$C170801)
 
 FDS_PAK_2024_RA_adult <- RA_adult %>%
   as_survey_design(
-    ids = NULL,           # Specify the column with cluster IDs
-    weights = NULL, # Specify the column with survey weights
+    strata = samp_strat,           # Specify the column with cluster strata
+    weights = wgh_samp_pop_restr_resp, # Specify the column with survey weights
     nest = TRUE              # Use TRUE if PSUs are nested within clusters (optional, based on your survey design)
   )
 
